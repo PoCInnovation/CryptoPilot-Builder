@@ -1,6 +1,6 @@
 > If you see this section, you've just created a repository using [PoC Innovation's Open-Source project template](https://github.com/PoCInnovation/open-source-project-template). Check the [getting started guide](./.github/getting-started.md).
 
-# [CryptoPilot-Builder]
+# CryptoPilot-Builder
 
 The goal of this project is to make a crypto builder with the assistance of AI that will help you to make a no-code solution for creating personalized cryptocurrency portfolios. By leveraging advanced AI algorithms, users can easily input their preferences, risk tolerance, and investment goals, and the builder will automatically generate optimized portfolios without requiring any technical knowledge. This tool aims to democratize access to cryptocurrency investment strategies, making them simple, intuitive, and accessible for everyone.
 
