@@ -36,7 +36,7 @@ Developers
 | :---: | :---: | :---: |
 
 Manager
-| [<img src="https://github.com/adrienfort.png?size=85" width=85><br><sub>[Manager's name]</sub>](https://github.com/adrienfort)
+| [<img src="https://github.com/adrienfort.png?size=85" width=85><br><sub>[Lucas LECLERC]</sub>](https://github.com/adrienfort)
 | :---: |
 
 <h2 align=center>
