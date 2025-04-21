@@ -2,7 +2,7 @@
 
 # CryptoPilot-Builder
 
-[Project's description]
+The goal of this project is to make a crypto builder with the assistance of AI that will help you to make a no-code solution for creating personalized cryptocurrency portfolios. By leveraging advanced AI algorithms, users can easily input their preferences, risk tolerance, and investment goals, and the builder will automatically generate optimized portfolios without requiring any technical knowledge. This tool aims to democratize access to cryptocurrency investment strategies, making them simple, intuitive, and accessible for everyone.
 
 ## How does it work?
 
@@ -30,13 +30,14 @@ If you're interested in how the project is organized at a higher level, please c
 
 ## Our PoC team ❤️
 
-Developers
- | [<img src="https://github.com/MrZalTy.png?size=85" width=85><br><sub>[Developer's name]</sub>](https://github.com/MrZalTy) | [<img src="https://github.com/MrZalTy.png?size=85" width=85><br><sub>[Developer's name]</sub>](https://github.com/MrZalTy) | [<img src="https://github.com/MrZalTy.png?size=85" width=85><br><sub>[Developer's name]</sub>](https://github.com/MrZalTy)
- | :---: | :---: | :---: |
+
+ Developers
+ | [<img src="https://github.com/AurelienDEMEUSY.png?size=85" width=85><br><sub>Aurelien Demeusy</sub>](https://github.com/AurelienDEMEUSY) | [<img src="https://github.com/Nerzouille.png?size=85" width=85><br><sub>Noa smoter</sub>](https://github.com/Nerzouille)
+ | :---: | :---: |
 
 Manager
-| [<img src="https://github.com/adrienfort.png?size=85" width=85><br><sub>[Manager's name]</sub>](https://github.com/adrienfort)
-| :---: |
+ | [<img src="https://github.com/Intermarch3.png?size=85" width=85><br><sub>Lucas Leclerc</sub>](https://github.com/Intermarch3) | [<img src="https://github.com/ramosleandre.png?size=85" width=85><br><sub>Leandre Ramos</sub>](https://github.com/ramosleandre)
+ | :---: | :---: |
 
 <h2 align=center>
 Organization
