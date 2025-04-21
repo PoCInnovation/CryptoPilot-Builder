@@ -32,13 +32,12 @@ If you're interested in how the project is organized at a higher level, please c
 
 
  Developers
- | [<img src="https://github.com/MrZalTy.png?size=85" width=85><br><sub>Aurelien Demeusy</sub>](https://github.com/AurelienDEMEUSY) | [<img src="https://github.com/MrZalTy.png?size=85" width=85><br><sub>Noa smoter</sub>](https://github.com/
+ | [<img src="https://github.com/AurelienDEMEUSY.png?size=85" width=85><br><sub>Aurelien Demeusy</sub>](https://github.com/AurelienDEMEUSY) | [<img src="https://github.com/Nerzouille.png?size=85" width=85><br><sub>Noa smoter</sub>](https://github.com/Nerzouille)
  | :---: | :---: |
 
 Manager
-| [<img src="https://github.com/adrienfort.png?size=85" width=85><br><sub>Lucas LECLERC</sub>](https://github.com/Intermarch3) |
-[<img src="https://github.com/MrZalTy.png?size=85" width=85><br><sub>leandre Ramos</sub>](https://github.com/ramosleandre)
-| :---: | :---: |
+ | [<img src="https://github.com/Intermarch3.png?size=85" width=85><br><sub>Lucas Leclerc</sub>](https://github.com/Intermarch3) | [<img src="https://github.com/ramosleandre.png?size=85" width=85><br><sub>Leandre Ramos</sub>](https://github.com/ramosleandre)
+ | :---: | :---: |
 
 <h2 align=center>
 Organization
