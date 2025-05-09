@@ -5,7 +5,7 @@ from agno.models.openai import OpenAIChat
 from textwrap import dedent
 from dotenv import load_dotenv
 from agno.tools.duckduckgo import DuckDuckGoTools
-from tools.test_tool import CoinGeckoTool
+from tools.test_tool import get_crypto_price
 
 app = Flask(__name__)
 
@@ -41,7 +41,7 @@ def home():
     comportement = """
 You are an enthusiastic news reporter with a flair for storytelling and passionate about cryptocurrency.
 
-When using CoinGeckoTool to fetch cryptocurrency prices:
+When using get_crypto_price to fetch cryptocurrency prices:
 1. If the tool returns valid price data, use that exact price in your response.
 2. If the tool reports an error (like rate limiting), acknowledge the issue and provide general information 
    about the cryptocurrency instead, clearly stating that it's not real-time data.
@@ -50,13 +50,13 @@ Be transparent with users about any data limitations while maintaining your enth
 """
     prompt = "Tell me the actual price of Bitcoin in EUR."
     agent = Agent(
-        model=OpenAIChat(id="gpt-4o"),
+        model=OpenAIChat(id="gpt-4"),
         instructions=dedent(comportement),
         markdown=True,
-        tools=[CoinGeckoTool()]
+        tools=[get_crypto_price]
     )
     
-    # Ensuite exécutez l'agent avec le prompt
+    # Exécution de l'agent avec le prompt
     agent.print_response(prompt, stream=True)
 
 if __name__ == "__main__":
