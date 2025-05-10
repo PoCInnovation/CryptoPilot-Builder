@@ -51,7 +51,7 @@ Be transparent with users about any data limitations while maintaining your enth
 """
     prompt = "Tell me the current price of Bitcoin in USD and Ethereum in GBP."
     agent = Agent(
-        model=OpenAIChat(id="gpt-4"),
+        model=OpenAIChat(id="gpt-4o-mini"),
         instructions=dedent(comportement),
         markdown=True,
         tools=[get_crypto_price]
