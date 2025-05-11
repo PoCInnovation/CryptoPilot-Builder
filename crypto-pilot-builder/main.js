@@ -1,6 +1,7 @@
 import { app, BrowserWindow, ipcMain } from 'electron'
 import path from 'path'
 import { fileURLToPath } from 'url'
+import fetch from 'node-fetch'
 import { spawn } from 'child_process'
 
 const __filename = fileURLToPath(import.meta.url)
@@ -20,25 +21,28 @@ function createWindow() {
     }
   })
 
-  // Charge le front en dev
   mainWindow.loadURL('http://localhost:5173')
 }
 
-// Communication avec Python
 ipcMain.handle('run-python', async (event, prompt) => {
-  return new Promise((resolve, reject) => {
-    const pythonProcess = spawn('python', [path.join(__dirname, 'python/chatbot.py'), prompt])
-
-    let output = ''
-    pythonProcess.stdout.on('data', data => output += data.toString())
-    pythonProcess.stderr.on('data', data => console.error(data.toString()))
-
-    pythonProcess.on('close', code => {
-      if (code === 0) resolve(output.trim())
-      else reject(`Erreur Python (code ${code})`)
+  try {
+    const response = await fetch('http://localhost:5000/chat', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ message: prompt })
     })
-  })
+
+    const data = await response.json()
+
+    if (!response.ok) throw new Error(data.error || 'Erreur API')
+
+    return data.response
+  } catch (err) {
+    console.error("Erreur lors de l'appel HTTP:", err)
+    return `Erreur: ${err.message}`
+  }
 })
+
 
 app.whenReady().then(() => {
   createWindow()
