@@ -7,6 +7,7 @@ import logging
 
 from agno.agent import Agent
 from agno.models.openai import OpenAIChat
+from tools.test_tool import get_crypto_price
 
 # Chargement des variables d'environnement
 load_dotenv()
@@ -35,13 +36,20 @@ def chat():
     Sois rigoureux, neutre et didactique. Utilise des exemples concrets si cela peut aider à comprendre.
     Si tu ne peux pas accéder à des données temps réel, précise-le.
     Si la question est trop vague, pose une question de clarification.
+
+    Tu peux utiliser l'outil get_crypto_price pour obtenir le prix des cryptomonnaies.
+    1. L'outil accepte deux paramètres : crypto_id (comme 'bitcoin', 'ethereum') et currency (comme 'eur', 'usd', 'gbp').
+    2. Si l'outil renvoie des données de prix valides, utilise ce prix exact dans ta réponse.
+    3. Si l'outil signale une erreur (comme un dépassement de quota), reconnaît le problème
+
+    Soit transparent avec les utilisateurs.
     """
     try:
         agent = Agent(
             model=OpenAIChat(id="gpt-4o-mini"),
             instructions=dedent(comportement),
             markdown=False,
-            tools=[],
+            tools=[get_crypto_price],
         )
         logger.info("Agent initialisé avec succès")
         result = agent.run(user_input)
