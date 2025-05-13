@@ -30,19 +30,19 @@ def chat():
     if not data or 'message' not in data:
         logger.warning("Aucun message fourni")
         return jsonify({'error': 'Message manquant'}), 400
-        
+
     # Récupérer l'ID du chat (utiliser 'default' s'il n'est pas fourni)
     chat_id = data.get('chat_id', 'default')
     user_input = data['message']
     logger.info(f"Message utilisateur pour le chat {chat_id}: {user_input}")
-    
+
     # Initialiser l'historique pour ce chat s'il n'existe pas
     if chat_id not in conversation_history:
         conversation_history[chat_id] = []
-    
+
     # Stocker le message utilisateur en texte simple
     conversation_history[chat_id].append(user_input)
-    
+
     comportement = """
     Tu es un expert financier qui repond de maniere claire, structuree et pedagogique aux questions sur la bourse.
     Tu peux expliquer le fonctionnement des actions, indices, ETF, crypto, ou tout autre instrument financier.
@@ -58,7 +58,7 @@ def chat():
 
     Soit transparent avec les utilisateurs.
     """
-    
+
     # Créer un contexte avec l'historique des conversations
     context = ""
     if len(conversation_history[chat_id]) > 1:
@@ -69,10 +69,10 @@ def chat():
             else:  # Message assistant
                 context += f"Assistant: {msg}\n"
         context += "\nDernière question de l'utilisateur:\n"
-    
+
     # Ajouter la dernière question
     full_prompt = context + user_input
-    
+
     try:
         agent = Agent(
             model=OpenAIChat(id="gpt-4o-mini"),
@@ -81,19 +81,19 @@ def chat():
             tools=[get_crypto_price],
         )
         logger.info("Agent initialisé avec succès")
-        
+
         # Utiliser seulement le dernier message avec le contexte
         result = agent.run(full_prompt)
         logger.info("Réponse de l'agent reçue")
-        
+
         if hasattr(result, 'content') and result.content:
             clean_response = result.content
         else:
             clean_response = str(result)
-        
+
         # Stocker la réponse en texte simple
         conversation_history[chat_id].append(clean_response)
-                
+
         logger.info(f"Réponse nettoyée prête à être envoyée")
         return jsonify({'response': clean_response})
     except Exception as e:
