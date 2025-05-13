@@ -73,7 +73,10 @@ const sendMessage = async () => {
       headers: {
         'Content-Type': 'application/json',
       },
-      body: JSON.stringify({ message: text }),
+      body: JSON.stringify({
+        message: text,
+        chat_id: `chat_${selectedChat.value}`
+      }),
     })
 
     const data = await response.json()
