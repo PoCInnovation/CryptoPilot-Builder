@@ -12,7 +12,7 @@
     <main class="chat-main">
       <div class="messages" ref="messagesContainer">
         <div v-for="(msg, index) in messages" :key="index" :class="['message', msg.isUser ? 'user' : 'bot']">
-          {{ msg.text }}
+          <div v-html="formatMessage(msg.text)"></div>
         </div>
       </div>
 
@@ -29,12 +29,10 @@
 <script setup>
 import { ref, onMounted } from 'vue'
 
-// Messages du chat actif
 const messages = ref([
   { text: 'Bonjour ! Posez-moi une question.', isUser: false }
 ])
 
-// Gestion des différents chats
 const chats = ref(['Chat 1'])
 const selectedChat = ref(0)
 const newMessage = ref('')
@@ -52,7 +50,16 @@ function addNewChat() {
   selectChat(chats.value.length - 1)
 }
 
-// Envoi d’un message
+function formatMessage(text) {
+  if (!text)
+    return '';
+  let formattedText = text
+    .replace(/\\n\\n/g, '<br><br>')
+    .replace(/\\n/g, '<br>')
+    .replace(/- /g, '• ');
+  return formattedText;
+}
+
 const sendMessage = async () => {
   const text = newMessage.value.trim()
   if (!text) return
@@ -60,18 +67,42 @@ const sendMessage = async () => {
   messages.value.push({ text, isUser: true })
   newMessage.value = ''
 
-  // Simuler une réponse IA
-  setTimeout(() => {
+  try {
+    const response = await fetch('http://localhost:5000/chat', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({ message: text }),
+    })
+
+    const data = await response.json()
+    if (data && data.response) {
+      let botResponse;
+      if (typeof data.response === 'string') {
+        botResponse = data.response.trim();
+      } else if (data.response.content) {
+        botResponse = data.response.content;
+      }
+      if (botResponse) {
+        messages.value.push({ text: botResponse, isUser: false })
+      } else {
+        throw new Error('Réponse vide de l\'API.')
+      }
+    } else {
+      throw new Error('Réponse invalide ou mal formatée de l\'API.')
+    }
+  } catch (err) {
+    console.error('Erreur lors de l\'exécution de l\'API:', err)
     messages.value.push({
-      text: "Réponse simulée : " + text.split(" ").reverse().join(" "),
+      text: "Erreur de communication avec l'IA locale.",
       isUser: false
     })
-  }, 500)
+  }
 
   scrollToBottom()
 }
 
-// Défilement automatique
 const messagesContainer = ref(null)
 const scrollToBottom = () => {
   if (messagesContainer.value) {
@@ -165,6 +196,16 @@ const scrollToBottom = () => {
   background-color: #ececec;
   color: black;
   align-self: flex-start;
+}
+
+.message ul {
+  margin-top: 0.5rem;
+  margin-bottom: 0.5rem;
+  padding-left: 1.5rem;
+}
+
+.message li {
+  margin-bottom: 0.25rem;
 }
 
 .input-form {
