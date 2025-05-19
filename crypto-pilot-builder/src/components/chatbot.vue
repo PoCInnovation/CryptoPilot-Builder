@@ -24,6 +24,13 @@
         >
           <div v-html="formatMessage(msg.text)"></div>
         </div>
+        <div v-if="isLoading" class="message bot loading">
+          <div class="loading-dots">
+            <span></span>
+            <span></span>
+            <span></span>
+          </div>
+        </div>
       </div>
 
       <form @submit.prevent="sendMessage" class="input-form">
@@ -41,12 +48,13 @@
 </template>
 
 <script setup>
-import { ref, nextTick } from 'vue'
+import { ref, nextTick, onMounted, watch } from 'vue'
 
 const messages = ref([
   { text: 'Bonjour ! Posez-moi une question.', isUser: false }
 ])
-
+const isLoading = ref(false)
+const shouldAutoScroll = ref(true)
 const chats = ref(['Chat 1'])
 const selectedChat = ref(0)
 const newMessage = ref('')
@@ -75,11 +83,29 @@ function formatMessage(text) {
 
 function scrollToBottom() {
   nextTick(() => {
-    if (messagesContainer.value) {
+    if (messagesContainer.value && shouldAutoScroll.value) {
       messagesContainer.value.scrollTop = messagesContainer.value.scrollHeight
     }
   })
 }
+
+function handleScroll() {
+  if (!messagesContainer.value) return
+  
+  const { scrollTop, scrollHeight, clientHeight } = messagesContainer.value
+  const isAtBottom = scrollHeight - scrollTop - clientHeight < 10
+  shouldAutoScroll.value = isAtBottom
+}
+
+onMounted(() => {
+  if (messagesContainer.value) {
+    messagesContainer.value.addEventListener('scroll', handleScroll)
+  }
+})
+
+watch(messages, () => {
+  scrollToBottom()
+}, { deep: true })
 
 async function sendMessage() {
   const text = newMessage.value.trim()
@@ -87,6 +113,7 @@ async function sendMessage() {
 
   messages.value.push({ text, isUser: true })
   newMessage.value = ''
+  isLoading.value = true
 
   try {
     const response = await fetch('http://localhost:5000/chat', {
@@ -109,6 +136,8 @@ async function sendMessage() {
       text: "Erreur de communication avec l'IA locale.",
       isUser: false
     })
+  } finally {
+    isLoading.value = false
   }
 
   scrollToBottom()
@@ -257,5 +286,44 @@ async function sendMessage() {
 
 .send-button:hover {
   background-color: #45a049;
+}
+
+.loading-dots {
+  display: flex;
+  gap: 4px;
+  padding: 8px 12px;
+}
+
+.loading-dots span {
+  width: 8px;
+  height: 8px;
+  background-color: #666;
+  border-radius: 50%;
+  animation: bounce 1.4s infinite ease-in-out;
+}
+
+.loading-dots span:nth-child(1) {
+  animation-delay: -0.32s;
+}
+
+.loading-dots span:nth-child(2) {
+  animation-delay: -0.16s;
+}
+
+@keyframes bounce {
+  0%, 80%, 100% {
+    transform: scale(0);
+  }
+  40% {
+    transform: scale(1);
+  }
+}
+
+.message.loading {
+  background-color: #ececec;
+  align-self: flex-start;
+  min-height: 40px;
+  display: flex;
+  align-items: center;
 }
 </style>
