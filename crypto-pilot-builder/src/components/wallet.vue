@@ -17,6 +17,7 @@ async function connectWallet() {
   try {
     const [account] = await window.ethereum.request({ method: 'eth_requestAccounts' })
     address.value = account
+    status.value = "✅ Wallet connecté"
   } catch (err) {
     console.error(err)
     status.value = "❌ Erreur lors de la connexion"
@@ -26,27 +27,62 @@ async function connectWallet() {
 async function sendTransaction() {
   if (!window.ethereum || !address.value || !recipient.value || !amount.value)
     return
+  
+  return await executeTransaction(recipient.value, amount.value)
+}
+
+// Nouvelle méthode exposée pour le chatbot
+async function sendTransactionFromChat(recipientAddress, amountEth) {
+  if (!window.ethereum || !address.value) {
+    throw new Error('Wallet non connecté')
+  }
+  
+  if (!recipientAddress || !amountEth) {
+    throw new Error('Adresse ou montant manquant')
+  }
+  
+  return await executeTransaction(recipientAddress, amountEth)
+}
+
+// Fonction commune pour exécuter les transactions
+async function executeTransaction(recipientAddress, amountEth) {
   isProcessing.value = true
   status.value = "Signature..."
+  
   try {
     const transport = custom(window.ethereum)
     const walletClient = createWalletClient({ chain: sepolia, transport })
+    
     const hash = await walletClient.sendTransaction({
       account: address.value,
-      to: recipient.value,
-      value: parseEther(amount.value)
+      to: recipientAddress,
+      value: parseEther(amountEth.toString())
     })
+    
     status.value = `✅ Tx envoyée : ${hash.slice(0, 10)}...`
-    recipient.value = ''
+    
+    // Nettoyer les champs du formulaire si c'est une transaction manuelle
+    if (recipientAddress === recipient.value) {
+      recipient.value = ''
+    }
+    
+    return { success: true, hash, message: status.value }
+    
   } catch (err) {
     console.error(err)
+    let errorMessage
+    
     if (err.message.includes('User rejected')) {
-      status.value = '❌ Rejeté'
+      errorMessage = '❌ Rejeté'
     } else if (err.message.includes('insufficient funds')) {
-      status.value = '💸 Fonds insuffisants'
+      errorMessage = '💸 Fonds insuffisants'
     } else {
-      status.value = '⚠️ Erreur transaction'
+      errorMessage = '⚠️ Erreur transaction'
     }
+    
+    status.value = errorMessage
+    throw new Error(errorMessage)
+    
   } finally {
     isProcessing.value = false
   }
@@ -56,6 +92,14 @@ function shortenAddress(addr) {
   if (!addr) return ''
   return addr.slice(0, 4) + '...' + addr.slice(-4)
 }
+
+// Exposer les méthodes pour que le parent puisse les utiliser
+defineExpose({
+  sendTransactionFromChat,
+  address,
+  connectWallet,
+  isConnected: () => !!address.value
+})
 </script>
 
 <template>
