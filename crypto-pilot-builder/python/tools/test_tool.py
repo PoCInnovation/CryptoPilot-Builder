@@ -32,6 +32,39 @@ def get_crypto_price(crypto_id: str, currency: str = "eur") -> str:
         print(f"[CoinGeckoTool] Exception: {e}")
         return f"Erreur lors de la récupération des données : {e}"
 
+@tool
+def detect_transaction_intent(prompt: str) -> dict:
+    """
+    Détecte si l'utilisateur souhaite effectuer une transaction Ethereum.
+    Retourne un dictionnaire avec les détails si une intention est détectée.
+    """
+    prompt_lower = prompt.lower()
+    keywords = ["envoyer", "transfer", "transférer", "envoie", "envois"]
+    if any(word in prompt_lower for word in keywords):
+        # Extraction basique de l'adresse et du montant (à améliorer avec NLP)
+        import re
+        address_match = re.search(r'0x[a-fA-F0-9]{40}', prompt)
+        eth_match = re.search(r'(\d+\.?\d*)\s*(eth|ether|ETH)', prompt)
+        return {
+            "intent": "transaction",
+            "address": address_match.group(0) if address_match else None,
+            "amount": eth_match.group(1) if eth_match else None
+        }
+    return {"intent": "none"}
+
+@tool
+def confirm_transaction(details: dict) -> str:
+    """
+    Outil pour demander confirmation à l'utilisateur avant d'exécuter une transaction.
+    """
+    if not details.get("address") or not details.get("amount"):
+        return "Je n'ai pas pu extraire tous les détails de la transaction."
+    return f"""
+    Je vais envoyer {details['amount']} ETH à l'adresse :
+    {details['address']}
+    Confirmez-vous cette transaction ? Répondez par "oui" ou "non".
+    """
+
 # Test de l'outil
 if __name__ == "__main__":
     print(get_crypto_price("bitcoin", "usd"))
