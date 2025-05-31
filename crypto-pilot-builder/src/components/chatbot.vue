@@ -8,6 +8,10 @@
     />
 
     <main class="chat-main">
+      <div class="chat-header">
+        <h3>Session: {{ currentSessionId ? currentSessionId.substring(0, 8) + '...' : 'Nouvelle session' }}</h3>
+      </div>
+
       <ChatMessages
         :messages="messages"
         :is-loading="isLoading"
@@ -34,7 +38,7 @@
 </template>
 
 <script setup>
-import { ref, inject } from 'vue'
+import { ref, inject, onMounted } from 'vue'
 import ChatSidebar from './chatbot/ChatSidebar.vue'
 import ChatMessages from './chatbot/ChatMessages.vue'
 import ChatInput from './chatbot/ChatInput.vue'
@@ -43,62 +47,140 @@ const messages = ref([
   { text: 'Bonjour ! Posez-moi une question ou demandez-moi d\'effectuer une transaction.', isUser: false }
 ])
 
-const chats = ref(['Chat 1'])
+const chats = ref([])
 const selectedChat = ref(0)
 const isLoading = ref(false)
 const pendingTransaction = ref(null)
+const currentSessionId = ref(null)
+
+// Stockage des sessions avec leurs messages
+const chatSessions = ref({})
 
 const walletFunctions = inject('walletFunctions', null)
 
-function selectChat(index) {
-  selectedChat.value = index
-  messages.value = [
-    { text: `Contenu du ${chats.value[index]}`, isUser: false }
-  ]
+onMounted(() => {
+  // Créer une session initiale
+  createNewSession()
+})
+
+async function createNewSession() {
+  try {
+    const response = await fetch('http://localhost:5000/new-session', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' }
+    })
+    
+    const data = await response.json()
+    const sessionId = data.session_id
+    
+    // Créer un nouveau chat
+    const chatName = `Chat ${chats.value.length + 1}`
+    chats.value.push(chatName)
+    
+    // Stocker la session
+    chatSessions.value[chatName] = {
+      sessionId: sessionId,
+      messages: [
+        { text: 'Bonjour ! Posez-moi une question ou demandez-moi d\'effectuer une transaction.', isUser: false }
+      ]
+    }
+    
+    // Sélectionner le nouveau chat
+    selectedChat.value = chats.value.length - 1
+    currentSessionId.value = sessionId
+    messages.value = [...chatSessions.value[chatName].messages]
+    
+  } catch (error) {
+    console.error('Erreur lors de la création de session:', error)
+  }
 }
 
-function addNewChat() {
-  const index = chats.value.length + 1
-  chats.value.push(`Chat ${index}`)
-  selectChat(chats.value.length - 1)
+function selectChat(index) {
+  selectedChat.value = index
+  const chatName = chats.value[index]
+  
+  if (chatSessions.value[chatName]) {
+    currentSessionId.value = chatSessions.value[chatName].sessionId
+    messages.value = [...chatSessions.value[chatName].messages]
+  } else {
+    // Session non trouvée, créer une nouvelle
+    createNewSession()
+  }
+}
+
+async function addNewChat() {
+  await createNewSession()
 }
 
 async function sendMessage(text) {
   if (!text.trim()) return
 
-  messages.value.push({ text, isUser: true })
+  const newMessage = { text, isUser: true }
+  messages.value.push(newMessage)
+  
+  // Sauvegarder dans la session actuelle
+  const currentChatName = chats.value[selectedChat.value]
+  if (chatSessions.value[currentChatName]) {
+    chatSessions.value[currentChatName].messages.push(newMessage)
+  }
+  
   isLoading.value = true
 
   try {
     const response = await fetch('http://localhost:5000/chat', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ message: text })
+      body: JSON.stringify({ 
+        message: text,
+        session_id: currentSessionId.value 
+      })
     })
 
     const data = await response.json()
+    
+    // Mettre à jour l'ID de session si nécessaire
+    if (data.session_id) {
+      currentSessionId.value = data.session_id
+      if (chatSessions.value[currentChatName]) {
+        chatSessions.value[currentChatName].sessionId = data.session_id
+      }
+    }
     
     if (data.transaction_request) {
       pendingTransaction.value = data.transaction_request
       
       if (data.response?.trim()) {
-        messages.value.push({ text: data.response.trim(), isUser: false })
+        const botMessage = { text: data.response.trim(), isUser: false }
+        messages.value.push(botMessage)
+        if (chatSessions.value[currentChatName]) {
+          chatSessions.value[currentChatName].messages.push(botMessage)
+        }
       }
     } else {
       let botResponse = data?.response?.content || data?.response || ''
       
       if (botResponse.trim()) {
-        messages.value.push({ text: botResponse.trim(), isUser: false })
+        const botMessage = { text: botResponse.trim(), isUser: false }
+        messages.value.push(botMessage)
+        if (chatSessions.value[currentChatName]) {
+          chatSessions.value[currentChatName].messages.push(botMessage)
+        }
       } else {
         throw new Error('Réponse vide de l\'API.')
       }
     }
   } catch (err) {
     console.error('Erreur API :', err)
-    messages.value.push({
+    const errorMessage = {
       text: "Erreur de communication avec l'IA locale.",
       isUser: false
-    })
+    }
+    messages.value.push(errorMessage)
+    
+    const currentChatName = chats.value[selectedChat.value]
+    if (chatSessions.value[currentChatName]) {
+      chatSessions.value[currentChatName].messages.push(errorMessage)
+    }
   } finally {
     isLoading.value = false
   }
@@ -106,10 +188,17 @@ async function sendMessage(text) {
 
 async function confirmTransaction() {
   if (!pendingTransaction.value || !walletFunctions) {
-    messages.value.push({
+    const errorMessage = {
       text: "❌ Erreur : Wallet non connecté ou transaction invalide.",
       isUser: false
-    })
+    }
+    messages.value.push(errorMessage)
+    
+    const currentChatName = chats.value[selectedChat.value]
+    if (chatSessions.value[currentChatName]) {
+      chatSessions.value[currentChatName].messages.push(errorMessage)
+    }
+    
     pendingTransaction.value = null
     return
   }
@@ -120,35 +209,63 @@ async function confirmTransaction() {
       pendingTransaction.value.amount
     )
 
-    messages.value.push({
+    const successMessage = {
       text: `✅ Transaction initiée : ${pendingTransaction.value.amount} ${pendingTransaction.value.currency} vers ${pendingTransaction.value.recipient}`,
       isUser: false
-    })
+    }
+    messages.value.push(successMessage)
+    
+    const currentChatName = chats.value[selectedChat.value]
+    if (chatSessions.value[currentChatName]) {
+      chatSessions.value[currentChatName].messages.push(successMessage)
+    }
+    
     await fetch('http://localhost:5000/confirm-transaction', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ confirmed: true, transaction: pendingTransaction.value })
+      body: JSON.stringify({ 
+        confirmed: true, 
+        transaction: pendingTransaction.value,
+        session_id: currentSessionId.value
+      })
     })
   } catch (error) {
     console.error('Erreur transaction:', error)
-    messages.value.push({
+    const errorMessage = {
       text: `❌ Erreur lors de la transaction : ${error.message}`,
       isUser: false
-    })
+    }
+    messages.value.push(errorMessage)
+    
+    const currentChatName = chats.value[selectedChat.value]
+    if (chatSessions.value[currentChatName]) {
+      chatSessions.value[currentChatName].messages.push(errorMessage)
+    }
   }
   pendingTransaction.value = null
 }
 
 async function cancelTransaction() {
-  messages.value.push({
+  const cancelMessage = {
     text: "❌ Transaction annulée par l'utilisateur.",
     isUser: false
-  })
+  }
+  messages.value.push(cancelMessage)
+  
+  const currentChatName = chats.value[selectedChat.value]
+  if (chatSessions.value[currentChatName]) {
+    chatSessions.value[currentChatName].messages.push(cancelMessage)
+  }
+  
   try {
     await fetch('http://localhost:5000/confirm-transaction', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ confirmed: false, transaction: pendingTransaction.value })
+      body: JSON.stringify({ 
+        confirmed: false, 
+        transaction: pendingTransaction.value,
+        session_id: currentSessionId.value
+      })
     })
   } catch (error) {
     console.error('Erreur lors de l\'annulation:', error)
@@ -176,6 +293,19 @@ async function cancelTransaction() {
   padding: 1rem;
   background-color: #fff;
   position: relative;
+}
+
+.chat-header {
+  padding: 0.5rem 0;
+  border-bottom: 1px solid #eee;
+  margin-bottom: 1rem;
+}
+
+.chat-header h3 {
+  margin: 0;
+  color: #666;
+  font-size: 0.9rem;
+  font-weight: normal;
 }
 
 .transaction-modal-overlay {
