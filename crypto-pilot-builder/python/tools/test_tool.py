@@ -47,19 +47,6 @@ def detect_transaction_intent(prompt: str) -> dict:
         }
     return {"intent": "none"}
 
-@tool
-def confirm_transaction(details: dict) -> str:
-    """
-    Outil pour demander confirmation à l'utilisateur avant d'exécuter une transaction.
-    """
-    if not details.get("address") or not details.get("amount"):
-        return "Je n'ai pas pu extraire tous les détails de la transaction."
-    return f"""
-    Je vais envoyer {details['amount']} ETH à l'adresse :
-    {details['address']}
-    Confirmez-vous cette transaction ? Répondez par "oui" ou "non".
-    """
-
 if __name__ == "__main__":
     print(get_crypto_price("bitcoin", "usd"))
     print(get_crypto_price("ethereum", "gbp"))
