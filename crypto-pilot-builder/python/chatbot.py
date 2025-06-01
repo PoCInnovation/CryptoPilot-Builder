@@ -35,11 +35,22 @@ def create_agent_with_history(conversation_history=""):
     Tu peux utiliser l'outil get_crypto_price pour obtenir le prix des cryptomonnaies.
     Tu peux aussi utiliser l'outil request_transaction pour initier des transactions blockchain.
 
-    IMPORTANT pour les transactions :
-    - Si l'utilisateur demande d'envoyer de la crypto (ex: "envoie 0.001 sepolia à 0x..."), utilise l'outil request_transaction
-    - Sois très précis sur les montants et adresses
-    - Explique toujours ce que tu vas faire avant de le faire
-    - Les transactions nécessitent une confirmation de l'utilisateur
+    RÈGLES CRITIQUES pour les transactions :
+    1. DÉTECTION : Si tu détectes l'un de ces mots-clés dans le message :
+       - "envoie", "envoyer", "send", "transfert", "transfer", "payer", "pay"
+       - OU si tu vois une adresse Ethereum (0x...) avec un montant
+    2. EXTRACTION : Extrais ces informations du message :
+       - L'adresse de destination (format 0x + 40 caractères)
+       - Le montant numérique
+       - La devise (par défaut "sepolia")
+    3. ACTION IMMÉDIATE : Utilise DIRECTEMENT l'outil request_transaction avec ces paramètres.
+       NE POSE PAS de questions de confirmation - l'outil se charge de tout !
+    4. Exemples de détection :
+       - "envoie 0.01 sepolia à 0xABC..." → request_transaction("0xABC...", "0.01", "sepolia")
+       - "send 0.5 eth to 0x123..." → request_transaction("0x123...", "0.5", "eth")
+       - "transfert 1.0 vers 0xDEF..." → request_transaction("0xDEF...", "1.0", "sepolia")
+
+    IMPORTANT : Dès que tu identifies une demande de transaction, utilise l'outil IMMÉDIATEMENT.
 
     Soit transparent avec les utilisateurs.
 
@@ -51,7 +62,7 @@ def create_agent_with_history(conversation_history=""):
         model=OpenAIChat(id="gpt-4o-mini"),
         instructions=dedent(comportement),
         markdown=False,
-        tools=[get_crypto_price, request_transaction],
+        tools=[get_crypto_price, request_transaction]
     )
 
 def format_conversation_history(messages):
@@ -104,6 +115,7 @@ def chat():
         logger.info(f"Historique de conversation: {conversation_history}")
         result = agent.run(user_input)
         logger.info("Réponse de l'agent reçue")
+        logger.info(f"Résultat complet de l'agent: {result}")
         if hasattr(result, 'content') and result.content:
             clean_response = result.content
         else:
@@ -116,23 +128,43 @@ def chat():
                     clean_response = str(result)
             else:
                 clean_response = str(result)
+        logger.info(f"Réponse extraite: {clean_response}")
         session_data['messages'].append({'role': 'assistant', 'content': clean_response})
         session_data['conversation_history'] = format_conversation_history(session_data['messages'])
         if "TRANSACTION_REQUEST:" in clean_response:
             try:
                 parts = clean_response.split("TRANSACTION_REQUEST:")
                 message_part = parts[0].strip()
-                transaction_data = json.loads(parts[1])
+                transaction_data_str = parts[1].strip()
+                transaction_data = json.loads(transaction_data_str)
                 logger.info(f"Transaction détectée : {transaction_data}")
                 return jsonify({
                     'response': message_part if message_part else f"Je vais préparer une transaction de {transaction_data['amount']} {transaction_data['currency']} vers {transaction_data['recipient']}. Confirmez-vous cette transaction ?",
                     'transaction_request': transaction_data,
                     'session_id': session_id
                 })
-            except (json.JSONDecodeError, IndexError) as e:
+            except (json.JSONDecodeError, IndexError, KeyError) as e:
                 logger.error(f"Erreur parsing transaction : {e}")
+                logger.error(f"Contenu à parser: {clean_response}")
+        if any(keyword in user_input.lower() for keyword in ['envoie', 'envoyer', 'send', 'transfert', 'payer']):
+            logger.info("Détection de mots-clés de transaction dans la requête utilisateur")
+            import re
+            address_pattern = r'0x[a-fA-F0-9]{40}'
+            address_match = re.search(address_pattern, user_input)
+            amount_pattern = r'(\d+(?:\.\d+)?)'
+            amount_match = re.search(amount_pattern, user_input)
+            if address_match and amount_match:
+                transaction_data = {
+                    "type": "transaction_request",
+                    "recipient": address_match.group(0),
+                    "amount": amount_match.group(1),
+                    "currency": "sepolia",
+                    "status": "pending_confirmation"
+                }
+                logger.info(f"Transaction extraite automatiquement : {transaction_data}")
                 return jsonify({
-                    'response': clean_response,
+                    'response': f"Je vais préparer une transaction de {transaction_data['amount']} sepolia vers {transaction_data['recipient'][:6]}...{transaction_data['recipient'][-4:]}. Confirmez-vous cette transaction ?",
+                    'transaction_request': transaction_data,
                     'session_id': session_id
                 })
         logger.info(f"Réponse nettoyée prête à être envoyée")
@@ -164,12 +196,12 @@ def confirm_transaction():
         logger.info(f"Transaction annulée pour session {session_id}")
     if session_id and session_id in sessions:
         sessions[session_id]['messages'].append({
-            'role': 'system', 
+            'role': 'system',
             'content': response_msg
         })
         sessions[session_id]['conversation_history'] = format_conversation_history(sessions[session_id]['messages'])
     return jsonify({
-        'status': 'confirmed' if data['confirmed'] else 'cancelled', 
+        'status': 'confirmed' if data['confirmed'] else 'cancelled',
         'message': response_msg,
         'session_id': session_id
     })
