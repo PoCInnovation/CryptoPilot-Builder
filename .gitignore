@@ -102,3 +102,7 @@ temp/
 # Backup files
 *.bak
 *.backup
+
+# MCP chats
+.mcp_server.py
+.mcp_chat.py
