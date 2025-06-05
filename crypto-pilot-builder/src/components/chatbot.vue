@@ -434,7 +434,7 @@ function checkWalletStatus() {
 
 .back-btn {
   padding: 0.5rem 1rem;
-  background-color: #007bff;
+  background-color: #4caf50;
   color: white;
   border: none;
   border-radius: 5px;
@@ -517,7 +517,7 @@ function checkWalletStatus() {
 }
 
 .confirm-btn:hover {
-  background: #43a047;
+  background: #0056b3;
 }
 
 .cancel-btn {

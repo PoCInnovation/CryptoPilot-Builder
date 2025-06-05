@@ -156,7 +156,7 @@ defineExpose({
 
 .connect-button:hover,
 .send-button:hover {
-  background-color: #43a047;
+  background-color: #0056b3;
 }
 
 .wallet-info {
