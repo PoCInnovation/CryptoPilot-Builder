@@ -10,6 +10,9 @@
     <main class="chat-main">
       <div class="chat-header">
         <h3>Session: {{ currentSessionId ? currentSessionId.substring(0, 8) + '...' : 'Nouvelle session' }}</h3>
+        <router-link to="/">
+          <button class="back-btn">⬅️ Retour à l'accueil</button>
+        </router-link>
       </div>
 
       <ChatMessages
@@ -416,9 +419,32 @@ function checkWalletStatus() {
 }
 
 .chat-header {
-  padding: 0.5rem 0;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 0.5rem 1rem;
   border-bottom: 1px solid #eee;
   margin-bottom: 1rem;
+}
+
+.header-actions {
+  display: flex;
+  align-items: center;
+}
+
+.back-btn {
+  padding: 0.5rem 1rem;
+  background-color: #007bff;
+  color: white;
+  border: none;
+  border-radius: 5px;
+  cursor: pointer;
+  font-size: 0.9rem;
+  transition: background-color 0.2s ease;
+}
+
+.back-btn:hover {
+  background-color: #0056b3;
 }
 
 .chat-header h3 {

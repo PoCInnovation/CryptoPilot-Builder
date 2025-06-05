@@ -2,8 +2,8 @@
   <div class="accueil">
     <h1>Bienvenue</h1>
     <p>Ceci est l'écran d'accueil</p>
-    <router-link to="/chat">
-      <button>Accéder au chatbot</button>
+    <router-link to="/Model">
+      <button>Accéder a la création d'agent</button>
     </router-link>
   </div>
 </template>
