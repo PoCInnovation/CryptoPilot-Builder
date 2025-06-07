@@ -1,6 +1,8 @@
 import { createRouter, createWebHashHistory } from 'vue-router'
 import Accueil from '../acceuil/Accueil.vue'
-import Model from '../agent_building/model_window.vue'
+import AI from '../agent_building/Ai.vue'
+import Module from '../agent_building/Module.vue'
+import Prompte from '../agent_building/Prompte.vue'
 import ChatPage from '../acceuil/Chat_Page.vue'
 
 const routes = [
@@ -11,8 +13,22 @@ const routes = [
   },
   {
     path: '/Model',
-    name: 'Model',
-    component: Model
+    redirect: '/AI'
+  },
+  {
+    path: '/AI',
+    name: 'AI',
+    component: AI
+  },
+  {
+    path: '/Module',
+    name: 'Module',
+    component: Module
+  },
+  {
+    path: '/Prompte',
+    name: 'Prompte',
+    component: Prompte
   },
   {
     path: '/chat',

@@ -5,7 +5,6 @@ import { sepolia } from 'viem/chains'
 
 const address = ref(null)
 const recipient = ref('')
-const amount = ref('0.001')
 const status = ref('')
 const isProcessing = ref(false)
 
@@ -24,54 +23,35 @@ async function connectWallet() {
   }
 }
 
-async function sendTransaction() {
-  if (!window.ethereum || !address.value || !recipient.value || !amount.value)
-    return
-  
-  return await executeTransaction(recipient.value, amount.value)
-}
-
-// Nouvelle méthode exposée pour le chatbot
 async function sendTransactionFromChat(recipientAddress, amountEth) {
   if (!window.ethereum || !address.value) {
     throw new Error('Wallet non connecté')
   }
-  
   if (!recipientAddress || !amountEth) {
     throw new Error('Adresse ou montant manquant')
   }
-  
   return await executeTransaction(recipientAddress, amountEth)
 }
 
-// Fonction commune pour exécuter les transactions
 async function executeTransaction(recipientAddress, amountEth) {
   isProcessing.value = true
   status.value = "Signature..."
-  
   try {
     const transport = custom(window.ethereum)
     const walletClient = createWalletClient({ chain: sepolia, transport })
-    
     const hash = await walletClient.sendTransaction({
       account: address.value,
       to: recipientAddress,
       value: parseEther(amountEth.toString())
     })
-    
     status.value = `✅ Tx envoyée : ${hash.slice(0, 10)}...`
-    
-    // Nettoyer les champs du formulaire si c'est une transaction manuelle
     if (recipientAddress === recipient.value) {
       recipient.value = ''
     }
-    
     return { success: true, hash, message: status.value }
-    
   } catch (err) {
     console.error(err)
     let errorMessage
-    
     if (err.message.includes('User rejected')) {
       errorMessage = '❌ Rejeté'
     } else if (err.message.includes('insufficient funds')) {
@@ -79,10 +59,8 @@ async function executeTransaction(recipientAddress, amountEth) {
     } else {
       errorMessage = '⚠️ Erreur transaction'
     }
-    
     status.value = errorMessage
     throw new Error(errorMessage)
-    
   } finally {
     isProcessing.value = false
   }
@@ -108,13 +86,6 @@ defineExpose({
       <div v-if="address" class="wallet-info">{{ shortenAddress(address) }}</div>
       <div class="actions">
         <button @click="connectWallet" v-if="!address" class="connect-button">connect</button>
-        <template v-else>
-          <input v-model="recipient" placeholder="To" class="address-input" />
-          <input v-model="amount" placeholder="ETH" class="amount-input" />
-          <button @click="sendTransaction" :disabled="isProcessing || !recipient || !amount" class="send-button">
-            Send
-          </button>
-        </template>
       </div>
     </div>
     <p v-if="status" class="status">{{ status }}</p>
