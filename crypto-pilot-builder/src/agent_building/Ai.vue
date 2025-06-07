@@ -9,7 +9,9 @@
       <p>Remplissez les informations nécessaires pour continuer.</p>
     </div>
     <div class="button-container">
-      <button class="btn-prev" disabled>Précédent</button>
+      <router-link to="/">
+        <button class="btn-prev">Précédent</button>
+      </router-link>
       <router-link to="/Module">
         <button class="btn-next">Suivant</button>
       </router-link>
