@@ -8,7 +8,7 @@
       :class="getStepClass(step)"
       class="step">
       <span>{{ step }}</span>
-      <div class="step-label">Étape {{ step }}</div>
+      <div class="step-label">Step {{ step }}</div>
     </div>
   </div>
 </template>
@@ -93,14 +93,14 @@ export default {
 }
 
 .step.active {
-  border-color: #333;
-  background-color: #333;
+  border-color: green;
+  background-color: green;
   color: white;
 }
 
 .step.completed {
-  border-color: #333;
-  background-color: #333;
+  border-color: green;
+  background-color: green;
   color: white;
 }
 

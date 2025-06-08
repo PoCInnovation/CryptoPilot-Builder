@@ -1,22 +1,19 @@
-// 2. Module.vue (corrigé)
 <template>
   <div class="container">
     <progress-bar :current-step="2" :total-steps="3" />
-    
     <div class="page-content">
-      <h2>Deuxième étape - Modules</h2>
+      <h2>Step 2 - Modules</h2>
       <div>Configuration</div>
       <div class="ligne"></div>
-      <div>Paramètres</div>
-      <p>Configurez vos préférences et paramètres.</p>
+      <div>Parametters</div>
+      <p>Choose your module</p>
     </div>
-
     <div class="button-container">
       <router-link to="/AI">
-        <button class="btn-prev">Précédent</button>
+        <button class="btn-prev">Previous</button>
       </router-link>
       <router-link to="/Prompte">
-        <button class="btn-next">Suivant</button>
+        <button class="btn-next">Next</button>
       </router-link>
     </div>
   </div>
@@ -77,20 +74,20 @@ button {
 }
 
 .btn-prev {
-  background-color: #6c757d;
+  background-color: #28a745;
   color: white;
 }
 
 .btn-prev:hover {
-  background-color: #545b62;
+  background-color: #218838;
 }
 
 .btn-next {
-  background-color: #333;
+  background-color: #28a745;
   color: white;
 }
 
 .btn-next:hover {
-  background-color: #555;
+  background-color: #218838;
 }
 </style>
