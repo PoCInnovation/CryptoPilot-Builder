@@ -1,4 +1,3 @@
-// src/components/__tests__/Chatbot.test.js
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest'
 import { mount } from '@vue/test-utils'
 import { nextTick } from 'vue'
@@ -86,18 +85,14 @@ describe('Chatbot.vue', () => {
     })
 
     it('devrait afficher les composants enfants', async () => {
-      // Mock successful session creation first
       global.fetch.mockResolvedValueOnce({
         ok: true,
         json: () => Promise.resolve({ session_id: 'test-session-123' })
       })
 
       wrapper = createWrapper()
-      
-      // Wait for the component to mount and session to be created
       await nextTick()
       await new Promise(resolve => setTimeout(resolve, 0))
-      
       expect(wrapper.findComponent(mockChatSidebar).exists()).toBe(true)
       expect(wrapper.findComponent(mockChatMessages).exists()).toBe(true)
       expect(wrapper.findComponent(mockChatInput).exists()).toBe(true)
@@ -112,15 +107,12 @@ describe('Chatbot.vue', () => {
     })
 
     it('devrait créer une nouvelle session au montage', async () => {
-      // Mock successful session creation
       global.fetch.mockResolvedValueOnce({
         ok: true,
         json: () => Promise.resolve({ session_id: 'test-session-123' })
       })
-
       wrapper = createWrapper()
       await nextTick()
-      
       expect(global.fetch).toHaveBeenCalledWith(
         'http://localhost:5000/new-session',
         expect.objectContaining({
@@ -142,7 +134,6 @@ describe('Chatbot.vue', () => {
     })
 
     it('devrait envoyer un message utilisateur', async () => {
-      // Mock de la réponse API
       global.fetch.mockResolvedValueOnce({
         ok: true,
         json: () => Promise.resolve({
@@ -150,11 +141,8 @@ describe('Chatbot.vue', () => {
           session_id: 'test-session-123'
         })
       })
-
       const testMessage = 'Bonjour, comment ça va ?'
       await wrapper.vm.sendMessage(testMessage)
-
-      // Vérifier que le message utilisateur a été ajouté
       const messages = wrapper.vm.messages
       expect(messages.some(msg => msg.text === testMessage && msg.isUser === true)).toBe(true)
     })
@@ -168,10 +156,8 @@ describe('Chatbot.vue', () => {
           session_id: 'test-session-123'
         })
       })
-
       await wrapper.vm.sendMessage('Test message')
       await nextTick()
-
       const messages = wrapper.vm.messages
       expect(messages.some(msg => msg.text === botResponse && msg.isUser === false)).toBe(true)
     })
@@ -187,9 +173,7 @@ describe('Chatbot.vue', () => {
     })
 
     it('ne devrait pas envoyer de messages vides', async () => {
-      // Reset fetch mock to avoid counting the initial session creation call
       vi.clearAllMocks()
-      
       const initialMessageCount = wrapper.vm.messages.length
       await wrapper.vm.sendMessage('')
       await wrapper.vm.sendMessage('   ')
@@ -255,14 +239,11 @@ describe('Chatbot.vue', () => {
         currency: 'eth'
       }
 
-      // Mock de la confirmation
       global.fetch.mockResolvedValueOnce({
         ok: true,
         json: () => Promise.resolve({ success: true })
       })
-
       await wrapper.vm.confirmTransaction()
-
       expect(mockWalletFunctions.sendTransaction).toHaveBeenCalledWith(
         '0x1234567890123456789012345678901234567890',
         '0.1'
@@ -324,7 +305,6 @@ describe('Chatbot.vue', () => {
     })
 
     it('devrait sélectionner un chat existant', async () => {
-      // Ajouter un chat de test
       wrapper.vm.chats.push('Test Chat')
       wrapper.vm.chatSessions['Test Chat'] = {
         sessionId: 'test-session-456',
@@ -345,13 +325,11 @@ describe('Chatbot.vue', () => {
 
     it('devrait vérifier le statut du wallet', () => {
       const status = wrapper.vm.checkWalletStatus()
-      
       expect(status.connected).toBe(true)
       expect(status.address).toBe('0x1234567890123456789012345678901234567890')
     })
 
     it('devrait gérer l\'absence de wallet', () => {
-      // Create wrapper without walletFunctions
       wrapper = createWrapper({
         global: {
           components: {
