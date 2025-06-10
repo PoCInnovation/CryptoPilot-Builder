@@ -2,7 +2,6 @@ import { app, BrowserWindow, ipcMain } from 'electron'
 import path from 'path'
 import { fileURLToPath } from 'url'
 import fetch from 'node-fetch'
-import { spawn } from 'child_process'
 
 const __filename = fileURLToPath(import.meta.url)
 const __dirname = path.dirname(__filename)
@@ -17,11 +16,15 @@ function createWindow() {
       preload: path.join(__dirname, 'preload.js'),
       contextIsolation: true,
       nodeIntegration: false,
-      sandbox: true
+      sandbox: false
     }
   })
 
-  mainWindow.loadURL('http://localhost:5173')
+  if (process.env.NODE_ENV === 'development') {
+    mainWindow.loadURL('http://localhost:3000')
+  } else {
+    mainWindow.loadFile(path.join(__dirname, '../dist/index.html'))
+  }
 }
 
 ipcMain.handle('run-python', async (event, prompt) => {
@@ -42,7 +45,6 @@ ipcMain.handle('run-python', async (event, prompt) => {
     return `Erreur: ${err.message}`
   }
 })
-
 
 app.whenReady().then(() => {
   createWindow()

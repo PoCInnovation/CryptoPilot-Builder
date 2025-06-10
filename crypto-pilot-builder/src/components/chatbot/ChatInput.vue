@@ -75,6 +75,6 @@ function handleSubmit() {
 }
 
 .send-button:hover {
-  background-color: #45a049;
+  background-color: #0056b3;
 }
 </style>
