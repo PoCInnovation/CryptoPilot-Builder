@@ -48,52 +48,6 @@ def create_api_routes(app):
         except Exception as e:
             return jsonify({"error": str(e)}), 500
 
-    @app.route('/mcp/call', methods=['POST'])
-    def call_mcp_tool():
-        """Call MCP tool directly"""
-        data = request.get_json()
-        if not data or 'tool_name' not in data:
-            return jsonify({"error": "tool_name required"}), 400
-
-        tool_name = data['tool_name']
-        arguments = data.get('arguments', {})
-
-        async def do_call():
-            return await mcp_client.call_tool(tool_name, arguments)
-
-        try:
-            loop = asyncio.new_event_loop()
-            asyncio.set_event_loop(loop)
-            result = loop.run_until_complete(do_call())
-            loop.close()
-
-            return jsonify(result)
-        except Exception as e:
-            return jsonify({"error": str(e)}), 500
-
-    @app.route('/mcp/agent', methods=['POST'])
-    def communicate_with_agent():
-        """Direct communication with OpenAI agent"""
-        data = request.get_json()
-        if not data or 'message' not in data:
-            return jsonify({"error": "message required"}), 400
-
-        message = data['message']
-        context = data.get('context', '')
-
-        async def do_agent_call():
-            return await mcp_client.chat(message, context)
-
-        try:
-            loop = asyncio.new_event_loop()
-            asyncio.set_event_loop(loop)
-            result = loop.run_until_complete(do_agent_call())
-            loop.close()
-
-            return jsonify(result)
-        except Exception as e:
-            return jsonify({"error": str(e)}), 500
-
     @app.route('/crypto/price', methods=['POST'])
     def get_crypto_price():
         """Get cryptocurrency price via MCP tool"""
@@ -102,7 +56,7 @@ def create_api_routes(app):
             return jsonify({"error": "crypto_id required"}), 400
 
         crypto_id = data['crypto_id']
-        currency = data.get('currency', 'eur')
+        currency = data.get('currency', 'usd')
 
         async def do_price_call():
             return await mcp_client.get_crypto_price(crypto_id, currency)
@@ -117,7 +71,7 @@ def create_api_routes(app):
         except Exception as e:
             return jsonify({"error": str(e)}), 500
 
-    # ===== FRONTEND COMPATIBLE ROUTES =====
+    # ===== FRONTEND ROUTES =====
 
     @app.route('/new-session', methods=['POST'])
     def create_new_session():
@@ -181,7 +135,7 @@ def create_api_routes(app):
                 'session_id': session_id
             }), 500
 
-    # ===== SESSION MANAGEMENT ROUTES =====
+    # ===== SESSION MANAGEMENT =====
 
     @app.route('/sessions', methods=['GET'])
     def list_sessions():
@@ -210,7 +164,7 @@ def create_api_routes(app):
         else:
             return jsonify({'error': 'Session not found'}), 404
 
-    # ===== HEALTH ROUTE =====
+    # ===== HEALTH =====
 
     @app.route('/health', methods=['GET'])
     def health_check():
