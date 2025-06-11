@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """
-Gestionnaire de sessions pour le bridge MCP
+Session manager for MCP bridge
 """
 
 import uuid
@@ -12,7 +12,7 @@ class SessionManager:
         self.sessions: Dict[str, Dict] = {}
 
     def create_session(self) -> str:
-        """Crée une nouvelle session et retourne son ID"""
+        """Create new session and return its ID"""
         session_id = str(uuid.uuid4())
         self.sessions[session_id] = {
             'messages': [],
@@ -21,11 +21,11 @@ class SessionManager:
         return session_id
 
     def get_session(self, session_id: str) -> Optional[Dict]:
-        """Récupère une session par son ID"""
+        """Get session by ID"""
         return self.sessions.get(session_id)
 
     def add_message(self, session_id: str, role: str, content: str):
-        """Ajoute un message à une session"""
+        """Add message to session"""
         if session_id not in self.sessions:
             self.sessions[session_id] = {
                 'messages': [],
@@ -38,7 +38,7 @@ class SessionManager:
         })
 
     def get_context(self, session_id: str) -> str:
-        """Construit le contexte de conversation pour les derniers messages"""
+        """Build conversation context for recent messages"""
         if session_id not in self.sessions:
             return ""
 
@@ -51,20 +51,20 @@ class SessionManager:
         ])
 
     def get_messages(self, session_id: str) -> List[Dict]:
-        """Récupère tous les messages d'une session"""
+        """Get all messages from session"""
         if session_id not in self.sessions:
             return []
         return self.sessions[session_id]['messages']
 
     def delete_session(self, session_id: str) -> bool:
-        """Supprime une session"""
+        """Delete session"""
         if session_id in self.sessions:
             del self.sessions[session_id]
             return True
         return False
 
     def list_sessions(self) -> List[Dict]:
-        """Liste toutes les sessions actives"""
+        """List all active sessions"""
         session_list = []
         for session_id, data in self.sessions.items():
             session_list.append({
@@ -74,5 +74,5 @@ class SessionManager:
             })
         return session_list
 
-# Instance globale
+# Global instance
 session_manager = SessionManager()
