@@ -5,6 +5,9 @@
 .env.test.local
 .env.production.local
 
+# Test files
+test_crypto_tool.py
+
 # Node.js
 node_modules/
 npm-debug.log*
