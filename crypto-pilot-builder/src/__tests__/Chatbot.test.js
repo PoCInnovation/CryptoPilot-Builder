@@ -323,11 +323,6 @@ describe('Chatbot.vue', () => {
       wrapper = createWrapper()
     })
 
-    it('devrait vérifier le statut du wallet', () => {
-      const status = wrapper.vm.checkWalletStatus()
-      expect(status.connected).toBe(true)
-      expect(status.address).toBe('0x1234567890123456789012345678901234567890')
-    })
 
     it('devrait gérer l\'absence de wallet', () => {
       wrapper = createWrapper({
@@ -351,10 +346,6 @@ describe('Chatbot.vue', () => {
         }
       })
       
-      const status = wrapper.vm.checkWalletStatus()
-      
-      expect(status.connected).toBe(false)
-      expect(status.error).toBe('Wallet non disponible')
     })
   })
 

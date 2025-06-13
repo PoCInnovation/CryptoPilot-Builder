@@ -385,16 +385,6 @@ if (typeof window !== 'undefined') {
   window.testWalletConnection = testWalletConnection
 }
 
-function checkWalletStatus() {
-  if (!walletFunctions) {
-    return { connected: false, error: 'Wallet non disponible' }
-  }
-  return {
-    connected: walletFunctions.isConnected(),
-    address: walletFunctions.getAddress()
-  }
-}
-
 </script>
 
 <style scoped>
