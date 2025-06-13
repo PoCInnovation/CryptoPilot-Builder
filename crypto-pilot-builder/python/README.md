@@ -16,10 +16,18 @@ python chatbot.py
 
 ## MCP version
 
-To run the MCP version, you can use the following command:
+To run the MCP version, you can use the following commands:
+
+### The basic way:
 
 ```bash
 python mcp_client/mcp_http_bridge.py
+```
+
+### The uv way (in development):
+
+```bash
+./run_mcp.sh
 ```
 
 ## Main differences
