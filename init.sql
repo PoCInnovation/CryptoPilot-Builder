@@ -7,7 +7,6 @@ CREATE TABLE IF NOT EXISTS users (
     password_hash VARCHAR(255) NOT NULL,
     wallet_address VARCHAR(42),
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
 
 CREATE TABLE IF NOT EXISTS chat_sessions (
@@ -26,15 +25,16 @@ CREATE TABLE IF NOT EXISTS chat_messages (
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
 
-    CREATE TABLE IF NOT EXISTS transactions (
+CREATE TABLE IF NOT EXISTS ai_agents (
     id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
     user_id UUID REFERENCES users(id) ON DELETE CASCADE,
-    from_address VARCHAR(42) NOT NULL,
-    to_address VARCHAR(42) NOT NULL,
-    amount DECIMAL(20, 8) NOT NULL,
-    currency VARCHAR(10) NOT NULL,
-    transaction_hash VARCHAR(66),
-    status VARCHAR(20) DEFAULT 'pending' CHECK (status IN ('pending', 'confirmed', 'failed')),
+    agent_name VARCHAR(100) NOT NULL,
+    agent_description TEXT,
+    model_type VARCHAR(50) NOT NULL CHECK (model_type IN ('gpt-4', 'gpt-3.5-turbo', 'claude-3', 'claude-4', 'gemini-pro')),
+    api_key_encrypted TEXT,
+    prompt TEXT,
+    is_active BOOLEAN DEFAULT true,
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    UNIQUE(user_id, agent_name)
 );

@@ -20,4 +20,4 @@ USER appuser
 
 EXPOSE 5000
 
-CMD ["python", "chatbot.py"]
+CMD ["python", "mcp_client/mcp_http_bridge.py"]
