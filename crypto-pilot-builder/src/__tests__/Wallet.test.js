@@ -72,7 +72,7 @@ describe('Wallet.vue', () => {
       wrapper = createWrapper()
       const connectButton = wrapper.find('.connect-button')
       expect(connectButton.exists()).toBe(true)
-      expect(connectButton.text()).toBe('connect')
+      expect(connectButton.text()).toBe('🔗 Connecter')
     })
 
     it('ne devrait pas afficher les informations du wallet initialement', () => {
@@ -93,7 +93,7 @@ describe('Wallet.vue', () => {
         method: 'eth_requestAccounts'
       })
       expect(wrapper.vm.address).toBe(testAddress)
-      expect(wrapper.vm.status).toBe('✅ Wallet connecté')
+      expect(wrapper.vm.status).toBe('✅ Wallet connecté automatiquement')
     })
 
     it('devrait afficher les informations du wallet après connexion', async () => {
@@ -123,7 +123,7 @@ describe('Wallet.vue', () => {
       wrapper = createWrapper()
       await wrapper.vm.connectWallet()
       await nextTick()
-      expect(wrapper.vm.status).toBe('❌ Erreur lors de la connexion')
+      expect(wrapper.vm.status).toBe('✏️ Saisissez votre adresse manuellement')
       expect(wrapper.vm.address).toBeNull()
     })
 
