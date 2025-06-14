@@ -51,6 +51,10 @@
     <main class="main-content">
       <header class="main-header">
         <h1 class="welcome-title">Welcome</h1>
+        <button class="login-button" @click="openLoginModal">
+          <span class="login-icon">👤</span>
+          Se connecter
+        </button>
       </header>
       <section class="dashboard-section">
         <div class="widgets-container">
@@ -94,6 +98,46 @@
         🗑️ Supprimer
       </button>
     </aside>
+
+    <!-- Modale de connexion -->
+    <div v-if="showLoginModal" class="modal-overlay" @click="closeLoginModal">
+      <div class="modal-container" @click.stop>
+        <div class="modal-header">
+          <h2 class="modal-title">Connexion</h2>
+          <button class="modal-close" @click="closeLoginModal">&times;</button>
+        </div>
+        <form @submit.prevent="handleLogin" class="login-form">
+          <div class="form-group">
+            <label for="username" class="form-label">Nom d'utilisateur</label>
+            <input
+              id="username"
+              v-model="loginForm.username"
+              type="text"
+              class="form-input"
+              placeholder="Votre nom d'utilisateur"
+              required>
+          </div>
+          <div class="form-group">
+            <label for="password" class="form-label">Mot de passe</label>
+            <input
+              id="password"
+              v-model="loginForm.password"
+              type="password"
+              class="form-input"
+              placeholder="Votre mot de passe"
+              required>
+          </div>
+          <div class="form-actions">
+            <button type="button" class="btn-secondary" @click="closeLoginModal">
+              Annuler
+            </button>
+            <button type="submit" class="btn-primary">
+              Se connecter
+            </button>
+          </div>
+        </form>
+      </div>
+    </div>
   </div>
 </template>
 
@@ -110,6 +154,11 @@ export default {
       contextMenuX: 0,
       contextMenuY: 0,
       contextMenuChatId: null,
+      showLoginModal: false,
+      loginForm: {
+        username: '',
+        password: ''
+      },
       chats: [
         { id: 1, name: 'Trading Analysis' }
       ]
@@ -153,7 +202,6 @@ export default {
       this.editingChatId = null;
       this.tempChatName = '';
     },
-
     showChatContextMenu(event, chatId) {
       event.preventDefault();
       this.contextMenuChatId = chatId;
@@ -211,6 +259,26 @@ export default {
         this.saveEditingChat();
       } else if (event.key === 'Escape') {
         this.cancelEditingChat();
+      }
+    },
+    openLoginModal() {
+      this.showLoginModal = true;
+      this.loginForm.username = '';
+      this.loginForm.password = '';
+    },
+    closeLoginModal() {
+      this.showLoginModal = false;
+      this.loginForm.username = '';
+      this.loginForm.password = '';
+    },
+    handleLogin() {
+      // La faut mettre la logique de connexion
+      console.log('Tentative de connexion:', this.loginForm);
+      if (this.loginForm.username && this.loginForm.password) {
+        alert(`Connexion réussie pour ${this.loginForm.username}`);
+        this.closeLoginModal();
+      } else {
+        alert('Veuillez remplir tous les champs');
       }
     }
   }
@@ -403,13 +471,45 @@ export default {
 
 .main-header {
   margin-bottom: 40px;
+  width: 100%;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  position: relative;
 }
 
 .welcome-title {
-  font-size: 48px;
+  font-size: 100px;
   font-weight: bold;
   color: #2c3e50;
   margin: 0;
+}
+
+.login-button {
+  position: absolute;
+  right: 0;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 12px 20px;
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  border: none;
+  color: white;
+  border-radius: 25px;
+  cursor: pointer;
+  font-size: 14px;
+  font-weight: 600;
+  transition: all 0.3s ease;
+  box-shadow: 0 4px 15px rgba(102, 126, 234, 0.3);
+}
+
+.login-button:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 6px 20px rgba(102, 126, 234, 0.4);
+}
+
+.login-icon {
+  font-size: 16px;
 }
 
 .dashboard-section {
@@ -425,6 +525,7 @@ export default {
   display: flex;
   justify-content: center;
   gap: 20px;
+  margin-top: 200px;
   flex-wrap: wrap;
 }
 
@@ -496,6 +597,152 @@ export default {
   box-shadow: 0 6px 20px rgba(76, 175, 80, 0.4);
 }
 
+/* Styles pour la modale */
+.modal-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background-color: rgba(0, 0, 0, 0.6);
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  z-index: 2000;
+  backdrop-filter: blur(5px);
+}
+
+.modal-container {
+  background: white;
+  border-radius: 16px;
+  box-shadow: 0 20px 40px rgba(0, 0, 0, 0.2);
+  width: 90%;
+  max-width: 400px;
+  overflow: hidden;
+  transform: scale(0.9);
+  animation: modalAppear 0.3s ease forwards;
+}
+
+@keyframes modalAppear {
+  to {
+    transform: scale(1);
+  }
+}
+
+.modal-header {
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  color: white;
+  padding: 20px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.modal-title {
+  font-size: 20px;
+  font-weight: bold;
+  margin: 0;
+}
+
+.modal-close {
+  background: none;
+  border: none;
+  color: white;
+  font-size: 24px;
+  cursor: pointer;
+  width: 30px;
+  height: 30px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 50%;
+  transition: background-color 0.2s ease;
+}
+
+.modal-close:hover {
+  background-color: rgba(255, 255, 255, 0.1);
+}
+
+.login-form {
+  padding: 30px;
+}
+
+.form-group {
+  margin-bottom: 20px;
+}
+
+.form-label {
+  display: block;
+  margin-bottom: 8px;
+  font-weight: 600;
+  color: #2c3e50;
+  font-size: 14px;
+}
+
+.form-input {
+  width: 100%;
+  padding: 12px 16px;
+  border: 2px solid #e1e8ed;
+  border-radius: 8px;
+  font-size: 14px;
+  transition: all 0.3s ease;
+  background-color: #f8f9fa;
+  box-sizing: border-box;
+}
+
+.form-input:focus {
+  outline: none;
+  border-color: #667eea;
+  background-color: white;
+  box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
+}
+
+.form-input::placeholder {
+  color: #95a5a6;
+}
+
+.form-actions {
+  display: flex;
+  gap: 12px;
+  justify-content: flex-end;
+  margin-top: 30px;
+}
+
+.btn-secondary {
+  padding: 10px 20px;
+  border: 2px solid #e1e8ed;
+  background: white;
+  color: #2c3e50;
+  border-radius: 8px;
+  cursor: pointer;
+  font-size: 14px;
+  font-weight: 600;
+  transition: all 0.3s ease;
+}
+
+.btn-secondary:hover {
+  background-color: #f8f9fa;
+  border-color: #d1d9e0;
+}
+
+.btn-primary {
+  padding: 10px 20px;
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  border: none;
+  color: white;
+  border-radius: 8px;
+  cursor: pointer;
+  font-size: 14px;
+  font-weight: 600;
+  transition: all 0.3s ease;
+  box-shadow: 0 4px 15px rgba(102, 126, 234, 0.3);
+}
+
+.btn-primary:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 6px 20px rgba(102, 126, 234, 0.4);
+}
+
 @media (max-width: 768px) {
   .app-container {
     flex-direction: column;
@@ -511,7 +758,19 @@ export default {
   .main-content {
     padding: 20px;
   }
+  .main-header {
+    flex-direction: column;
+    gap: 20px;
+    align-items: center;
+  }
   .welcome-title {
     font-size: 36px;
   }
-}</style>
+  .modal-container {
+    margin: 20px;
+  }
+  .login-form {
+    padding: 20px;
+  }
+}
+</style>
