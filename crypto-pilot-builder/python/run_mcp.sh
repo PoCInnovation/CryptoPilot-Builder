@@ -4,8 +4,8 @@
 if ! command -v uv &> /dev/null; then
     echo "Installing uv..."
     curl -LsSf https://astral.sh/uv/install.sh | sh
+    export PATH="$HOME/.local/bin:$PATH"
 fi
 
-# Run the application with uv
 echo "Setting up environment and running the application..."
-uv run --with-requirements requirements.txt --isolated ./mcp_client/mcp_http_bridge.py
+$HOME/.local/bin/uv run --with-requirements requirements.txt --isolated ./mcp_client/mcp_http_bridge.py
