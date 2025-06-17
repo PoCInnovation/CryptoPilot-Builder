@@ -4,8 +4,7 @@
       :chats="chats"
       :selected-chat="selectedChat"
       @select-chat="selectChat"
-      @add-chat="addNewChat"
-    />
+      @add-chat="addNewChat"/>
 
     <main class="chat-main">
       <div class="chat-header">
@@ -17,8 +16,7 @@
 
       <ChatMessages
         :messages="messages"
-        :is-loading="isLoading"
-      />
+        :is-loading="isLoading"/>
 
       <!-- Modal de confirmation de transaction -->
       <div v-if="pendingTransaction" class="transaction-modal-overlay" @click.self="cancelTransaction">
