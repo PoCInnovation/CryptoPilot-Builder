@@ -4,12 +4,148 @@ API routes for interface with Vue.js frontend
 """
 
 import asyncio
+import os
+import re
+from datetime import timedelta
 from flask import request, jsonify
+from flask_sqlalchemy import SQLAlchemy
+from flask_bcrypt import Bcrypt
+from flask_jwt_extended import JWTManager, create_access_token
 from mcp_client import mcp_client
 from session_manager import session_manager
+import uuid
+
+# Extensions d'authentification
+db = SQLAlchemy()
+bcrypt = Bcrypt()
+jwt = JWTManager()
 
 def create_api_routes(app):
     """Register all API routes on Flask app"""
+
+    # ===== AUTHENTICATION SETUP =====
+    database_url = os.getenv('DATABASE_URL')
+    if database_url:
+        app.config['SQLALCHEMY_DATABASE_URI'] = database_url
+    else:
+        postgres_host = os.getenv('POSTGRES_HOST', 'localhost')
+        app.config['SQLALCHEMY_DATABASE_URI'] = f"postgresql://{os.getenv('POSTGRES_USER', 'cryptopilot_user')}:{os.getenv('POSTGRES_PASSWORD', 'cryptopilot_password')}@{postgres_host}/{os.getenv('POSTGRES_DB', 'cryptopilot')}"
+
+    app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
+    app.config['JWT_SECRET_KEY'] = os.getenv('JWT_SECRET_KEY', 'votre-clé-secrète-super-sécurisée')
+    app.config['JWT_ACCESS_TOKEN_EXPIRES'] = timedelta(hours=24)
+
+    db.init_app(app)
+    bcrypt.init_app(app)
+    jwt.init_app(app)
+
+    class User(db.Model):
+        __tablename__ = 'users'
+        id = db.Column(db.String(36), primary_key=True, default=lambda: str(uuid.uuid4()))
+        username = db.Column(db.String(50), unique=True, nullable=False)
+        email = db.Column(db.String(100), unique=True, nullable=False)
+        password_hash = db.Column(db.String(255), nullable=False)
+        wallet_address = db.Column(db.String(42), nullable=True)
+        created_at = db.Column(db.DateTime, default=db.func.current_timestamp())
+
+    def validate_email(email):
+        pattern = r'^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$'
+        return re.match(pattern, email) is not None
+
+    def validate_password(password):
+        if len(password) < 8:
+            return False
+        if not re.search(r'[A-Z]', password):
+            return False
+        if not re.search(r'[a-z]', password):
+            return False
+        if not re.search(r'\d', password):
+            return False
+        return True
+
+    with app.app_context():
+        try:
+            db.create_all()
+            print("✅ Tables d'authentification créées")
+        except Exception as e:
+            print(f"❌ Erreur lors de la création des tables: {e}")
+
+    # ===== AUTHENTICATION ROUTES =====
+
+    @app.route('/register', methods=['POST'])
+    def register():
+        try:
+            data = request.get_json()
+            if not data:
+                return jsonify({'error': 'Aucune donnée fournie'}), 400
+            email = data.get('email', '').strip().lower()
+            username = data.get('username', '').strip()
+            password = data.get('password', '')
+            if not email or not username or not password:
+                return jsonify({'error': 'Email, nom d\'utilisateur et mot de passe sont requis'}), 400
+            if not validate_email(email):
+                return jsonify({'error': 'Format d\'email invalide'}), 400
+            if len(username) < 3 or len(username) > 80:
+                return jsonify({'error': 'Le nom d\'utilisateur doit contenir entre 3 et 80 caractères'}), 400
+            if not validate_password(password):
+                return jsonify({'error': 'Le mot de passe doit contenir au moins 8 caractères, une majuscule, une minuscule et un chiffre'}), 400
+            if User.query.filter_by(email=email).first():
+                return jsonify({'error': 'Un utilisateur avec cet email existe déjà'}), 409
+            if User.query.filter_by(username=username).first():
+                return jsonify({'error': 'Ce nom d\'utilisateur est déjà pris'}), 409
+            password_hash = bcrypt.generate_password_hash(password).decode('utf-8')
+            new_user = User(
+                email=email,
+                username=username,
+                password_hash=password_hash
+            )
+            db.session.add(new_user)
+            db.session.commit()
+            access_token = create_access_token(identity=new_user.id)
+            return jsonify({
+                'message': 'Utilisateur créé avec succès',
+                'user': {
+                    'id': new_user.id,
+                    'email': new_user.email,
+                    'username': new_user.username,
+                    'created_at': new_user.created_at.isoformat()
+                },
+                'access_token': access_token
+            }), 201
+        except Exception as e:
+            db.session.rollback()
+            return jsonify({'error': f'Erreur serveur: {str(e)}'}), 500
+
+    @app.route('/login', methods=['POST'])
+    def login():
+        try:
+            data = request.get_json()
+            if not data:
+                return jsonify({'error': 'Aucune donnée fournie'}), 400
+            login_field = data.get('email') or data.get('username')
+            password = data.get('password')
+            if not login_field or not password:
+                return jsonify({'error': 'Email/nom d\'utilisateur et mot de passe sont requis'}), 400
+            user = None
+            if '@' in login_field:
+                user = User.query.filter_by(email=login_field.strip().lower()).first()
+            else:
+                user = User.query.filter_by(username=login_field.strip()).first()
+            if not user or not bcrypt.check_password_hash(user.password_hash, password):
+                return jsonify({'error': 'Identifiants invalides'}), 401
+            access_token = create_access_token(identity=user.id)
+            return jsonify({
+                'message': 'Connexion réussie',
+                'user': {
+                    'id': user.id,
+                    'email': user.email,
+                    'username': user.username,
+                    'created_at': user.created_at.isoformat()
+                },
+                'access_token': access_token
+            }), 200
+        except Exception as e:
+            return jsonify({'error': f'Erreur serveur: {str(e)}'}), 500
 
     # ===== MCP ROUTES =====
 

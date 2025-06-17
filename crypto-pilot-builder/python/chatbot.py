@@ -6,6 +6,7 @@ import os
 import logging
 import json
 import uuid
+import re
 
 from agno.agent import Agent
 from agno.models.openai import OpenAIChat
@@ -149,7 +150,6 @@ def chat():
                 logger.error(f"Contenu à parser: {clean_response}")
         if any(keyword in user_input.lower() for keyword in ['envoie', 'envoyer', 'send', 'transfert', 'payer']):
             logger.info("Détection de mots-clés de transaction dans la requête utilisateur")
-            import re
             address_pattern = r'0x[a-fA-F0-9]{40}'
             address_match = re.search(address_pattern, user_input)
             amount_pattern = r'(\d+(?:\.\d+)?)'
