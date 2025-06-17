@@ -201,11 +201,19 @@ export default {
 
 <style scoped>
 .container {
-  max-width: 1000px;
-  margin: 0 auto;
+  width: 100vw;
+  height: 100vh;
+  margin: 0;
   padding: 20px;
-  min-height: 100vh;
+  box-sizing: border-box;
   background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  display: flex;
+  flex-direction: column;
+  position: fixed;
+  top: 0;
+  left: 0;
+  overflow-y: auto;
+  font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
 }
 
 .page-content {
@@ -213,10 +221,17 @@ export default {
   backdrop-filter: blur(20px);
   border-radius: 24px;
   padding: 40px;
-  margin: 30px 0;
+  margin: 30px auto;
+  max-width: 900px;
+  width: 100%;
   box-shadow: 0 20px 40px rgba(0, 0, 0, 0.1);
   border: 1px solid rgba(255, 255, 255, 0.2);
   animation: slideUp 0.6s ease-out;
+  box-sizing: border-box;
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
 }
 
 @keyframes slideUp {
@@ -232,7 +247,7 @@ export default {
 
 .header-section {
   text-align: center;
-  margin-bottom: 50px;
+  margin-bottom: 30px;
 }
 
 .page-title {
@@ -253,50 +268,64 @@ export default {
   font-weight: 500;
 }
 
-.prompt-section {
-  background: white;
+.prompt-section,
+.summary-section {
+  background: linear-gradient(135deg, #f8fafc 0%, #e2e8f0 100%);
+  padding: 25px;
   border-radius: 20px;
-  padding: 30px;
-  margin-bottom: 40px;
-  box-shadow: 0 10px 25px rgba(0, 0, 0, 0.05);
-  border: 1px solid #f1f5f9;
+  text-align: center;
+  border: 1px solid rgba(255, 255, 255, 0.8);
+  transition: all 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+  position: relative;
+  overflow: hidden;
+  box-shadow: 0 10px 25px rgba(0, 0, 0, 0.08);
 }
 
-.prompt-header {
-  display: flex;
-  align-items: center;
-  gap: 20px;
-  margin-bottom: 25px;
-}
-
-.prompt-icon {
-  width: 60px;
-  height: 60px;
+.prompt-section::before,
+.summary-section::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 4px;
   background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-  border-radius: 16px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
+  transform: translateX(-100%);
+  transition: transform 0.4s ease;
+}
+
+.prompt-section:hover::before,
+.summary-section:hover::before {
+  transform: translateX(0);
+}
+
+.prompt-section:hover,
+.summary-section:hover {
+  transform: translateY(-5px);
+  box-shadow: 0 15px 30px rgba(0, 0, 0, 0.15);
+}
+
+.prompt-icon,
+.config-icon {
+  display: inline-flex;
+  padding: 15px;
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  border-radius: 15px;
   color: white;
-  flex-shrink: 0;
+  margin-bottom: 15px;
+  transition: transform 0.3s ease;
+}
+
+.prompt-section:hover .prompt-icon,
+.summary-section:hover .prompt-icon {
+  transform: scale(1.1);
 }
 
 .prompt-title h3 {
-  font-size: 1.5rem;
+  font-size: 1.3rem;
   font-weight: 700;
   color: #1e293b;
-  margin: 0 0 5px 0;
-}
-
-.prompt-title p {
-  color: #64748b;
-  margin: 0;
-  font-size: 0.95rem;
-}
-
-.textarea-wrapper {
-  position: relative;
-  margin-bottom: 20px;
+  margin: 0 0 10px 0;
 }
 
 .prompt-textarea {
@@ -313,19 +342,16 @@ export default {
   transition: all 0.3s ease;
   background: #fafbfc;
   color: #334155;
+  position: relative;
+  z-index: 1;
 }
 
 .prompt-textarea:focus {
   outline: none;
   border-color: #667eea;
-  box-shadow: 0 0 0 4px rgba(102, 126, 234, 0.1);
+  box-shadow: 0 0 0 4px rgba(102, 126, 234, 0.1), 0 4px 12px rgba(102, 126, 234, 0.2);
   background: white;
   transform: translateY(-2px);
-}
-
-.prompt-textarea::placeholder {
-  color: #94a3b8;
-  font-style: italic;
 }
 
 .textarea-decoration {
@@ -339,19 +365,11 @@ export default {
   opacity: 0;
   transition: opacity 0.3s ease;
   pointer-events: none;
-  z-index: -1;
+  z-index: 0;
 }
 
 .prompt-textarea:focus + .textarea-decoration {
   opacity: 0.1;
-}
-
-.prompt-footer {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  flex-wrap: wrap;
-  gap: 20px;
 }
 
 .character-count {
@@ -363,31 +381,9 @@ export default {
 .character-count .warning {
   color: #f59e0b;
 }
-
 .character-count .danger {
   color: #ef4444;
   font-weight: 700;
-}
-
-.count-separator {
-  margin: 0 4px;
-  opacity: 0.5;
-}
-
-.count-max {
-  color: #94a3b8;
-}
-
-.count-label {
-  margin-left: 8px;
-  font-size: 13px;
-  opacity: 0.7;
-}
-
-.prompt-suggestions {
-  display: flex;
-  gap: 10px;
-  flex-wrap: wrap;
 }
 
 .suggestion-btn {
@@ -399,37 +395,32 @@ export default {
   font-size: 13px;
   font-weight: 500;
   cursor: pointer;
-  transition: all 0.2s ease;
+  transition: all 0.3s ease;
+  position: relative;
+  overflow: hidden;
+  z-index: 1;
+}
+
+.suggestion-btn::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: -100%;
+  width: 100%;
+  height: 100%;
+  background: linear-gradient(90deg, transparent, rgba(102, 126, 234, 0.1), transparent);
+  transition: left 0.4s ease;
+  z-index: -1;
+}
+
+.suggestion-btn:hover::before {
+  left: 100%;
 }
 
 .suggestion-btn:hover {
   background: #e2e8f0;
   border-color: #cbd5e1;
   transform: translateY(-1px);
-}
-
-.summary-section {
-  background: white;
-  border-radius: 20px;
-  padding: 30px;
-  box-shadow: 0 10px 25px rgba(0, 0, 0, 0.05);
-  border: 1px solid #f1f5f9;
-}
-
-.summary-header {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  margin-bottom: 30px;
-  flex-wrap: wrap;
-  gap: 15px;
-}
-
-.summary-header h3 {
-  font-size: 1.5rem;
-  font-weight: 700;
-  color: #1e293b;
-  margin: 0;
 }
 
 .summary-status {
@@ -450,16 +441,6 @@ export default {
   background: #dcfce7;
   color: #166534;
   border-color: #86efac;
-}
-
-.summary-status svg {
-  flex-shrink: 0;
-}
-
-.config-grid {
-  display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
-  gap: 20px;
 }
 
 .config-card {
@@ -491,11 +472,6 @@ export default {
   border-radius: 12px;
   box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
   flex-shrink: 0;
-}
-
-.config-content {
-  flex: 1;
-  min-width: 0;
 }
 
 .config-content h4 {
@@ -530,74 +506,44 @@ export default {
   color: #16a34a;
 }
 
-.config-status svg {
-  flex-shrink: 0;
-}
-
 .button-container {
   display: flex;
   justify-content: space-between;
-  align-items: center;
   gap: 20px;
-  margin-top: 30px;
-  flex-wrap: wrap;
+  margin-top: 40px;
+  max-width: 900px;
+  width: 100%;
+  margin-left: auto;
+  margin-right: auto;
+  padding: 0 20px;
+  box-sizing: border-box;
 }
 
 .btn-link {
   text-decoration: none;
   flex: 1;
-  max-width: 300px;
 }
 
 .btn {
   width: 100%;
-  padding: 16px 24px;
+  padding: 16px 32px;
+  border: none;
   border-radius: 16px;
   font-size: 16px;
   font-weight: 600;
+  cursor: pointer;
+  transition: all 0.3s ease;
   display: flex;
   align-items: center;
   justify-content: center;
   gap: 10px;
-  transition: all 0.3s ease;
-  cursor: pointer;
-  border: none;
-  min-height: 56px;
-}
-
-.btn-secondary {
-  background: rgba(255, 255, 255, 0.9);
-  color: #475569;
-  border: 1px solid rgba(255, 255, 255, 0.3);
-  backdrop-filter: blur(10px);
-}
-
-.btn-secondary:hover {
-  background: rgba(255, 255, 255, 1);
-  transform: translateY(-2px);
-  box-shadow: 0 8px 25px rgba(0, 0, 0, 0.15);
-}
-
-.btn-primary {
-  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-  color: white;
-  border: 1px solid rgba(255, 255, 255, 0.2);
+  letter-spacing: -0.01em;
+  box-sizing: border-box;
   position: relative;
   overflow: hidden;
 }
 
-.btn-primary:hover:not(:disabled) {
-  transform: translateY(-2px);
-  box-shadow: 0 12px 35px rgba(102, 126, 234, 0.4);
-}
-
-.btn-primary:disabled {
-  opacity: 0.6;
-  cursor: not-allowed;
-  transform: none;
-}
-
-.btn-primary::before {
+.btn::before {
   content: '';
   position: absolute;
   top: 0;
@@ -608,189 +554,62 @@ export default {
   transition: left 0.5s;
 }
 
-.btn-primary:hover:not(:disabled)::before {
+.btn:hover::before {
   left: 100%;
 }
 
-.btn svg {
-  flex-shrink: 0;
+.btn-primary {
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  color: white;
+  box-shadow: 0 10px 20px rgba(102, 126, 234, 0.3);
 }
 
-/* Styles spécifiques pour les boutons */
-.btn-finish {
-  position: relative;
-  overflow: hidden;
-}
-
-.btn-finish:not(:disabled) {
-  background: linear-gradient(135deg, #10b981 0%, #059669 50%, #047857 100%);
-  box-shadow: 0 4px 15px rgba(16, 185, 129, 0.3);
-}
-
-.btn-finish:hover:not(:disabled) {
-  box-shadow: 0 8px 25px rgba(16, 185, 129, 0.4);
+.btn-primary:hover {
   transform: translateY(-3px);
+  box-shadow: 0 15px 30px rgba(102, 126, 234, 0.4);
 }
 
-.btn-finish:disabled {
-  background: #9ca3af;
-  color: #6b7280;
-  box-shadow: none;
+.btn-secondary {
+  background: white;
+  color: #64748b;
+  border: 2px solid #e2e8f0;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
 }
 
-.btn-primary.btn-finish:not(:disabled)::after {
-  content: '';
-  position: absolute;
-  top: 0;
-  left: 0;
-  right: 0;
-  bottom: 0;
-  background: linear-gradient(135deg, transparent 0%, rgba(255, 255, 255, 0.1) 50%, transparent 100%);
-  transform: translateX(-100%);
-  transition: transform 0.6s ease;
-}
-
-.btn-primary.btn-finish:hover:not(:disabled)::after {
-  transform: translateX(100%);
-}
-
-/* Animation pour les icônes des boutons */
-.btn svg {
-  transition: transform 0.3s ease;
-}
-
-.btn:hover svg {
-  transform: scale(1.1);
-}
-
-.btn-secondary:hover svg {
-  transform: translateX(-2px) scale(1.1);
-}
-
-.btn-primary:hover:not(:disabled) svg {
-  transform: translateX(2px) scale(1.1);
-}
-
-/* Styles pour les liens de boutons */
-.btn-link {
-  display: block;
-  transition: all 0.3s ease;
-}
-
-.btn-link:first-child {
-  flex: 0 0 auto;
-}
-
-.btn-link:last-child {
-  flex: 1;
-}
-
-/* États de focus pour l'accessibilité */
-.btn:focus {
-  outline: none;
-  box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.3);
-}
-
-.btn-secondary:focus {
-  box-shadow: 0 0 0 3px rgba(71, 85, 105, 0.3);
-}
-
-/* Animation de chargement pour le bouton primaire */
-.btn-primary.loading {
-  position: relative;
-  color: transparent;
-}
-
-.btn-primary.loading::before {
-  content: '';
-  position: absolute;
-  top: 50%;
-  left: 50%;
-  width: 20px;
-  height: 20px;
-  margin: -10px 0 0 -10px;
-  border: 2px solid rgba(255, 255, 255, 0.3);
-  border-top-color: white;
-  border-radius: 50%;
-  animation: spin 1s linear infinite;
-}
-
-@keyframes spin {
-  0% { transform: rotate(0deg); }
-  100% { transform: rotate(360deg); }
-}
-
-/* Styles pour les boutons de suggestion */
-.suggestion-btn {
-  position: relative;
-  overflow: hidden;
-}
-
-.suggestion-btn::before {
-  content: '';
-  position: absolute;
-  top: 0;
-  left: -100%;
-  width: 100%;
-  height: 100%;
-  background: linear-gradient(90deg, transparent, rgba(102, 126, 234, 0.1), transparent);
-  transition: left 0.4s ease;
-}
-
-.suggestion-btn:hover::before {
-  left: 100%;
-}
-
-.suggestion-btn:active {
-  transform: scale(0.98);
+.btn-secondary:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 8px 20px rgba(0, 0, 0, 0.1);
+  border-color: #cbd5e1;
+  color: #475569;
 }
 
 @media (max-width: 768px) {
   .container {
     padding: 15px;
   }
-  
+
   .page-content {
-    padding: 25px;
-    margin: 20px 0;
+    padding: 30px 20px;
+    margin: 20px auto;
   }
-  
+
   .page-title {
     font-size: 2rem;
   }
-  
+
   .prompt-section,
   .summary-section {
     padding: 20px;
   }
-  
-  .prompt-header {
-    flex-direction: column;
-    align-items: flex-start;
-    gap: 15px;
-  }
-  
-  .prompt-footer {
-    flex-direction: column;
-    align-items: flex-start;
-    gap: 15px;
-  }
-  
-  .config-grid {
-    grid-template-columns: 1fr;
-  }
-  
+
   .button-container {
     flex-direction: column;
+    gap: 15px;
+    padding: 0 15px;
   }
-  
-  .btn-link {
-    max-width: none;
-  }
-  
-  .summary-header {
-    flex-direction: column;
-    align-items: flex-start;
+
+  .module-selection {
+    padding: 25px 20px;
   }
 }
 
@@ -798,19 +617,13 @@ export default {
   .page-title {
     font-size: 1.8rem;
   }
-  
+
+  .page-subtitle {
+    font-size: 1rem;
+  }
+
   .prompt-textarea {
     min-height: 150px;
-  }
-  
-  .config-card {
-    padding: 15px;
-  }
-  
-  .config-icon {
-    width: 40px;
-    height: 40px;
-    font-size: 20px;
   }
 }
 </style>
