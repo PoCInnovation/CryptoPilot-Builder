@@ -79,15 +79,20 @@ export default {
 <style scoped>
 .progress-container {
   position: relative;
-  margin: 60px 0;
+  margin: 0;
+  padding: 40px 20px 60px 20px;
   height: 120px;
+  width: 100%;
+  max-width: 900px;
+  margin: 0 auto;
+  box-sizing: border-box;
 }
 
 .progress-track {
   position: absolute;
   top: 50%;
-  left: 5%;
-  right: 5%;
+  left: 10%;
+  right: 10%;
   height: 6px;
   background: rgba(255, 255, 255, 0.3);
   border-radius: 10px;
@@ -242,46 +247,57 @@ export default {
 
 @media (max-width: 768px) {
   .progress-container {
-    margin: 40px 0;
+    padding: 30px 15px 50px 15px;
     height: 100px;
   }
-  
+
+  .progress-track {
+    left: 15%;
+    right: 15%;
+  }
+
   .step-circle {
     width: 44px;
     height: 44px;
     font-size: 16px;
   }
-  
+
   .step-wrapper.active .step-circle {
     transform: scale(1.05);
   }
-  
+
   .step-title {
     font-size: 12px;
   }
-  
+
   .step-subtitle {
     font-size: 10px;
   }
-  
+
   .step-label {
     margin-top: 12px;
   }
 }
 
 @media (max-width: 480px) {
+  .progress-container {
+    padding: 25px 10px 45px 10px;
+    height: 80px;
+  }
+
+  .progress-track {
+    left: 20%;
+    right: 20%;
+  }
+
   .step-title {
     font-size: 11px;
   }
-  
+
   .step-subtitle {
     display: none;
   }
-  
-  .progress-container {
-    height: 80px;
-  }
-  
+
   .step-circle {
     width: 36px;
     height: 36px;

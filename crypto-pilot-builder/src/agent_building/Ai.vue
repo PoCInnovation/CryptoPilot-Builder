@@ -125,11 +125,18 @@ export default {
 
 <style scoped>
 .container {
-  max-width: 900px;
-  margin: 0 auto;
+  width: 100vw;
+  height: 100vh;
+  margin: 0;
   padding: 20px;
-  min-height: 100vh;
+  box-sizing: border-box;
   background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  display: flex;
+  flex-direction: column;
+  position: fixed;
+  top: 0;
+  left: 0;
+  overflow-y: auto;
 }
 
 .page-content {
@@ -137,10 +144,17 @@ export default {
   backdrop-filter: blur(20px);
   border-radius: 24px;
   padding: 40px;
-  margin: 30px 0;
+  margin: 30px auto;
+  max-width: 900px;
+  width: 100%;
   box-shadow: 0 20px 40px rgba(0, 0, 0, 0.1);
   border: 1px solid rgba(255, 255, 255, 0.2);
   animation: slideUp 0.6s ease-out;
+  box-sizing: border-box;
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
 }
 
 @keyframes slideUp {
@@ -218,6 +232,7 @@ export default {
   appearance: none;
   transition: all 0.3s ease;
   font-weight: 500;
+  box-sizing: border-box;
 }
 
 .form-select:focus {
@@ -255,6 +270,7 @@ export default {
   color: #334155;
   transition: all 0.3s ease;
   font-weight: 500;
+  box-sizing: border-box;
 }
 
 .form-input:focus {
@@ -324,6 +340,12 @@ export default {
   justify-content: space-between;
   gap: 20px;
   margin-top: 40px;
+  max-width: 900px;
+  width: 100%;
+  margin-left: auto;
+  margin-right: auto;
+  padding: 0 20px;
+  box-sizing: border-box;
 }
 
 .btn-link {
@@ -345,6 +367,7 @@ export default {
   justify-content: center;
   gap: 10px;
   letter-spacing: -0.01em;
+  box-sizing: border-box;
 }
 
 .btn-primary {
@@ -382,21 +405,22 @@ export default {
   .container {
     padding: 15px;
   }
-  
+
   .page-content {
     padding: 30px 20px;
-    margin: 20px 0;
+    margin: 20px auto;
   }
-  
+
   .page-title {
     font-size: 2rem;
   }
-  
+
   .button-container {
     flex-direction: column;
     gap: 15px;
+    padding: 0 15px;
   }
-  
+
   .btn-link {
     flex: none;
   }
