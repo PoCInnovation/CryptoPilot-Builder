@@ -32,8 +32,8 @@ If you're interested in how the project is organized at a higher level, please c
 
 
  Developers
- | [<img src="https://github.com/AurelienDEMEUSY.png?size=85" width=85><br><sub>Aurelien Demeusy</sub>](https://github.com/AurelienDEMEUSY) | [<img src="https://github.com/Nerzouille.png?size=85" width=85><br><sub>Noa smoter</sub>](https://github.com/Nerzouille)
- | :---: | :---: |
+ | [<img src="https://github.com/AurelienDEMEUSY.png?size=85" width=85><br><sub>Aurelien Demeusy</sub>](https://github.com/AurelienDEMEUSY) | [<img src="https://github.com/Nerzouille.png?size=85" width=85><br><sub>Noa smoter</sub>](https://github.com/Nerzouille) | [<img src="https://github.com/MiloKow.png?size=85" width=85><br><sub>Milo Kowalska</sub>](https://github.com/MiloKow)
+ | :---: | :---: | :---: |
 
 Manager
  | [<img src="https://github.com/Intermarch3.png?size=85" width=85><br><sub>Lucas Leclerc</sub>](https://github.com/Intermarch3) | [<img src="https://github.com/ramosleandre.png?size=85" width=85><br><sub>Leandre Ramos</sub>](https://github.com/ramosleandre)
