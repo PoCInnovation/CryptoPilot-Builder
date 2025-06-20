@@ -4,6 +4,7 @@ MCP client for communication with OpenAI crypto agent
 """
 
 import asyncio
+import json
 from typing import Dict, Any
 from mcp import ClientSession, StdioServerParameters
 from mcp.client.stdio import stdio_client
@@ -99,6 +100,59 @@ class MCPClient:
             "message": message,
             "context": context
         })
+
+    async def chat_with_config(self, message: str, context: Dict[str, Any], api_key: str) -> Dict[str, Any]:
+        """Communication with OpenAI agent using user configuration"""
+        # Extraire la configuration de l'agent depuis le contexte
+        agent_config = context.get('agent_config', {})
+        
+        # Construire le prompt système basé sur la configuration utilisateur
+        system_prompt = self._build_system_prompt(agent_config)
+        
+        # Préparer les arguments avec la configuration
+        arguments = {
+            "message": message,
+            "context": json.dumps(context),
+            "api_key": api_key,
+            "model": agent_config.get('model', 'gpt-4o-mini'),
+            "system_prompt": system_prompt,
+            "modules": json.dumps(agent_config.get('modules', {}))
+        }
+        
+        return await self.call_tool("agent_chat_configured", arguments)
+
+    def _build_system_prompt(self, agent_config: Dict[str, Any]) -> str:
+        """Construire le prompt système basé sur la configuration de l'agent"""
+        
+        # Prompt de base
+        base_prompt = agent_config.get('prompt', '')
+        if not base_prompt:
+            base_prompt = "Tu es un assistant IA spécialisé en cryptomonnaies. Tu es précis, utile et professionnel."
+        
+        # Ajouter les capacités des modules activés
+        modules = agent_config.get('modules', {})
+        module_capabilities = []
+        
+        if modules.get('chatAdvanced', False):
+            module_capabilities.append("- Tu as une mémoire contextuelle avancée pour maintenir des conversations naturelles")
+        
+        if modules.get('dataAnalysis', False):
+            module_capabilities.append("- Tu peux analyser et visualiser des données complexes")
+        
+        if modules.get('webSearch', False):
+            module_capabilities.append("- Tu as accès aux informations en temps réel via la recherche web")
+        
+        if modules.get('creativeGeneration', False):
+            module_capabilities.append("- Tu peux créer du contenu artistique et créatif")
+        
+        # Construire le prompt final
+        if module_capabilities:
+            capabilities_text = "\n".join(module_capabilities)
+            system_prompt = f"{base_prompt}\n\nTes capacités spéciales incluent:\n{capabilities_text}"
+        else:
+            system_prompt = base_prompt
+        
+        return system_prompt
 
     def is_connected(self) -> bool:
         """Check if client is configured"""
