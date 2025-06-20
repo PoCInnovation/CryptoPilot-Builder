@@ -14,11 +14,13 @@
           <article
             v-for="chat in chats"
             :key="chat.id"
-            class="chat-item-container">
+            class="chat-item-container"
+          >
             <form
               v-if="editingChatId === chat.id"
               class="chat-edit-form"
-              @submit.prevent="saveEditingChat">
+              @submit.prevent="saveEditingChat"
+            >
               <input
                 v-model="tempChatName"
                 @keydown="handleEditKeydown"
@@ -26,22 +28,28 @@
                 ref="chatEditInput"
                 class="chat-name-input"
                 maxlength="50"
-                type="text"/>
+                type="text"
+              />
             </form>
             <button
               v-else
-              :class="['chat-item-button', { 'chat-item-button--active': chat.id === activeChat }]"
+              :class="[
+                'chat-item-button',
+                { 'chat-item-button--active': chat.id === activeChat },
+              ]"
               @click="selectChat(chat.id)"
               @dblclick="startEditingChat(chat.id)"
               @contextmenu="showChatContextMenu($event, chat.id)"
-              :title="'Double-cliquez pour renommer | Clic droit pour plus d\'options'">
+              :title="'Double-cliquez pour renommer | Clic droit pour plus d\'options'"
+            >
               {{ chat.name }}
             </button>
             <button
               class="chat-delete-button"
               @click="deleteChat(chat.id)"
               title="Supprimer ce chat"
-              :aria-label="`Supprimer le chat ${chat.name}`">
+              :aria-label="`Supprimer le chat ${chat.name}`"
+            >
               ×
             </button>
           </article>
@@ -51,10 +59,27 @@
     <main class="main-content">
       <header class="main-header">
         <h1 class="welcome-title">Welcome</h1>
-        <button class="login-button" @click="openLoginModal">
-          <span class="login-icon">👤</span>
-          Se connecter
-        </button>
+
+        <!-- Bouton de connexion/profil utilisateur -->
+        <div class="user-section">
+          <div v-if="isAuthenticated" class="user-info">
+            <span class="user-welcome"
+              >Bonjour, {{ user?.username || user?.email }}</span
+            >
+            <button
+              class="logout-button"
+              @click="handleLogout"
+              title="Se déconnecter"
+            >
+              <span class="logout-icon">🚪</span>
+              Déconnexion
+            </button>
+          </div>
+          <button v-else class="login-button" @click="showAuthModal = true">
+            <span class="login-icon">👤</span>
+            Se connecter
+          </button>
+        </div>
       </header>
       <section class="dashboard-section">
         <div class="widgets-container">
@@ -67,114 +92,130 @@
           </article>
         </div>
         <section class="action-section">
-          <router-link to="/Model" class="agent-navigation-link">
-            <button class="talk-to-agent-button">Talk to Agent</button>
-          </router-link>
+          <!-- Protection du bouton Talk to Agent -->
+          <div v-if="isAuthenticated" class="authenticated-actions">
+            <router-link to="/AI" class="agent-navigation-link">
+              <button class="configure-agent-button">
+                ⚙️ Configurer mon Agent
+              </button>
+            </router-link>
+
+            <!-- Bouton pour accéder au chat si la configuration est valide -->
+            <router-link
+              v-if="hasValidConfig"
+              to="/chat"
+              class="agent-navigation-link"
+            >
+              <button class="chat-access-button">💬 Accéder au Chat</button>
+            </router-link>
+          </div>
+          <div v-else class="auth-required-section">
+            <button
+              class="talk-to-agent-button-disabled"
+              @click="showAuthModal = true"
+            >
+              🔒 Configurer mon Agent
+            </button>
+            <p class="auth-message">
+              Veuillez vous connecter pour configurer votre agent IA
+              personnalisé
+            </p>
+          </div>
         </section>
       </section>
     </main>
+
+    <!-- Menu contextuel -->
     <aside
       v-if="showContextMenu"
       class="context-menu"
       :style="{ left: contextMenuX + 'px', top: contextMenuY + 'px' }"
-      role="menu">
+      role="menu"
+    >
       <button
         @click="renameFromContextMenu"
         class="context-menu-item"
-        role="menuitem">
+        role="menuitem"
+      >
         ✏️ Renommer
       </button>
-      <button
-        @click="duplicateChat"
-        class="context-menu-item"
-        role="menuitem">
+      <button @click="duplicateChat" class="context-menu-item" role="menuitem">
         📋 Dupliquer
       </button>
-      <hr class="context-menu-divider" role="separator">
+      <hr class="context-menu-divider" role="separator" />
       <button
         @click="deleteChatFromContextMenu"
         class="context-menu-item context-menu-item--danger"
-        role="menuitem">
+        role="menuitem"
+      >
         🗑️ Supprimer
       </button>
     </aside>
 
-    <!-- Modale de connexion -->
-    <div v-if="showLoginModal" class="modal-overlay" @click="closeLoginModal">
-      <div class="modal-container" @click.stop>
-        <div class="modal-header">
-          <h2 class="modal-title">Connexion</h2>
-          <button class="modal-close" @click="closeLoginModal">&times;</button>
-        </div>
-        <form @submit.prevent="handleLogin" class="login-form">
-          <div class="form-group">
-            <label for="username" class="form-label">Nom d'utilisateur</label>
-            <input
-              id="username"
-              v-model="loginForm.username"
-              type="text"
-              class="form-input"
-              placeholder="Votre nom d'utilisateur"
-              required>
-          </div>
-          <div class="form-group">
-            <label for="password" class="form-label">Mot de passe</label>
-            <input
-              id="password"
-              v-model="loginForm.password"
-              type="password"
-              class="form-input"
-              placeholder="Votre mot de passe"
-              required>
-          </div>
-          <div class="form-actions">
-            <button type="button" class="btn-secondary" @click="closeLoginModal">
-              Annuler
-            </button>
-            <button type="submit" class="btn-primary">
-              Se connecter
-            </button>
-          </div>
-        </form>
-      </div>
-    </div>
+    <!-- Composant d'authentification -->
+    <AuthModal
+      :show="showAuthModal"
+      @close="showAuthModal = false"
+      @authenticated="handleAuthenticated"
+    />
   </div>
 </template>
 
 <script>
+import { mapState, mapActions, mapGetters } from "vuex";
+import AuthModal from "../components/AuthModal.vue";
+
 export default {
-  name: 'Accueil',
+  name: "Accueil",
+  components: {
+    AuthModal,
+  },
   data() {
     return {
       activeChat: 1,
       nextChatId: 2,
       editingChatId: null,
-      tempChatName: '',
+      tempChatName: "",
       showContextMenu: false,
       contextMenuX: 0,
       contextMenuY: 0,
       contextMenuChatId: null,
-      showLoginModal: false,
-      loginForm: {
-        username: '',
-        password: ''
-      },
-      chats: [
-        { id: 1, name: 'Trading Analysis' }
-      ]
-    }
+      showAuthModal: false,
+      redirectAfterAuth: null,
+      chats: [{ id: 1, name: "Trading Analysis" }],
+    };
+  },
+  computed: {
+    ...mapState("auth", ["isAuthenticated", "user"]),
+    ...mapGetters(["aiConfig"]),
+
+    // Vérifier si la configuration est valide
+    hasValidConfig() {
+      return (
+        this.aiConfig &&
+        this.aiConfig.selectedModel &&
+        this.aiConfig.apiKey &&
+        this.aiConfig.prompt
+      );
+    },
   },
   methods: {
+    ...mapActions("auth", ["logout"]),
+    ...mapActions(["loadAgentConfig"]),
+
     selectChat(chatId) {
       this.activeChat = chatId;
       console.log(`Chat sélectionné: ${chatId}`);
     },
     createNewChat() {
-      const chatName = prompt('Nom du nouveau chat:', `Chat ${this.nextChatId}`);
+      const chatName = prompt(
+        "Nom du nouveau chat:",
+        `Chat ${this.nextChatId}`
+      );
       if (chatName && chatName.trim()) {
         const newChat = {
           id: this.nextChatId,
-          name: chatName.trim()
+          name: chatName.trim(),
         };
         this.chats.push(newChat);
         this.activeChat = this.nextChatId;
@@ -183,7 +224,7 @@ export default {
       }
     },
     startEditingChat(chatId) {
-      const chat = this.chats.find(c => c.id === chatId);
+      const chat = this.chats.find((c) => c.id === chatId);
       if (chat) {
         this.editingChatId = chatId;
         this.tempChatName = chat.name;
@@ -191,7 +232,7 @@ export default {
     },
     saveEditingChat() {
       if (this.tempChatName.trim()) {
-        const chat = this.chats.find(c => c.id === this.editingChatId);
+        const chat = this.chats.find((c) => c.id === this.editingChatId);
         if (chat) {
           chat.name = this.tempChatName.trim();
         }
@@ -200,7 +241,7 @@ export default {
     },
     cancelEditingChat() {
       this.editingChatId = null;
-      this.tempChatName = '';
+      this.tempChatName = "";
     },
     showChatContextMenu(event, chatId) {
       event.preventDefault();
@@ -208,12 +249,12 @@ export default {
       this.contextMenuX = event.clientX;
       this.contextMenuY = event.clientY;
       this.showContextMenu = true;
-      document.addEventListener('click', this.hideContextMenu);
+      document.addEventListener("click", this.hideContextMenu);
     },
     hideContextMenu() {
       this.showContextMenu = false;
       this.contextMenuChatId = null;
-      document.removeEventListener('click', this.hideContextMenu);
+      document.removeEventListener("click", this.hideContextMenu);
     },
     renameFromContextMenu() {
       if (this.contextMenuChatId) {
@@ -223,11 +264,13 @@ export default {
     },
     duplicateChat() {
       if (this.contextMenuChatId) {
-        const originalChat = this.chats.find(c => c.id === this.contextMenuChatId);
+        const originalChat = this.chats.find(
+          (c) => c.id === this.contextMenuChatId
+        );
         if (originalChat) {
           const newChat = {
             id: this.nextChatId,
-            name: `${originalChat.name} (copie)`
+            name: `${originalChat.name} (copie)`,
           };
           this.chats.push(newChat);
           this.nextChatId++;
@@ -243,10 +286,10 @@ export default {
     },
     deleteChat(chatId) {
       if (this.chats.length <= 1) {
-        alert('Vous devez garder au moins un chat');
+        alert("Vous devez garder au moins un chat");
         return;
       }
-      const index = this.chats.findIndex(chat => chat.id === chatId);
+      const index = this.chats.findIndex((chat) => chat.id === chatId);
       if (index !== -1) {
         this.chats.splice(index, 1);
         if (this.activeChat === chatId) {
@@ -255,41 +298,58 @@ export default {
       }
     },
     handleEditKeydown(event) {
-      if (event.key === 'Enter') {
+      if (event.key === "Enter") {
         this.saveEditingChat();
-      } else if (event.key === 'Escape') {
+      } else if (event.key === "Escape") {
         this.cancelEditingChat();
       }
     },
-    openLoginModal() {
-      this.showLoginModal = true;
-      this.loginForm.username = '';
-      this.loginForm.password = '';
-    },
-    closeLoginModal() {
-      this.showLoginModal = false;
-      this.loginForm.username = '';
-      this.loginForm.password = '';
-    },
-    handleLogin() {
-      // La faut mettre la logique de connexion
-      console.log('Tentative de connexion:', this.loginForm);
-      if (this.loginForm.username && this.loginForm.password) {
-        alert(`Connexion réussie pour ${this.loginForm.username}`);
-        this.closeLoginModal();
-      } else {
-        alert('Veuillez remplir tous les champs');
+
+    handleAuthenticated() {
+      // Charger la configuration de l'agent après authentification
+      this.loadAgentConfig();
+
+      // Rediriger vers la page demandée si elle existe
+      if (this.redirectAfterAuth) {
+        this.$router.push(this.redirectAfterAuth);
+        this.redirectAfterAuth = null;
       }
+    },
+
+    async handleLogout() {
+      await this.logout();
+      // Rediriger vers l'accueil après déconnexion
+      this.$router.push("/");
+    },
+  },
+
+  mounted() {
+    // Vérifier l'authentification au montage
+    this.$store.dispatch("auth/checkAuth");
+
+    // Charger la config si déjà authentifié
+    if (this.isAuthenticated) {
+      this.loadAgentConfig();
     }
-  }
-}
+
+    // Gérer la redirection après authentification si nécessaire
+    const urlParams = new URLSearchParams(window.location.search);
+    if (urlParams.get("authRequired") === "true") {
+      // Afficher automatiquement la modale de connexion
+      this.showAuthModal = true;
+
+      // Stocker l'URL de redirection
+      this.redirectAfterAuth = urlParams.get("redirect") || "/AI";
+    }
+  },
+};
 </script>
 
 <style scoped>
 .app-container {
   display: flex;
   height: 100vh;
-  font-family: 'Arial', sans-serif;
+  font-family: "Arial", sans-serif;
   background-color: #fafafa;
 }
 
@@ -298,7 +358,7 @@ export default {
   background-color: #2c3e50;
   color: white;
   padding: 20px;
-  box-shadow: 2px 0 5px rgba(0,0,0,0.1);
+  box-shadow: 2px 0 5px rgba(0, 0, 0, 0.1);
 }
 
 .sidebar-header {
@@ -423,7 +483,7 @@ export default {
   background-color: white;
   border: 1px solid #ddd;
   border-radius: 6px;
-  box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
   z-index: 1000;
   min-width: 150px;
   overflow: hidden;
@@ -485,9 +545,25 @@ export default {
   margin: 0;
 }
 
-.login-button {
+/* Section utilisateur */
+.user-section {
   position: absolute;
   right: 0;
+}
+
+.user-info {
+  display: flex;
+  align-items: center;
+  gap: 15px;
+}
+
+.user-welcome {
+  color: #2c3e50;
+  font-weight: 500;
+  font-size: 14px;
+}
+
+.login-button {
   display: flex;
   align-items: center;
   gap: 8px;
@@ -508,7 +584,28 @@ export default {
   box-shadow: 0 6px 20px rgba(102, 126, 234, 0.4);
 }
 
-.login-icon {
+.logout-button {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 16px;
+  background: #e74c3c;
+  border: none;
+  color: white;
+  border-radius: 20px;
+  cursor: pointer;
+  font-size: 12px;
+  font-weight: 500;
+  transition: all 0.3s ease;
+}
+
+.logout-button:hover {
+  background: #c0392b;
+  transform: translateY(-1px);
+}
+
+.login-icon,
+.logout-icon {
   font-size: 16px;
 }
 
@@ -541,7 +638,7 @@ export default {
   justify-content: center;
   color: white;
   font-weight: bold;
-  box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+  box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
   transition: transform 0.3s ease;
 }
 
@@ -575,15 +672,22 @@ export default {
   justify-content: center;
 }
 
+.authenticated-actions {
+  display: flex;
+  flex-direction: column;
+  gap: 15px;
+  align-items: center;
+}
+
 .agent-navigation-link {
   text-decoration: none;
 }
 
-.talk-to-agent-button {
+.configure-agent-button {
   padding: 15px 30px;
   font-size: 18px;
   font-weight: bold;
-  background: linear-gradient(135deg, #4CAF50 0%, #45a049 100%);
+  background: linear-gradient(135deg, #4caf50 0%, #45a049 100%);
   border: none;
   color: white;
   border-radius: 10px;
@@ -592,9 +696,80 @@ export default {
   box-shadow: 0 4px 15px rgba(76, 175, 80, 0.3);
 }
 
-.talk-to-agent-button:hover {
+.configure-agent-button:hover {
   transform: translateY(-2px);
   box-shadow: 0 6px 20px rgba(76, 175, 80, 0.4);
+}
+
+.chat-access-button {
+  padding: 15px 30px;
+  font-size: 18px;
+  font-weight: bold;
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  border: none;
+  color: white;
+  border-radius: 10px;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  box-shadow: 0 4px 15px rgba(102, 126, 234, 0.3);
+}
+
+.chat-access-button:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 6px 20px rgba(102, 126, 234, 0.4);
+}
+
+/* Section d'authentification requise */
+.auth-required-section {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 12px;
+}
+
+.talk-to-agent-button-disabled {
+  padding: 15px 30px;
+  font-size: 18px;
+  font-weight: bold;
+  background: linear-gradient(135deg, #95a5a6 0%, #7f8c8d 100%);
+  border: none;
+  color: white;
+  border-radius: 10px;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  box-shadow: 0 4px 15px rgba(149, 165, 166, 0.3);
+  position: relative;
+  overflow: hidden;
+}
+
+.talk-to-agent-button-disabled:hover {
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  transform: translateY(-2px);
+  box-shadow: 0 6px 20px rgba(102, 126, 234, 0.4);
+}
+
+.talk-to-agent-button-disabled:hover::after {
+  content: "Cliquer pour se connecter";
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(102, 126, 234, 0.9);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 14px;
+  font-weight: 500;
+}
+
+.auth-message {
+  margin: 0;
+  color: #7f8c8d;
+  font-size: 14px;
+  text-align: center;
+  max-width: 300px;
+  line-height: 1.4;
 }
 
 /* Styles pour la modale */
@@ -765,6 +940,14 @@ export default {
   }
   .welcome-title {
     font-size: 36px;
+  }
+  .authenticated-actions {
+    gap: 12px;
+  }
+  .configure-agent-button,
+  .chat-access-button {
+    padding: 12px 24px;
+    font-size: 16px;
   }
   .modal-container {
     margin: 20px;

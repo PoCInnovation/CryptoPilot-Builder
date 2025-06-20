@@ -4,7 +4,9 @@
     <div class="page-content">
       <div class="header-section">
         <h2 class="page-title">Configuration IA</h2>
-        <p class="page-subtitle">Configurez votre assistant intelligent en quelques étapes</p>
+        <p class="page-subtitle">
+          Configurez votre assistant intelligent en quelques étapes
+        </p>
       </div>
       <div class="form-section">
         <div class="form-group">
@@ -13,13 +15,23 @@
             Modèle d'IA
           </label>
           <div class="select-wrapper">
-            <select id="model-select" v-model="selectedModel" class="form-select">
+            <select
+              id="model-select"
+              v-model="selectedModel"
+              class="form-select"
+            >
               <option value="">Choisir un modèle</option>
               <option value="gpt-4o-mini">GPT-4o Mini</option>
             </select>
             <div class="select-arrow">
               <svg width="20" height="20" viewBox="0 0 20 20" fill="none">
-                <path d="M5 7.5L10 12.5L15 7.5" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                <path
+                  d="M5 7.5L10 12.5L15 7.5"
+                  stroke="currentColor"
+                  stroke-width="2"
+                  stroke-linecap="round"
+                  stroke-linejoin="round"
+                />
               </svg>
             </div>
           </div>
@@ -35,11 +47,24 @@
               type="password"
               v-model="apiKey"
               placeholder="Entrez votre clé API"
-              class="form-input"/>
+              class="form-input"
+            />
             <div class="input-icon">
               <svg width="18" height="18" viewBox="0 0 24 24" fill="none">
-                <path d="M6 10V8C6 5.79086 7.79086 4 10 4H14C16.2091 4 18 5.79086 18 8V10" stroke="currentColor" stroke-width="2"/>
-                <rect x="4" y="10" width="16" height="10" rx="2" stroke="currentColor" stroke-width="2"/>
+                <path
+                  d="M6 10V8C6 5.79086 7.79086 4 10 4H14C16.2091 4 18 5.79086 18 8V10"
+                  stroke="currentColor"
+                  stroke-width="2"
+                />
+                <rect
+                  x="4"
+                  y="10"
+                  width="16"
+                  height="10"
+                  rx="2"
+                  stroke="currentColor"
+                  stroke-width="2"
+                />
               </svg>
             </div>
           </div>
@@ -57,16 +82,32 @@
       <router-link to="/" class="btn-link">
         <button class="btn btn-secondary">
           <svg width="20" height="20" viewBox="0 0 24 24" fill="none">
-            <path d="M19 12H5M12 19L5 12L12 5" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+            <path
+              d="M19 12H5M12 19L5 12L12 5"
+              stroke="currentColor"
+              stroke-width="2"
+              stroke-linecap="round"
+              stroke-linejoin="round"
+            />
           </svg>
           Précédent
         </button>
       </router-link>
       <router-link to="/Module" class="btn-link">
-        <button class="btn btn-primary" :disabled="!isFormValid" @click="saveConfig">
+        <button
+          class="btn btn-primary"
+          :disabled="!isFormValid"
+          @click="saveConfig"
+        >
           Suivant
           <svg width="20" height="20" viewBox="0 0 24 24" fill="none">
-            <path d="M5 12H19M12 5L19 12L12 19" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+            <path
+              d="M5 12H19M12 5L19 12L12 19"
+              stroke="currentColor"
+              stroke-width="2"
+              stroke-linecap="round"
+              stroke-linejoin="round"
+            />
           </svg>
         </button>
       </router-link>
@@ -75,52 +116,55 @@
 </template>
 
 <script>
-import ProgressBar from './Progress_bar.vue'
-import { mapGetters, mapActions } from 'vuex'
+import ProgressBar from "./Progress_bar.vue";
+import { mapGetters, mapActions } from "vuex";
 
 export default {
-  name: 'AI',
+  name: "AI",
   components: {
-    ProgressBar
+    ProgressBar,
   },
   data() {
     return {
-      selectedModel: '',
-      apiKey: ''
-    }
+      selectedModel: "",
+      apiKey: "",
+    };
   },
   computed: {
-    ...mapGetters(['getApiKey', 'getSelectedModel', 'isConfigured']),
+    ...mapGetters(["aiConfig", "isAuthenticated"]),
     isFormValid() {
-      return this.selectedModel && this.apiKey.trim()
-    }
+      return this.selectedModel && this.apiKey.trim();
+    },
+    isConfigured() {
+      return this.selectedModel && this.apiKey;
+    },
   },
   methods: {
-    ...mapActions(['updateAIConfig', 'setApiKey', 'setModel']),
+    ...mapActions(["updateAIConfig", "setApiKey", "setModel"]),
     saveConfig() {
       this.updateAIConfig({
         selectedModel: this.selectedModel,
-        apiKey: this.apiKey
-      })
-    }
+        apiKey: this.apiKey,
+      });
+    },
   },
   watch: {
     selectedModel(newVal) {
       if (newVal) {
-        this.setModel(newVal)
+        this.setModel(newVal);
       }
     },
     apiKey(newVal) {
       if (newVal) {
-        this.setApiKey(newVal)
+        this.setApiKey(newVal);
       }
-    }
+    },
   },
   mounted() {
-    this.selectedModel = this.getSelectedModel
-    this.apiKey = this.getApiKey
-  }
-}
+    this.selectedModel = this.aiConfig.selectedModel || "";
+    this.apiKey = this.aiConfig.apiKey || "";
+  },
+};
 </script>
 
 <style scoped>

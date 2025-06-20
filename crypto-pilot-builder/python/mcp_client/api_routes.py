@@ -6,11 +6,12 @@ API routes for interface with Vue.js frontend
 import asyncio
 import os
 import re
+import json
 from datetime import timedelta
 from flask import request, jsonify
 from flask_sqlalchemy import SQLAlchemy
 from flask_bcrypt import Bcrypt
-from flask_jwt_extended import JWTManager, create_access_token
+from flask_jwt_extended import JWTManager, create_access_token, jwt_required, get_jwt_identity
 from mcp_client import mcp_client
 from session_manager import session_manager
 import uuid
@@ -47,6 +48,31 @@ def create_api_routes(app):
         password_hash = db.Column(db.String(255), nullable=False)
         wallet_address = db.Column(db.String(42), nullable=True)
         created_at = db.Column(db.DateTime, default=db.func.current_timestamp())
+        
+        # Relation avec les configurations d'agent
+        agent_configs = db.relationship('AgentConfig', backref='user', lazy=True, cascade='all, delete-orphan')
+
+    class AgentConfig(db.Model):
+        __tablename__ = 'agent_configs'
+        id = db.Column(db.String(36), primary_key=True, default=lambda: str(uuid.uuid4()))
+        user_id = db.Column(db.String(36), db.ForeignKey('users.id'), nullable=False)
+        
+        # Configuration IA
+        selected_model = db.Column(db.String(100), nullable=False)
+        api_key = db.Column(db.Text, nullable=False)  # Chiffré en production
+        
+        # Configuration des modules
+        modules_config = db.Column(db.JSON, nullable=True, default=dict)
+        
+        # Comportement de l'assistant
+        prompt = db.Column(db.Text, nullable=True)
+        
+        # Métadonnées
+        name = db.Column(db.String(100), nullable=False, default='Mon Assistant')
+        description = db.Column(db.Text, nullable=True)
+        is_active = db.Column(db.Boolean, default=True)
+        created_at = db.Column(db.DateTime, default=db.func.current_timestamp())
+        updated_at = db.Column(db.DateTime, default=db.func.current_timestamp(), onupdate=db.func.current_timestamp())
 
     def validate_email(email):
         pattern = r'^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$'
@@ -66,7 +92,7 @@ def create_api_routes(app):
     with app.app_context():
         try:
             db.create_all()
-            print("✅ Tables d'authentification créées")
+            print("✅ Tables d'authentification et de configuration créées")
         except Exception as e:
             print(f"❌ Erreur lors de la création des tables: {e}")
 
@@ -147,6 +173,186 @@ def create_api_routes(app):
         except Exception as e:
             return jsonify({'error': f'Erreur serveur: {str(e)}'}), 500
 
+    # ===== AGENT CONFIGURATION ROUTES =====
+
+    @app.route('/agent-config', methods=['POST'])
+    @jwt_required()
+    def create_agent_config():
+        """Créer ou mettre à jour la configuration de l'agent"""
+        try:
+            user_id = get_jwt_identity()
+            data = request.get_json()
+            
+            if not data:
+                return jsonify({'error': 'Aucune donnée fournie'}), 400
+            
+            # Validation des données requises
+            selected_model = data.get('selectedModel')
+            api_key = data.get('apiKey')
+            
+            if not selected_model or not api_key:
+                return jsonify({'error': 'Modèle et clé API sont requis'}), 400
+            
+            # Chercher une configuration existante pour cet utilisateur
+            existing_config = AgentConfig.query.filter_by(user_id=user_id, is_active=True).first()
+            
+            if existing_config:
+                # Mettre à jour la configuration existante
+                existing_config.selected_model = selected_model
+                existing_config.api_key = api_key
+                existing_config.modules_config = data.get('modules', {})
+                existing_config.prompt = data.get('prompt', '')
+                existing_config.name = data.get('name', 'Mon Assistant')
+                existing_config.description = data.get('description', '')
+                existing_config.updated_at = db.func.current_timestamp()
+                
+                config = existing_config
+            else:
+                # Créer une nouvelle configuration
+                config = AgentConfig(
+                    user_id=user_id,
+                    selected_model=selected_model,
+                    api_key=api_key,
+                    modules_config=data.get('modules', {}),
+                    prompt=data.get('prompt', ''),
+                    name=data.get('name', 'Mon Assistant'),
+                    description=data.get('description', '')
+                )
+                db.session.add(config)
+            
+            db.session.commit()
+            
+            return jsonify({
+                'message': 'Configuration sauvegardée avec succès',
+                'config': {
+                    'id': config.id,
+                    'selectedModel': config.selected_model,
+                    'apiKey': config.api_key[-4:] + '...' if config.api_key else '',  # Masquer la clé
+                    'modules': config.modules_config,
+                    'prompt': config.prompt,
+                    'name': config.name,
+                    'description': config.description,
+                    'createdAt': config.created_at.isoformat(),
+                    'updatedAt': config.updated_at.isoformat()
+                }
+            }), 201
+            
+        except Exception as e:
+            db.session.rollback()
+            return jsonify({'error': f'Erreur serveur: {str(e)}'}), 500
+
+    @app.route('/agent-config', methods=['GET'])
+    @jwt_required()
+    def get_agent_config():
+        """Récupérer la configuration active de l'agent"""
+        try:
+            user_id = get_jwt_identity()
+            config = AgentConfig.query.filter_by(user_id=user_id, is_active=True).first()
+            
+            if not config:
+                return jsonify({'error': 'Aucune configuration trouvée'}), 404
+            
+            return jsonify({
+                'config': {
+                    'id': config.id,
+                    'selectedModel': config.selected_model,
+                    'apiKey': config.api_key,  # Retourner la clé complète pour l'utilisation
+                    'modules': config.modules_config,
+                    'prompt': config.prompt,
+                    'name': config.name,
+                    'description': config.description,
+                    'createdAt': config.created_at.isoformat(),
+                    'updatedAt': config.updated_at.isoformat()
+                }
+            }), 200
+            
+        except Exception as e:
+            return jsonify({'error': f'Erreur serveur: {str(e)}'}), 500
+
+    @app.route('/agent-config/partial', methods=['PUT'])
+    @jwt_required()
+    def update_partial_config():
+        """Mettre à jour partiellement la configuration (pour les étapes du wizard)"""
+        try:
+            user_id = get_jwt_identity()
+            data = request.get_json()
+            
+            if not data:
+                return jsonify({'error': 'Aucune donnée fournie'}), 400
+            
+            # Chercher ou créer une configuration
+            config = AgentConfig.query.filter_by(user_id=user_id, is_active=True).first()
+            
+            if not config:
+                config = AgentConfig(
+                    user_id=user_id,
+                    selected_model='',
+                    api_key='',
+                    modules_config={},
+                    prompt=''
+                )
+                db.session.add(config)
+            
+            # Mettre à jour les champs fournis
+            if 'selectedModel' in data:
+                config.selected_model = data['selectedModel']
+            if 'apiKey' in data:
+                config.api_key = data['apiKey']
+            if 'modules' in data:
+                config.modules_config = data['modules']
+            if 'prompt' in data:
+                config.prompt = data['prompt']
+            if 'name' in data:
+                config.name = data['name']
+            if 'description' in data:
+                config.description = data['description']
+            
+            config.updated_at = db.func.current_timestamp()
+            db.session.commit()
+            
+            return jsonify({
+                'message': 'Configuration mise à jour avec succès',
+                'config': {
+                    'id': config.id,
+                    'selectedModel': config.selected_model,
+                    'apiKey': config.api_key[-4:] + '...' if config.api_key else '',
+                    'modules': config.modules_config,
+                    'prompt': config.prompt,
+                    'name': config.name,
+                    'description': config.description,
+                    'updatedAt': config.updated_at.isoformat()
+                }
+            }), 200
+            
+        except Exception as e:
+            db.session.rollback()
+            return jsonify({'error': f'Erreur serveur: {str(e)}'}), 500
+
+    @app.route('/agent-configs', methods=['GET'])
+    @jwt_required()
+    def list_agent_configs():
+        """Lister toutes les configurations de l'utilisateur"""
+        try:
+            user_id = get_jwt_identity()
+            configs = AgentConfig.query.filter_by(user_id=user_id).order_by(AgentConfig.created_at.desc()).all()
+            
+            configs_data = []
+            for config in configs:
+                configs_data.append({
+                    'id': config.id,
+                    'name': config.name,
+                    'description': config.description,
+                    'selectedModel': config.selected_model,
+                    'isActive': config.is_active,
+                    'createdAt': config.created_at.isoformat(),
+                    'updatedAt': config.updated_at.isoformat()
+                })
+            
+            return jsonify({'configs': configs_data}), 200
+            
+        except Exception as e:
+            return jsonify({'error': f'Erreur serveur: {str(e)}'}), 500
+
     # ===== MCP ROUTES =====
 
     @app.route('/mcp/connect', methods=['POST'])
@@ -216,14 +422,21 @@ def create_api_routes(app):
         return jsonify({'session_id': session_id})
 
     @app.route('/chat', methods=['POST'])
+    @jwt_required()
     def chat():
-        """Intelligent chat via OpenAI MCP agent"""
+        """Intelligent chat via OpenAI MCP agent with user config"""
         data = request.get_json()
         if not data or 'message' not in data:
             return jsonify({'error': 'Missing message'}), 400
 
         user_input = data['message']
         session_id = data.get('session_id')
+        user_id = get_jwt_identity()
+
+        # Récupérer la configuration de l'utilisateur
+        config = AgentConfig.query.filter_by(user_id=user_id, is_active=True).first()
+        if not config:
+            return jsonify({'error': 'Aucune configuration d\'agent trouvée. Veuillez configurer votre agent d\'abord.'}), 400
 
         # Create session if necessary
         if not session_id:
@@ -233,12 +446,20 @@ def create_api_routes(app):
             # Save user message
             session_manager.add_message(session_id, "user", user_input)
 
-            # Build conversation context
-            context = session_manager.get_context(session_id)
+            # Build conversation context with user config
+            conversation_history = session_manager.get_context(session_id)
+            context = {
+                'conversation_history': conversation_history,
+                'agent_config': {
+                    'model': config.selected_model,
+                    'prompt': config.prompt,
+                    'modules': config.modules_config
+                }
+            }
 
-            # Call OpenAI agent via MCP
+            # Call OpenAI agent via MCP with user configuration
             async def do_chat():
-                return await mcp_client.chat(user_input, context)
+                return await mcp_client.chat_with_config(user_input, context, config.api_key)
 
             loop = asyncio.new_event_loop()
             asyncio.set_event_loop(loop)
@@ -259,11 +480,12 @@ def create_api_routes(app):
             return jsonify({
                 'response': ai_response,
                 'session_id': session_id,
-                'agent': 'OpenAI CryptoPilot'
+                'agent': config.name,
+                'model': config.selected_model
             })
 
         except Exception as e:
-            error_msg = f"OpenAI agent error: {str(e)}"
+            error_msg = f"Agent error: {str(e)}"
             session_manager.add_message(session_id, "assistant", error_msg)
 
             return jsonify({

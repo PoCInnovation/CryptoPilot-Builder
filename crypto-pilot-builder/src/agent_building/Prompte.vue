@@ -4,17 +4,55 @@
     <div class="page-content">
       <div class="header-section">
         <h2 class="page-title">Finalisation</h2>
-        <p class="page-subtitle">Définissez le comportement de votre assistant IA</p>
+        <p class="page-subtitle">
+          Définissez le comportement de votre assistant IA
+        </p>
       </div>
       <div class="prompt-section">
         <div class="prompt-header">
           <div class="prompt-icon">
             <svg width="24" height="24" viewBox="0 0 24 24" fill="none">
-              <path d="M14 2H6C5.46957 2 4.96086 2.21071 4.58579 2.58579C4.21071 2.96086 4 3.46957 4 4V20C4 20.5304 4.21071 21.0391 4.58579 21.4142C4.96086 21.7893 5.46957 22 6 22H18C18.5304 22 19.0391 21.7893 19.4142 21.4142C19.7893 21.0391 20 20.5304 20 20V8L14 2Z" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
-              <polyline points="14,2 14,8 20,8" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
-              <line x1="16" y1="13" x2="8" y2="13" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
-              <line x1="16" y1="17" x2="8" y2="17" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
-              <polyline points="10,9 9,9 8,9" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+              <path
+                d="M14 2H6C5.46957 2 4.96086 2.21071 4.58579 2.58579C4.21071 2.96086 4 3.46957 4 4V20C4 20.5304 4.21071 21.0391 4.58579 21.4142C4.96086 21.7893 5.46957 22 6 22H18C18.5304 22 19.0391 21.7893 19.4142 21.4142C19.7893 21.0391 20 20.5304 20 20V8L14 2Z"
+                stroke="currentColor"
+                stroke-width="2"
+                stroke-linecap="round"
+                stroke-linejoin="round"
+              />
+              <polyline
+                points="14,2 14,8 20,8"
+                stroke="currentColor"
+                stroke-width="2"
+                stroke-linecap="round"
+                stroke-linejoin="round"
+              />
+              <line
+                x1="16"
+                y1="13"
+                x2="8"
+                y2="13"
+                stroke="currentColor"
+                stroke-width="2"
+                stroke-linecap="round"
+                stroke-linejoin="round"
+              />
+              <line
+                x1="16"
+                y1="17"
+                x2="8"
+                y2="17"
+                stroke="currentColor"
+                stroke-width="2"
+                stroke-linecap="round"
+                stroke-linejoin="round"
+              />
+              <polyline
+                points="10,9 9,9 8,9"
+                stroke="currentColor"
+                stroke-width="2"
+                stroke-linecap="round"
+                stroke-linejoin="round"
+              />
             </svg>
           </div>
           <div class="prompt-title">
@@ -34,7 +72,12 @@
         </div>
         <div class="prompt-footer">
           <div class="character-count">
-            <span :class="{ 'warning': characterCount > 1800, 'danger': characterCount > 2000 }">
+            <span
+              :class="{
+                warning: characterCount > 1800,
+                danger: characterCount > 2000,
+              }"
+            >
               {{ characterCount }}
             </span>
             <span class="count-separator">/</span>
@@ -42,13 +85,22 @@
             <span class="count-label">caractères</span>
           </div>
           <div class="prompt-suggestions">
-            <button @click="useSuggestion('assistant-general')" class="suggestion-btn">
+            <button
+              @click="useSuggestion('assistant-general')"
+              class="suggestion-btn"
+            >
               💼 Assistant Général
             </button>
-            <button @click="useSuggestion('assistant-technique')" class="suggestion-btn">
+            <button
+              @click="useSuggestion('assistant-technique')"
+              class="suggestion-btn"
+            >
               🔧 Assistant Technique
             </button>
-            <button @click="useSuggestion('assistant-creatif')" class="suggestion-btn">
+            <button
+              @click="useSuggestion('assistant-creatif')"
+              class="suggestion-btn"
+            >
               🎨 Assistant Créatif
             </button>
           </div>
@@ -57,17 +109,57 @@
       <div class="summary-section">
         <div class="summary-header">
           <h3>Résumé de Configuration</h3>
-          <div class="summary-status" :class="{ 'complete': isReadyToFinish }">
-            <svg v-if="isReadyToFinish" width="20" height="20" viewBox="0 0 24 24" fill="none">
-              <circle cx="12" cy="12" r="10" stroke="currentColor" stroke-width="2"/>
-              <path d="M9 12L11 14L15 10" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+          <div class="summary-status" :class="{ complete: isReadyToFinish }">
+            <svg
+              v-if="isReadyToFinish"
+              width="20"
+              height="20"
+              viewBox="0 0 24 24"
+              fill="none"
+            >
+              <circle
+                cx="12"
+                cy="12"
+                r="10"
+                stroke="currentColor"
+                stroke-width="2"
+              />
+              <path
+                d="M9 12L11 14L15 10"
+                stroke="currentColor"
+                stroke-width="2"
+                stroke-linecap="round"
+                stroke-linejoin="round"
+              />
             </svg>
             <svg v-else width="20" height="20" viewBox="0 0 24 24" fill="none">
-              <circle cx="12" cy="12" r="10" stroke="currentColor" stroke-width="2"/>
-              <path d="M12 8V12" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
-              <path d="M12 16H12.01" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+              <circle
+                cx="12"
+                cy="12"
+                r="10"
+                stroke="currentColor"
+                stroke-width="2"
+              />
+              <path
+                d="M12 8V12"
+                stroke="currentColor"
+                stroke-width="2"
+                stroke-linecap="round"
+                stroke-linejoin="round"
+              />
+              <path
+                d="M12 16H12.01"
+                stroke="currentColor"
+                stroke-width="2"
+                stroke-linecap="round"
+                stroke-linejoin="round"
+              />
             </svg>
-            {{ isReadyToFinish ? 'Configuration complète' : 'Configuration incomplète' }}
+            {{
+              isReadyToFinish
+                ? "Configuration complète"
+                : "Configuration incomplète"
+            }}
           </div>
         </div>
         <div class="config-grid">
@@ -75,15 +167,47 @@
             <div class="config-icon">🤖</div>
             <div class="config-content">
               <h4>Modèle IA</h4>
-              <p>{{ selectedModel || 'Non défini' }}</p>
+              <p>{{ selectedModel || "Non défini" }}</p>
             </div>
-            <div class="config-status" :class="{ 'valid': selectedModel }">
-              <svg v-if="selectedModel" width="16" height="16" viewBox="0 0 24 24" fill="none">
-                <path d="M20 6L9 17L4 12" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+            <div class="config-status" :class="{ valid: selectedModel }">
+              <svg
+                v-if="selectedModel"
+                width="16"
+                height="16"
+                viewBox="0 0 24 24"
+                fill="none"
+              >
+                <path
+                  d="M20 6L9 17L4 12"
+                  stroke="currentColor"
+                  stroke-width="2"
+                  stroke-linecap="round"
+                  stroke-linejoin="round"
+                />
               </svg>
-              <svg v-else width="16" height="16" viewBox="0 0 24 24" fill="none">
-                <line x1="18" y1="6" x2="6" y2="18" stroke="currentColor" stroke-width="2"/>
-                <line x1="6" y1="6" x2="18" y2="18" stroke="currentColor" stroke-width="2"/>
+              <svg
+                v-else
+                width="16"
+                height="16"
+                viewBox="0 0 24 24"
+                fill="none"
+              >
+                <line
+                  x1="18"
+                  y1="6"
+                  x2="6"
+                  y2="18"
+                  stroke="currentColor"
+                  stroke-width="2"
+                />
+                <line
+                  x1="6"
+                  y1="6"
+                  x2="18"
+                  y2="18"
+                  stroke="currentColor"
+                  stroke-width="2"
+                />
               </svg>
             </div>
           </div>
@@ -91,15 +215,49 @@
             <div class="config-icon">🔐</div>
             <div class="config-content">
               <h4>Clé API</h4>
-              <p>{{ apiKey ? '●●●●●●●●' + apiKey.slice(-4) : 'Non définie' }}</p>
+              <p>
+                {{ apiKey ? "●●●●●●●●" + apiKey.slice(-4) : "Non définie" }}
+              </p>
             </div>
-            <div class="config-status" :class="{ 'valid': apiKey }">
-              <svg v-if="apiKey" width="16" height="16" viewBox="0 0 24 24" fill="none">
-                <path d="M20 6L9 17L4 12" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+            <div class="config-status" :class="{ valid: apiKey }">
+              <svg
+                v-if="apiKey"
+                width="16"
+                height="16"
+                viewBox="0 0 24 24"
+                fill="none"
+              >
+                <path
+                  d="M20 6L9 17L4 12"
+                  stroke="currentColor"
+                  stroke-width="2"
+                  stroke-linecap="round"
+                  stroke-linejoin="round"
+                />
               </svg>
-              <svg v-else width="16" height="16" viewBox="0 0 24 24" fill="none">
-                <line x1="18" y1="6" x2="6" y2="18" stroke="currentColor" stroke-width="2"/>
-                <line x1="6" y1="6" x2="18" y2="18" stroke="currentColor" stroke-width="2"/>
+              <svg
+                v-else
+                width="16"
+                height="16"
+                viewBox="0 0 24 24"
+                fill="none"
+              >
+                <line
+                  x1="18"
+                  y1="6"
+                  x2="6"
+                  y2="18"
+                  stroke="currentColor"
+                  stroke-width="2"
+                />
+                <line
+                  x1="6"
+                  y1="6"
+                  x2="18"
+                  y2="18"
+                  stroke="currentColor"
+                  stroke-width="2"
+                />
               </svg>
             </div>
           </div>
@@ -107,15 +265,53 @@
             <div class="config-icon">💬</div>
             <div class="config-content">
               <h4>Comportement</h4>
-              <p>{{ localPrompt ? 'Défini (' + localPrompt.length + ' caractères)' : 'Non défini' }}</p>
+              <p>
+                {{
+                  localPrompt
+                    ? "Défini (" + localPrompt.length + " caractères)"
+                    : "Non défini"
+                }}
+              </p>
             </div>
-            <div class="config-status" :class="{ 'valid': localPrompt }">
-              <svg v-if="localPrompt" width="16" height="16" viewBox="0 0 24 24" fill="none">
-                <path d="M20 6L9 17L4 12" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+            <div class="config-status" :class="{ valid: localPrompt }">
+              <svg
+                v-if="localPrompt"
+                width="16"
+                height="16"
+                viewBox="0 0 24 24"
+                fill="none"
+              >
+                <path
+                  d="M20 6L9 17L4 12"
+                  stroke="currentColor"
+                  stroke-width="2"
+                  stroke-linecap="round"
+                  stroke-linejoin="round"
+                />
               </svg>
-              <svg v-else width="16" height="16" viewBox="0 0 24 24" fill="none">
-                <line x1="18" y1="6" x2="6" y2="18" stroke="currentColor" stroke-width="2"/>
-                <line x1="6" y1="6" x2="18" y2="18" stroke="currentColor" stroke-width="2"/>
+              <svg
+                v-else
+                width="16"
+                height="16"
+                viewBox="0 0 24 24"
+                fill="none"
+              >
+                <line
+                  x1="18"
+                  y1="6"
+                  x2="6"
+                  y2="18"
+                  stroke="currentColor"
+                  stroke-width="2"
+                />
+                <line
+                  x1="6"
+                  y1="6"
+                  x2="18"
+                  y2="18"
+                  stroke="currentColor"
+                  stroke-width="2"
+                />
               </svg>
             </div>
           </div>
@@ -126,16 +322,32 @@
       <router-link to="/Module" class="btn-link">
         <button class="btn btn-secondary">
           <svg width="20" height="20" viewBox="0 0 24 24" fill="none">
-            <path d="M19 12H5M12 19L5 12L12 5" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+            <path
+              d="M19 12H5M12 19L5 12L12 5"
+              stroke="currentColor"
+              stroke-width="2"
+              stroke-linecap="round"
+              stroke-linejoin="round"
+            />
           </svg>
           Précédent
         </button>
       </router-link>
       <router-link to="/chat" class="btn-link">
-        <button class="btn btn-primary" :disabled="!isFormValid" @click="saveConfig">
+        <button
+          class="btn btn-primary"
+          :disabled="!isFormValid"
+          @click="saveConfig"
+        >
           Go to chatbot
           <svg width="20" height="20" viewBox="0 0 24 24" fill="none">
-            <path d="M5 12H19M12 5L19 12L12 19" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+            <path
+              d="M5 12H19M12 5L19 12L12 19"
+              stroke="currentColor"
+              stroke-width="2"
+              stroke-linecap="round"
+              stroke-linejoin="round"
+            />
           </svg>
         </button>
       </router-link>
@@ -144,59 +356,93 @@
 </template>
 
 <script>
-import { mapGetters, mapActions } from 'vuex'
-import ProgressBar from './Progress_bar.vue'
+import { mapGetters, mapActions } from "vuex";
+import ProgressBar from "./Progress_bar.vue";
 
 export default {
-  name: 'Prompte',
+  name: "Prompte",
   components: {
-    ProgressBar
+    ProgressBar,
   },
   data() {
     return {
-      localPrompt: '',
+      localPrompt: "",
       suggestions: {
-        'assistant-general': 'Tu es un assistant IA polyvalent et bienveillant. Tu réponds de manière claire, précise et utile à toutes les questions. Tu adoptes un ton professionnel mais chaleureux, et tu t\'adaptes au niveau de connaissance de l\'utilisateur. Tu fournis des exemples concrets quand c\'est pertinent.',
-        'assistant-technique': 'Tu es un assistant technique spécialisé en développement et technologies. Tu réponds avec précision en fournissant du code, des solutions pratiques et des explications détaillées. Tu utilises un langage technique approprié et proposes toujours des alternatives quand c\'est possible.',
-        'assistant-creatif': 'Tu es un assistant créatif spécialisé dans la génération de contenu artistique et innovant. Tu adoptes un ton inspirant et imaginatif, tu proposes des idées originales et tu encourages la créativité. Tu sais adapter ton style selon le type de création demandé.'
-      }
-    }
+        "assistant-general":
+          "Tu es un assistant IA polyvalent et bienveillant. Tu réponds de manière claire, précise et utile à toutes les questions. Tu adoptes un ton professionnel mais chaleureux, et tu t'adaptes au niveau de connaissance de l'utilisateur. Tu fournis des exemples concrets quand c'est pertinent.",
+        "assistant-technique":
+          "Tu es un assistant technique spécialisé en développement et technologies. Tu réponds avec précision en fournissant du code, des solutions pratiques et des explications détaillées. Tu utilises un langage technique approprié et proposes toujours des alternatives quand c'est possible.",
+        "assistant-creatif":
+          "Tu es un assistant créatif spécialisé dans la génération de contenu artistique et innovant. Tu adoptes un ton inspirant et imaginatif, tu proposes des idées originales et tu encourages la créativité. Tu sais adapter ton style selon le type de création demandé.",
+      },
+    };
   },
   computed: {
-    ...mapGetters(['getPrompt', 'getSelectedModel', 'getApiKey', 'isConfigured']),
+    ...mapGetters(["aiConfig", "isAuthenticated"]),
     selectedModel() {
-      return this.getSelectedModel
+      return this.aiConfig.selectedModel;
     },
     apiKey() {
-      return this.getApiKey
+      return this.aiConfig.apiKey;
     },
     characterCount() {
-      return this.localPrompt.length
+      return this.localPrompt.length;
     },
     isFormValid() {
-    return this.localPrompt.trim().length > 0
+      return this.localPrompt.trim().length > 0;
     },
     isReadyToFinish() {
-      return this.isConfigured
-    }
+      return this.selectedModel && this.apiKey && this.localPrompt;
+    },
   },
   mounted() {
-    this.localPrompt = this.getPrompt || ''
+    this.localPrompt = this.aiConfig.prompt || "";
   },
   methods: {
-    ...mapActions(['setPrompt']),
+    ...mapActions(["setPrompt", "saveCompleteConfig"]),
     updatePrompt() {
       if (this.localPrompt.length > 2000) {
-        this.localPrompt = this.localPrompt.substring(0, 2000)
+        this.localPrompt = this.localPrompt.substring(0, 2000);
       }
-      this.setPrompt(this.localPrompt)
+      this.setPrompt(this.localPrompt);
     },
     useSuggestion(type) {
-      this.localPrompt = this.suggestions[type]
-      this.setPrompt(this.localPrompt)
-    }
-  }
-}
+      this.localPrompt = this.suggestions[type];
+      this.setPrompt(this.localPrompt);
+    },
+    async saveConfig() {
+      if (!this.isFormValid) {
+        return;
+      }
+
+      try {
+        // Préparer la configuration complète
+        const completeConfig = {
+          selectedModel: this.aiConfig.selectedModel,
+          apiKey: this.aiConfig.apiKey,
+          prompt: this.localPrompt,
+          modules: this.aiConfig.modules || {},
+          name: "Mon Assistant CryptoPilot",
+          description: "Assistant IA configuré pour les cryptomonnaies",
+        };
+
+        // Sauvegarder la configuration complète
+        await this.saveCompleteConfig(completeConfig);
+
+        console.log("Configuration complète sauvegardée avec succès!");
+
+        // Optionnel: Afficher un message de succès ou rediriger
+        this.$emit("config-completed");
+      } catch (error) {
+        console.error("Erreur lors de la sauvegarde finale:", error);
+        // Afficher un message d'erreur à l'utilisateur
+        alert(
+          "Erreur lors de la sauvegarde de la configuration. Veuillez réessayer."
+        );
+      }
+    },
+  },
+};
 </script>
 
 <style scoped>
@@ -213,7 +459,8 @@ export default {
   top: 0;
   left: 0;
   overflow-y: auto;
-  font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+  font-family: "Inter", -apple-system, BlinkMacSystemFont, "Segoe UI",
+    sans-serif;
 }
 
 .page-content {
@@ -283,7 +530,7 @@ export default {
 
 .prompt-section::before,
 .summary-section::before {
-  content: '';
+  content: "";
   position: absolute;
   top: 0;
   left: 0;
@@ -334,7 +581,7 @@ export default {
   padding: 20px;
   border: 2px solid #e2e8f0;
   border-radius: 16px;
-  font-family: 'SF Pro Text', -apple-system, BlinkMacSystemFont, sans-serif;
+  font-family: "SF Pro Text", -apple-system, BlinkMacSystemFont, sans-serif;
   font-size: 15px;
   line-height: 1.6;
   resize: vertical;
@@ -349,7 +596,8 @@ export default {
 .prompt-textarea:focus {
   outline: none;
   border-color: #667eea;
-  box-shadow: 0 0 0 4px rgba(102, 126, 234, 0.1), 0 4px 12px rgba(102, 126, 234, 0.2);
+  box-shadow: 0 0 0 4px rgba(102, 126, 234, 0.1),
+    0 4px 12px rgba(102, 126, 234, 0.2);
   background: white;
   transform: translateY(-2px);
 }
@@ -402,13 +650,18 @@ export default {
 }
 
 .suggestion-btn::before {
-  content: '';
+  content: "";
   position: absolute;
   top: 0;
   left: -100%;
   width: 100%;
   height: 100%;
-  background: linear-gradient(90deg, transparent, rgba(102, 126, 234, 0.1), transparent);
+  background: linear-gradient(
+    90deg,
+    transparent,
+    rgba(102, 126, 234, 0.1),
+    transparent
+  );
   transition: left 0.4s ease;
   z-index: -1;
 }
@@ -544,13 +797,18 @@ export default {
 }
 
 .btn::before {
-  content: '';
+  content: "";
   position: absolute;
   top: 0;
   left: -100%;
   width: 100%;
   height: 100%;
-  background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.2), transparent);
+  background: linear-gradient(
+    90deg,
+    transparent,
+    rgba(255, 255, 255, 0.2),
+    transparent
+  );
   transition: left 0.5s;
 }
 
