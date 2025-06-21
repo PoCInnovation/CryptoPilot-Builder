@@ -23,12 +23,29 @@ class OpenAIAgent:
     """OpenAI Agent"""
 
     def __init__(self):
-        self.client = openai.OpenAI()
+        # Ne pas créer de client par défaut - créer seulement quand nécessaire
+        self.default_client = None
         self.model = "gpt-4o-mini"
+
+    def _get_default_client(self):
+        """Créer un client par défaut seulement si OPENAI_API_KEY est disponible"""
+        if self.default_client is None:
+            api_key = os.getenv('OPENAI_API_KEY')
+            if api_key:
+                self.default_client = openai.OpenAI(api_key=api_key)
+            else:
+                # Pas de clé par défaut, retourner None
+                return None
+        return self.default_client
 
     async def process_message(self, message: str, context: str = "") -> str:
         """Process message via OpenAI agent"""
         try:
+            # Vérifier si une clé API par défaut est disponible
+            client = self._get_default_client()
+            if client is None:
+                return "❌ Aucune clé API OpenAI configurée. Veuillez utiliser agent_chat_configured avec votre clé API."
+            
             system_prompt = """You are a crypto expert who responds clearly, structured and pedagogically to questions about cryptocurrencies, their functioning and their investments.
             You can explain how stocks, indices, ETFs, crypto, or any other instrument related to cryptocurrencies work.
 
@@ -49,7 +66,7 @@ class OpenAIAgent:
             if context:
                 system_prompt += f"\n\nConversation context: {context}"
 
-            return await self._chat_with_openai(message, system_prompt, self.model)
+            return await self._chat_with_openai(message, system_prompt, self.model, client)
 
         except Exception as e:
             return f"❌ OpenAI agent error: {str(e)}"
@@ -60,7 +77,7 @@ class OpenAIAgent:
         """Process message with user configuration"""
         try:
             # Utiliser la clé API personnalisée si fournie
-            client = self.client
+            client = self._get_default_client()
             if api_key and api_key.strip():
                 client = openai.OpenAI(api_key=api_key)
             
@@ -94,7 +111,11 @@ class OpenAIAgent:
     async def _chat_with_openai(self, message: str, system_prompt: str, model: str, client=None) -> str:
         """Méthode commune pour communiquer avec OpenAI"""
         if client is None:
-            client = self.client
+            client = self._get_default_client()
+        
+        # Vérifier qu'on a un client valide
+        if client is None:
+            return "❌ Aucune clé API OpenAI disponible pour traiter cette demande."
 
         response = client.chat.completions.create(
             model=model,
