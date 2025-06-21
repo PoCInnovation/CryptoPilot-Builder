@@ -103,9 +103,10 @@ class ApiService {
     });
   }
 
-  async createNewSession() {
+  async createNewSession(sessionName = "New Chat") {
     return this.request("/new-session", {
       method: "POST",
+      body: { session_name: sessionName },
     });
   }
 
