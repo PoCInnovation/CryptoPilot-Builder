@@ -17,9 +17,6 @@
               : "Nouvelle session"
           }}
         </h3>
-        <router-link to="/">
-          <button class="back-btn">⬅️ Retour à l'accueil</button>
-        </router-link>
       </div>
 
       <ChatMessages :messages="messages" :is-loading="isLoading" />
