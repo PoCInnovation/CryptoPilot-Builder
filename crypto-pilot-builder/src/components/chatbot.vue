@@ -33,9 +33,6 @@
           <button @click="redirectToLogin" class="btn btn-primary">
             Se connecter
           </button>
-          <button @click="continueWithoutAuth" class="btn btn-secondary">
-            Continuer sans compte
-          </button>
         </div>
       </div>
 
@@ -80,9 +77,6 @@
 
       <ChatInput @send-message="handleSendMessage" />
     </main>
-
-    <!-- Composant de test pour l'authentification -->
-    <QuickAuth v-if="showDebugAuth" />
   </div>
 </template>
 
@@ -94,16 +88,12 @@ import ChatSidebar from "./chatbot/ChatSidebar.vue";
 import ChatMessages from "./chatbot/ChatMessages.vue";
 import ChatInput from "./chatbot/ChatInput.vue";
 import apiService from "../services/apiService";
-import QuickAuth from "./QuickAuth.vue";
 
 const store = useStore();
 const router = useRouter();
 
-const showDebugAuth = ref(true); // Mettre à false en production
-
 const isAuthenticated = computed(() => store.getters.isAuthenticated);
 const authError = ref(null);
-const shouldCheckAuth = ref(true);
 
 const messages = ref([
   {
@@ -122,8 +112,6 @@ const chatSessions = ref({});
 const walletFunctions = inject("walletFunctions", null);
 
 async function checkAuthentication() {
-  if (!shouldCheckAuth.value) return true;
-
   if (!isAuthenticated.value) {
     authError.value =
       "Vous devez être connecté pour utiliser le chat avec votre configuration personnalisée.";
@@ -153,37 +141,135 @@ async function redirectToLogin() {
   router.push("/AI");
 }
 
-function continueWithoutAuth() {
-  shouldCheckAuth.value = false;
-  authError.value = null;
-  createNewSession();
-}
-
 onMounted(async () => {
   const authOk = await checkAuthentication();
   if (authOk) {
-    await createNewSession();
+    await loadExistingSessions();
   }
 });
 
+async function loadExistingSessions() {
+  try {
+    console.log("Chargement des sessions existantes...");
+    const response = await apiService.listSessions();
+    const existingSessions = response.sessions || [];
+
+    console.log(`${existingSessions.length} session(s) trouvée(s)`);
+
+    if (existingSessions.length > 0) {
+      // Charger les sessions existantes
+      chats.value = [];
+      chatSessions.value = {};
+
+      for (let i = 0; i < existingSessions.length; i++) {
+        const session = existingSessions[i];
+        // Utiliser le vrai nom de session ou générer un nom unique
+        const chatName = session.session_name || `Chat ${i + 1}`;
+
+        // Éviter les doublons de noms
+        let uniqueChatName = chatName;
+        let counter = 1;
+        while (chats.value.includes(uniqueChatName)) {
+          uniqueChatName = `${chatName} (${counter})`;
+          counter++;
+        }
+
+        chats.value.push(uniqueChatName);
+
+        try {
+          // Charger les messages de la session
+          const sessionDetail = await apiService.getSession(session.session_id);
+          const messages = sessionDetail.messages || [];
+
+          // Convertir les messages au format frontend
+          const frontendMessages = messages.map((msg) => ({
+            text: msg.content,
+            isUser: msg.role === "user",
+            created_at: msg.created_at,
+          }));
+
+          // Ajouter le message de bienvenue si pas de messages
+          if (frontendMessages.length === 0) {
+            frontendMessages.push({
+              text: "Bonjour ! Posez-moi une question ou demandez-moi d'effectuer une transaction.",
+              isUser: false,
+            });
+          }
+
+          chatSessions.value[uniqueChatName] = {
+            sessionId: session.session_id,
+            messages: frontendMessages,
+            originalName: session.session_name,
+          };
+        } catch (sessionError) {
+          console.error(
+            `Erreur lors du chargement de la session ${session.session_id}:`,
+            sessionError
+          );
+          // En cas d'erreur, créer une entrée basique
+          chatSessions.value[uniqueChatName] = {
+            sessionId: session.session_id,
+            messages: [
+              {
+                text: "Bonjour ! Posez-moi une question ou demandez-moi d'effectuer une transaction.",
+                isUser: false,
+              },
+            ],
+            originalName: session.session_name,
+          };
+        }
+      }
+
+      // Sélectionner la première session
+      if (chats.value.length > 0) {
+        selectedChat.value = 0;
+        const firstChatName = chats.value[0];
+        currentSessionId.value = chatSessions.value[firstChatName].sessionId;
+        messages.value = [...chatSessions.value[firstChatName].messages];
+      }
+
+      console.log("Sessions existantes chargées avec succès");
+    } else {
+      // Aucune session existante, créer une nouvelle
+      console.log("Aucune session existante, création d'une nouvelle session");
+      await createNewSession();
+    }
+  } catch (error) {
+    console.error("Erreur lors du chargement des sessions:", error);
+    // En cas d'erreur, créer une nouvelle session
+    await createNewSession();
+  }
+}
+
 async function createNewSession() {
   try {
-    let sessionData;
-
-    if (isAuthenticated.value && shouldCheckAuth.value) {
-      sessionData = await apiService.createNewSession();
-    } else {
-      const response = await fetch("http://localhost:5000/new-session", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-      });
-      sessionData = await response.json();
+    if (!isAuthenticated.value) {
+      authError.value = "Vous devez être connecté pour utiliser le chat.";
+      return;
     }
 
+    // Générer un nom de session intelligent
+    const now = new Date();
+    const sessionName = `Chat ${now.toLocaleDateString(
+      "fr-FR"
+    )} ${now.toLocaleTimeString("fr-FR", {
+      hour: "2-digit",
+      minute: "2-digit",
+    })}`;
+
+    const sessionData = await apiService.createNewSession(sessionName);
     const sessionId = sessionData.session_id;
-    const chatName = `Chat ${chats.value.length + 1}`;
-    chats.value.push(chatName);
-    chatSessions.value[chatName] = {
+
+    // Éviter les doublons de noms
+    let uniqueChatName = sessionName;
+    let counter = 1;
+    while (chats.value.includes(uniqueChatName)) {
+      uniqueChatName = `${sessionName} (${counter})`;
+      counter++;
+    }
+
+    chats.value.push(uniqueChatName);
+    chatSessions.value[uniqueChatName] = {
       sessionId: sessionId,
       messages: [
         {
@@ -191,10 +277,13 @@ async function createNewSession() {
           isUser: false,
         },
       ],
+      originalName: sessionName,
     };
     selectedChat.value = chats.value.length - 1;
     currentSessionId.value = sessionId;
-    messages.value = [...chatSessions.value[chatName].messages];
+    messages.value = [...chatSessions.value[uniqueChatName].messages];
+
+    console.log(`Nouvelle session créée: ${uniqueChatName}`);
   } catch (error) {
     console.error("Erreur lors de la création de session:", error);
     authError.value =
@@ -220,6 +309,11 @@ async function addNewChat() {
 async function handleSendMessage(text) {
   if (!text.trim()) return;
 
+  if (!isAuthenticated.value) {
+    authError.value = "Vous devez être connecté pour envoyer des messages.";
+    return;
+  }
+
   const newMessage = { text, isUser: true };
   messages.value.push(newMessage);
   const currentChatName = chats.value[selectedChat.value];
@@ -231,23 +325,7 @@ async function handleSendMessage(text) {
   try {
     console.log("🚀 Envoi du message:", text);
 
-    let data;
-    if (isAuthenticated.value && shouldCheckAuth.value) {
-      data = await apiService.sendChatMessage(text, currentSessionId.value);
-    } else {
-      const response = await fetch("http://localhost:5000/chat", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          message: text,
-          session_id: currentSessionId.value,
-        }),
-      });
-      if (!response.ok) {
-        throw new Error(`HTTP ${response.status}: ${response.statusText}`);
-      }
-      data = await response.json();
-    }
+    const data = await apiService.sendChatMessage(text, currentSessionId.value);
 
     console.log("📥 Réponse complète du serveur:", data);
 

@@ -7,6 +7,7 @@ import asyncio
 import os
 import re
 import json
+import logging
 from datetime import timedelta
 from flask import request, jsonify
 from flask_sqlalchemy import SQLAlchemy
@@ -15,6 +16,9 @@ from flask_jwt_extended import JWTManager, create_access_token, jwt_required, ge
 from mcp_client import mcp_client
 from session_manager import session_manager
 import uuid
+
+# Configuration du logging
+logger = logging.getLogger(__name__)
 
 # Extensions d'authentification
 db = SQLAlchemy()
@@ -74,6 +78,27 @@ def create_api_routes(app):
         created_at = db.Column(db.DateTime, default=db.func.current_timestamp())
         updated_at = db.Column(db.DateTime, default=db.func.current_timestamp(), onupdate=db.func.current_timestamp())
 
+    class ChatSession(db.Model):
+        __tablename__ = 'chat_sessions'
+        
+        id = db.Column(db.String(36), primary_key=True)
+        user_id = db.Column(db.String(36), db.ForeignKey('users.id'), nullable=True)  # Nullable pour les sessions anonymes
+        session_name = db.Column(db.String(100), default='New Chat')
+        created_at = db.Column(db.DateTime, default=db.func.current_timestamp())
+        updated_at = db.Column(db.DateTime, default=db.func.current_timestamp(), onupdate=db.func.current_timestamp())
+        
+        # Relations
+        messages = db.relationship('ChatMessage', backref='session', lazy=True, cascade='all, delete-orphan', order_by='ChatMessage.created_at')
+
+    class ChatMessage(db.Model):
+        __tablename__ = 'chat_messages'
+        
+        id = db.Column(db.String(36), primary_key=True, default=lambda: str(uuid.uuid4()))
+        session_id = db.Column(db.String(36), db.ForeignKey('chat_sessions.id'), nullable=False)
+        role = db.Column(db.String(20), nullable=False)  # 'user', 'assistant', 'system'
+        content = db.Column(db.Text, nullable=False)
+        created_at = db.Column(db.DateTime, default=db.func.current_timestamp())
+
     def validate_email(email):
         pattern = r'^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$'
         return re.match(pattern, email) is not None
@@ -116,10 +141,18 @@ def create_api_routes(app):
         except Exception as e:
             print(f"❌ Erreur lors de la création des tables: {e}")
 
+    # Initialiser le session_manager avec la base de données
+    with app.app_context():
+        logger.info("Initialisation du session_manager avec la base de données")
+        session_manager.db = db
+        session_manager.set_models(ChatSession, ChatMessage)
+        logger.info("Session manager initialisé avec succès")
+
     # ===== AUTHENTICATION ROUTES =====
 
     @app.route('/register', methods=['POST'])
     def register():
+        """Register a new user"""
         try:
             data = request.get_json()
             if not data:
@@ -164,6 +197,7 @@ def create_api_routes(app):
 
     @app.route('/login', methods=['POST'])
     def login():
+        """Login a user"""
         try:
             data = request.get_json()
             if not data:
@@ -460,10 +494,22 @@ def create_api_routes(app):
     # ===== FRONTEND ROUTES =====
 
     @app.route('/new-session', methods=['POST'])
+    @jwt_required()
     def create_new_session():
         """Create new session"""
-        session_id = session_manager.create_session()
-        return jsonify({'session_id': session_id})
+        try:
+            user_id = get_jwt_identity()
+            
+            # Utiliser silent=True pour éviter l'erreur si pas de JSON
+            data = request.get_json(silent=True) or {}
+            session_name = data.get('session_name', 'New Chat')
+            
+            session_id = session_manager.create_session(user_id=user_id, session_name=session_name)
+            
+            return jsonify({'session_id': session_id})
+        except Exception as e:
+            logger.error(f"Erreur lors de la création de la session: {str(e)}")
+            return jsonify({'error': f'Erreur lors de la création de la session: {str(e)}'}), 500
 
     @app.route('/chat', methods=['POST'])
     @jwt_required()
@@ -482,9 +528,17 @@ def create_api_routes(app):
         if not config:
             return jsonify({'error': 'Aucune configuration d\'agent trouvée. Veuillez configurer votre agent d\'abord.'}), 400
 
-        # Create session if necessary
+        # Create session if necessary, linked to user
         if not session_id:
-            session_id = session_manager.create_session()
+            session_id = session_manager.create_session(user_id=user_id, session_name='New Chat')
+        else:
+            # Vérifier que la session appartient à l'utilisateur ou la créer si elle n'existe pas
+            session = session_manager.get_session(session_id)
+            if not session:
+                session_id = session_manager.create_session(user_id=user_id, session_name='New Chat')
+            elif session.get('user_id') != user_id:
+                # La session n'appartient pas à cet utilisateur, créer une nouvelle session
+                session_id = session_manager.create_session(user_id=user_id, session_name='New Chat')
 
         try:
             # Save user message
@@ -540,31 +594,88 @@ def create_api_routes(app):
     # ===== SESSION MANAGEMENT =====
 
     @app.route('/sessions', methods=['GET'])
+    @jwt_required()
     def list_sessions():
-        """List all active sessions"""
-        sessions = session_manager.list_sessions()
+        """List user's sessions"""
+        user_id = get_jwt_identity()
+        sessions = session_manager.list_sessions(user_id=user_id)
         return jsonify({'sessions': sessions})
 
     @app.route('/sessions/<session_id>', methods=['GET'])
+    @jwt_required()
     def get_session(session_id):
         """Get session details"""
+        user_id = get_jwt_identity()
         session = session_manager.get_session(session_id)
+        
         if not session:
             return jsonify({'error': 'Session not found'}), 404
+        
+        # Vérifier que la session appartient à l'utilisateur
+        session_user_id = session.get('user_id')
+        
+        if session_user_id != user_id:
+            return jsonify({'error': 'Access denied'}), 403
 
         return jsonify({
             'session_id': session_id,
-            'messages': session_manager.get_messages(session_id)
+            'session_name': session.get('session_name', 'New Chat'),
+            'messages': session_manager.get_messages(session_id),
+            'created_at': session.get('created_at'),
+            'updated_at': session.get('updated_at')
         })
 
     @app.route('/sessions/<session_id>', methods=['DELETE'])
+    @jwt_required()
     def delete_session(session_id):
         """Delete a session"""
+        user_id = get_jwt_identity()
+        session = session_manager.get_session(session_id)
+        
+        if not session:
+            return jsonify({'error': 'Session not found'}), 404
+        
+        # Vérifier que la session appartient à l'utilisateur
+        if session.get('user_id') != user_id:
+            return jsonify({'error': 'Access denied'}), 403
+        
         success = session_manager.delete_session(session_id)
         if success:
             return jsonify({'status': 'deleted'})
         else:
+            return jsonify({'error': 'Failed to delete session'}), 500
+
+    @app.route('/sessions/<session_id>/rename', methods=['PUT'])
+    @jwt_required()
+    def rename_session(session_id):
+        """Rename a session"""
+        user_id = get_jwt_identity()
+        data = request.get_json()
+        
+        if not data or 'session_name' not in data:
+            return jsonify({'error': 'session_name required'}), 400
+        
+        new_name = data['session_name'].strip()
+        if not new_name:
+            return jsonify({'error': 'session_name cannot be empty'}), 400
+        
+        session = session_manager.get_session(session_id)
+        if not session:
             return jsonify({'error': 'Session not found'}), 404
+        
+        # Vérifier que la session appartient à l'utilisateur
+        if session.get('user_id') != user_id:
+            return jsonify({'error': 'Access denied'}), 403
+        
+        success = session_manager.rename_session(session_id, new_name)
+        if success:
+            return jsonify({
+                'status': 'renamed',
+                'session_id': session_id,
+                'session_name': new_name
+            })
+        else:
+            return jsonify({'error': 'Failed to rename session'}), 500
 
     # ===== HEALTH =====
 
