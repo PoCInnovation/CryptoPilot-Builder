@@ -89,6 +89,26 @@ def create_api_routes(app):
             return False
         return True
 
+    def validate_openai_api_key(api_key):
+        """Valider le format d'une clé API OpenAI"""
+        if not api_key or not isinstance(api_key, str):
+            return False
+        
+        # Les clés OpenAI commencent par "sk-" et font généralement 51 caractères
+        if not api_key.startswith('sk-'):
+            return False
+        
+        # Longueur attendue pour les clés OpenAI (peut varier mais généralement 51 caractères)
+        if len(api_key) < 20 or len(api_key) > 100:
+            return False
+        
+        # Caractères autorisés : lettres, chiffres, tirets et underscores
+        allowed_pattern = r'^sk-[A-Za-z0-9_-]+$'
+        if not re.match(allowed_pattern, api_key):
+            return False
+        
+        return True
+
     with app.app_context():
         try:
             db.create_all()
@@ -193,6 +213,19 @@ def create_api_routes(app):
             if not selected_model or not api_key:
                 return jsonify({'error': 'Modèle et clé API sont requis'}), 400
             
+            # Normaliser la structure des modules
+            modules_config = {}
+            if 'modules' in data:
+                # Format attendu : { modules: { chatAdvanced: true, ... } }
+                modules_config = data.get('modules', {})
+            else:
+                # Format alternatif : { chatAdvanced: true, creativeGeneration: false, ... }
+                # Extraire les propriétés de modules connues
+                module_keys = ['chatAdvanced', 'creativeGeneration', 'dataAnalysis', 'webSearch']
+                for key in module_keys:
+                    if key in data:
+                        modules_config[key] = data[key]
+            
             # Chercher une configuration existante pour cet utilisateur
             existing_config = AgentConfig.query.filter_by(user_id=user_id, is_active=True).first()
             
@@ -200,7 +233,7 @@ def create_api_routes(app):
                 # Mettre à jour la configuration existante
                 existing_config.selected_model = selected_model
                 existing_config.api_key = api_key
-                existing_config.modules_config = data.get('modules', {})
+                existing_config.modules_config = modules_config
                 existing_config.prompt = data.get('prompt', '')
                 existing_config.name = data.get('name', 'Mon Assistant')
                 existing_config.description = data.get('description', '')
@@ -213,7 +246,7 @@ def create_api_routes(app):
                     user_id=user_id,
                     selected_model=selected_model,
                     api_key=api_key,
-                    modules_config=data.get('modules', {}),
+                    modules_config=modules_config,
                     prompt=data.get('prompt', ''),
                     name=data.get('name', 'Mon Assistant'),
                     description=data.get('description', '')
@@ -297,9 +330,20 @@ def create_api_routes(app):
             if 'selectedModel' in data:
                 config.selected_model = data['selectedModel']
             if 'apiKey' in data:
+                # Validation du format de l'API key si elle est fournie
+                # if not validate_openai_api_key(data['apiKey']):
+                #     return jsonify({'error': 'Format de clé API OpenAI invalide. La clé doit commencer par "sk-" et contenir uniquement des caractères alphanumériques, tirets et underscores.'}), 400
                 config.api_key = data['apiKey']
             if 'modules' in data:
                 config.modules_config = data['modules']
+            elif any(key in data for key in ['chatAdvanced', 'creativeGeneration', 'dataAnalysis', 'webSearch']):
+                # Normaliser la structure des modules si ils sont fournis directement
+                modules_config = config.modules_config or {}
+                module_keys = ['chatAdvanced', 'creativeGeneration', 'dataAnalysis', 'webSearch']
+                for key in module_keys:
+                    if key in data:
+                        modules_config[key] = data[key]
+                config.modules_config = modules_config
             if 'prompt' in data:
                 config.prompt = data['prompt']
             if 'name' in data:

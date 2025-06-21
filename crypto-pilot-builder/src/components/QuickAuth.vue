@@ -1,4 +1,4 @@
-<template>
+<!-- <template>
   <div class="quick-auth">
     <div v-if="!isAuthenticated" class="login-section">
       <h3>🔐 Connexion rapide</h3>
@@ -30,7 +30,7 @@
       </div>
     </div>
 
-    <div v-else class="user-info">
+     <div v-else class="user-info">
       <h3>✅ Connecté</h3>
       <p>{{ user?.username || user?.email }}</p>
       <button @click="logout" class="logout-btn">Déconnexion</button>
@@ -41,7 +41,7 @@
       {{ error }}
     </div>
   </div>
-</template>
+</template> -->
 
 <script>
 import { mapGetters, mapActions } from "vuex";
