@@ -1034,17 +1034,14 @@ if (typeof window !== "undefined") {
   box-shadow: 0 12px 40px rgba(16, 185, 129, 0.4);
 }
 
-/* Responsive design */
 @media (max-width: 768px) {
   .chat-container {
     width: 95vw;
     height: 95vh;
   }
-  
   .modal-actions {
     flex-direction: column;
   }
-  
   .detail-row {
     flex-direction: column;
     align-items: flex-start;
