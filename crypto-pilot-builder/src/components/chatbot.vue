@@ -1,5 +1,13 @@
+<!-- TEMPLATE - Modifications principales -->
 <template>
   <div class="chat-container">
+    <!-- Effet de fond animé -->
+    <div class="background-animation">
+      <div class="floating-orb orb-1"></div>
+      <div class="floating-orb orb-2"></div>
+      <div class="floating-orb orb-3"></div>
+    </div>
+
     <ChatSidebar
       :chats="chats"
       :selected-chat="selectedChat"
@@ -8,65 +16,89 @@
     />
 
     <main class="chat-main">
+      <!-- Header amélioré avec glassmorphism -->
       <div class="chat-header">
-        <h3>
-          Session:
-          {{
-            currentSessionId
-              ? currentSessionId.substring(0, 8) + "..."
-              : "Nouvelle session"
-          }}
-        </h3>
+        <div class="session-info">
+          <div class="session-indicator"></div>
+          <h3>
+            <span class="session-label">Session Active</span>
+            <span class="session-id">
+              {{
+                currentSessionId
+                  ? currentSessionId.substring(0, 8) + "..."
+                  : "Nouvelle session"
+              }}
+            </span>
+          </h3>
+        </div>
+        <div class="header-glow"></div>
       </div>
 
       <ChatMessages :messages="messages" :is-loading="isLoading" />
 
-      <!-- Message d'erreur d'authentification -->
+      <!-- Message d'erreur d'authentification amélioré -->
       <div v-if="authError" class="auth-error">
-        <div class="error-icon">🔒</div>
-        <h3>Authentification requise</h3>
-        <p>{{ authError }}</p>
-        <div class="auth-actions">
-          <button @click="redirectToLogin" class="btn btn-primary">
-            Se connecter
-          </button>
+        <div class="auth-error-content">
+          <div class="error-icon-container">
+            <div class="error-icon">🔒</div>
+            <div class="icon-pulse"></div>
+          </div>
+          <h3>Authentification requise</h3>
+          <p>{{ authError }}</p>
+          <div class="auth-actions">
+            <button @click="redirectToLogin" class="btn btn-primary">
+              <span>Se connecter</span>
+              <div class="btn-shine"></div>
+            </button>
+          </div>
         </div>
       </div>
 
-      <!-- Modal de transaction -->
+      <!-- Modal de transaction améliorée -->
       <div
         v-if="pendingTransaction"
         class="modal-overlay"
         @click="rejectTransaction"
       >
         <div class="transaction-modal" @click.stop>
-          <h3>🔔 Confirmation de Transaction</h3>
-          <div class="transaction-details">
-            <p>
-              <strong>Destinataire:</strong>
-              {{ pendingTransaction.recipient?.slice(0, 6) }}...{{
-                pendingTransaction.recipient?.slice(-4)
-              }}
-            </p>
-            <p>
-              <strong>Montant:</strong> {{ pendingTransaction.amount }}
-              {{ pendingTransaction.currency?.toUpperCase() }}
-            </p>
+          <div class="modal-header">
+            <div class="notification-icon">🔔</div>
+            <h3>Confirmation de Transaction</h3>
           </div>
+          
+          <div class="transaction-details">
+            <div class="detail-row">
+              <span class="detail-label">Destinataire</span>
+              <span class="detail-value address-value">
+                {{ pendingTransaction.recipient?.slice(0, 6) }}...{{
+                  pendingTransaction.recipient?.slice(-4)
+                }}
+              </span>
+            </div>
+            <div class="detail-row">
+              <span class="detail-label">Montant</span>
+              <span class="detail-value amount-value">
+                {{ pendingTransaction.amount }}
+                <span class="currency">{{ pendingTransaction.currency?.toUpperCase() }}</span>
+              </span>
+            </div>
+          </div>
+          
           <div class="modal-actions">
             <button
               @click="rejectTransaction"
               class="btn btn-cancel"
               :disabled="isProcessingTransaction"
             >
-              Annuler
+              <span>Annuler</span>
             </button>
             <button
               @click="confirmTransaction"
               class="btn btn-confirm"
               :disabled="isProcessingTransaction"
             >
-              {{ isProcessingTransaction ? "En cours..." : "Confirmer" }}
+              <span>{{ isProcessingTransaction ? "En cours..." : "Confirmer" }}</span>
+              <div class="btn-shine"></div>
             </button>
           </div>
         </div>
@@ -574,180 +606,449 @@ if (typeof window !== "undefined") {
   display: flex;
   height: 90vh;
   width: 80vw;
-  border: 1px solid #ccc;
-  border-radius: 12px;
-  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.1);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 24px;
+  box-shadow: 
+    0 25px 50px -12px rgba(0, 0, 0, 0.25),
+    0 0 0 1px rgba(255, 255, 255, 0.05);
   overflow: hidden;
-  background-color: black;
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  position: relative;
+}
+
+/* Animation de fond */
+.background-animation {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  pointer-events: none;
+  overflow: hidden;
+}
+
+.floating-orb {
+  position: absolute;
+  border-radius: 50%;
+  background: radial-gradient(circle, rgba(255,255,255,0.1) 0%, transparent 70%);
+  animation: float 6s ease-in-out infinite;
+}
+
+.orb-1 {
+  width: 200px;
+  height: 200px;
+  top: 10%;
+  left: 10%;
+  animation-delay: 0s;
+}
+
+.orb-2 {
+  width: 150px;
+  height: 150px;
+  top: 60%;
+  right: 20%;
+  animation-delay: 2s;
+}
+
+.orb-3 {
+  width: 100px;
+  height: 100px;
+  bottom: 20%;
+  left: 60%;
+  animation-delay: 4s;
+}
+
+@keyframes float {
+  0%, 100% { transform: translateY(0px) scale(1); opacity: 0.3; }
+  50% { transform: translateY(-20px) scale(1.1); opacity: 0.6; }
 }
 
 .chat-main {
   flex: 1;
   display: flex;
   flex-direction: column;
-  padding: 1rem;
-  background-color: #fff;
+  padding: 0;
+  background: rgba(255, 255, 255, 0.95);
+  backdrop-filter: blur(20px);
   position: relative;
+  border-radius: 0 24px 24px 0;
 }
 
+/* Header moderne avec glassmorphism */
 .chat-header {
+  position: relative;
+  padding: 1.5rem 2rem;
+  background: rgba(255, 255, 255, 0.8);
+  backdrop-filter: blur(20px);
+  border-bottom: 1px solid rgba(255, 255, 255, 0.2);
+  margin-bottom: 0;
+}
+
+.session-info {
   display: flex;
-  justify-content: space-between;
   align-items: center;
-  padding: 0.5rem 1rem;
-  border-bottom: 1px solid #eee;
-  margin-bottom: 1rem;
+  gap: 12px;
 }
 
-.header-actions {
-  display: flex;
-  align-items: center;
+.session-indicator {
+  width: 12px;
+  height: 12px;
+  background: linear-gradient(45deg, #10b981, #059669);
+  border-radius: 50%;
+  animation: pulse 2s infinite;
+  box-shadow: 0 0 20px rgba(16, 185, 129, 0.5);
 }
 
-.back-btn {
-  padding: 0.5rem 1rem;
-  background-color: #4caf50;
-  color: white;
-  border: none;
-  border-radius: 5px;
-  cursor: pointer;
-  font-size: 0.9rem;
-  transition: background-color 0.2s ease;
-}
-
-.back-btn:hover {
-  background-color: #218838;
+@keyframes pulse {
+  0%, 100% { opacity: 1; transform: scale(1); }
+  50% { opacity: 0.7; transform: scale(1.1); }
 }
 
 .chat-header h3 {
   margin: 0;
-  color: #666;
-  font-size: 0.9rem;
-  font-weight: normal;
-}
-
-.auth-error {
   display: flex;
   flex-direction: column;
+  gap: 4px;
+}
+
+.session-label {
+  font-size: 0.75rem;
+  color: #64748b;
+  font-weight: 500;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.session-id {
+  font-size: 1rem;
+  color: #1e293b;
+  font-weight: 600;
+  background: linear-gradient(135deg, #667eea, #764ba2);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+
+.header-glow {
+  position: absolute;
+  bottom: 0;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 100px;
+  height: 2px;
+  background: linear-gradient(90deg, transparent, #667eea, transparent);
+  opacity: 0.8;
+}
+
+/* Auth error amélioré */
+.auth-error {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  display: flex;
   align-items: center;
   justify-content: center;
-  height: 100vh;
-  text-align: center;
   background: rgba(255, 255, 255, 0.95);
   backdrop-filter: blur(20px);
-  margin: 20px;
+  z-index: 100;
+}
+
+.auth-error-content {
+  text-align: center;
+  padding: 3rem;
   border-radius: 24px;
-  padding: 40px;
+  background: rgba(255, 255, 255, 0.9);
+  backdrop-filter: blur(30px);
+  box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.15);
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  max-width: 500px;
+}
+
+.error-icon-container {
+  position: relative;
+  display: inline-block;
+  margin-bottom: 2rem;
 }
 
 .error-icon {
   font-size: 4rem;
-  margin-bottom: 20px;
+  filter: drop-shadow(0 4px 8px rgba(0, 0, 0, 0.1));
+}
+
+.icon-pulse {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  width: 80px;
+  height: 80px;
+  border: 2px solid #667eea;
+  border-radius: 50%;
+  animation: ripple 2s infinite;
+  opacity: 0.3;
+}
+
+@keyframes ripple {
+  0% { transform: translate(-50%, -50%) scale(0.8); opacity: 0.8; }
+  100% { transform: translate(-50%, -50%) scale(1.5); opacity: 0; }
 }
 
 .auth-error h3 {
   color: #1e293b;
-  margin: 0 0 15px 0;
-  font-size: 1.5rem;
+  margin: 0 0 1rem 0;
+  font-size: 1.8rem;
+  font-weight: 700;
+  background: linear-gradient(135deg, #667eea, #764ba2);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
 }
 
 .auth-error p {
   color: #64748b;
-  margin: 0 0 30px 0;
+  margin: 0 0 2rem 0;
   font-size: 1.1rem;
-  max-width: 500px;
+  line-height: 1.6;
 }
 
-.auth-actions {
-  display: flex;
-  gap: 15px;
-  flex-wrap: wrap;
-  justify-content: center;
-}
-
+/* Boutons modernes */
 .btn {
-  padding: 12px 24px;
+  position: relative;
+  padding: 16px 32px;
   border: none;
-  border-radius: 12px;
+  border-radius: 16px;
   font-weight: 600;
   cursor: pointer;
-  transition: all 0.3s ease;
   font-size: 16px;
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  overflow: hidden;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.btn:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+  transform: none !important;
+}
+
+.btn span {
+  position: relative;
+  z-index: 2;
+}
+
+.btn-shine {
+  position: absolute;
+  top: 0;
+  left: -100%;
+  width: 100%;
+  height: 100%;
+  background: linear-gradient(90deg, transparent, rgba(255,255,255,0.3), transparent);
+  transition: left 0.5s;
+}
+
+.btn:hover .btn-shine {
+  left: 100%;
 }
 
 .btn-primary {
   background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
   color: white;
+  box-shadow: 0 8px 32px rgba(102, 126, 234, 0.3);
 }
 
 .btn-primary:hover {
-  transform: translateY(-2px);
-  box-shadow: 0 8px 20px rgba(102, 126, 234, 0.4);
+  transform: translateY(-3px);
+  box-shadow: 0 12px 40px rgba(102, 126, 234, 0.4);
 }
 
 .btn-secondary {
-  background: #e2e8f0;
+  background: rgba(226, 232, 240, 0.8);
+  backdrop-filter: blur(10px);
   color: #475569;
+  border: 1px solid rgba(255, 255, 255, 0.3);
 }
 
 .btn-secondary:hover {
-  background: #cbd5e1;
+  background: rgba(203, 213, 225, 0.9);
+  transform: translateY(-2px);
 }
 
+/* Modal transaction améliorée */
 .modal-overlay {
   position: fixed;
   top: 0;
   left: 0;
   right: 0;
   bottom: 0;
-  background: rgba(0, 0, 0, 0.7);
+  background: rgba(0, 0, 0, 0.8);
+  backdrop-filter: blur(8px);
   display: flex;
   align-items: center;
   justify-content: center;
   z-index: 1000;
+  animation: fadeIn 0.3s ease;
+}
+
+@keyframes fadeIn {
+  from { opacity: 0; }
+  to { opacity: 1; }
 }
 
 .transaction-modal {
-  background: white;
-  border-radius: 20px;
-  padding: 30px;
+  background: rgba(255, 255, 255, 0.95);
+  backdrop-filter: blur(30px);
+  border-radius: 24px;
+  padding: 0;
   max-width: 500px;
   width: 90%;
-  box-shadow: 0 20px 40px rgba(0, 0, 0, 0.3);
+  box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.25);
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  animation: modalSlideIn 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+  overflow: hidden;
 }
 
-.transaction-modal h3 {
-  margin: 0 0 20px 0;
-  color: #1e293b;
+@keyframes modalSlideIn {
+  from { 
+    opacity: 0; 
+    transform: scale(0.9) translateY(30px); 
+  }
+  to { 
+    opacity: 1; 
+    transform: scale(1) translateY(0); 
+  }
+}
+
+.modal-header {
+  padding: 2rem 2rem 1rem 2rem;
   text-align: center;
+  background: linear-gradient(135deg, rgba(102, 126, 234, 0.1), rgba(118, 75, 162, 0.1));
+}
+
+.notification-icon {
+  font-size: 3rem;
+  margin-bottom: 1rem;
+  animation: bounce 2s infinite;
+}
+
+@keyframes bounce {
+  0%, 100% { transform: translateY(0); }
+  50% { transform: translateY(-10px); }
+}
+
+.modal-header h3 {
+  margin: 0;
+  color: #1e293b;
+  font-size: 1.5rem;
+  font-weight: 700;
+  background: linear-gradient(135deg, #667eea, #764ba2);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
 }
 
 .transaction-details {
-  margin: 20px 0;
-  padding: 20px;
-  background: #f8fafc;
-  border-radius: 12px;
+  margin: 0;
+  padding: 2rem;
+  background: rgba(248, 250, 252, 0.8);
+  backdrop-filter: blur(10px);
 }
 
-.transaction-details p {
-  margin: 10px 0;
-  color: #475569;
+.detail-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 1rem 0;
+  border-bottom: 1px solid rgba(226, 232, 240, 0.5);
+}
+
+.detail-row:last-child {
+  border-bottom: none;
+}
+
+.detail-label {
+  font-weight: 600;
+  color: #64748b;
+  font-size: 0.9rem;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.detail-value {
+  font-weight: 700;
+  color: #1e293b;
+  font-size: 1rem;
+}
+
+.address-value {
+  font-family: 'Monaco', 'Menlo', monospace;
+  background: rgba(102, 126, 234, 0.1);
+  padding: 0.5rem 1rem;
+  border-radius: 8px;
+  border: 1px solid rgba(102, 126, 234, 0.2);
+}
+
+.amount-value {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.currency {
+  background: linear-gradient(135deg, #10b981, #059669);
+  color: white;
+  padding: 0.25rem 0.75rem;
+  border-radius: 12px;
+  font-size: 0.8rem;
+  font-weight: 600;
 }
 
 .modal-actions {
   display: flex;
-  gap: 15px;
+  gap: 1rem;
+  padding: 2rem;
   justify-content: center;
-  margin-top: 25px;
 }
 
 .btn-cancel {
-  background: #e2e8f0;
+  background: rgba(226, 232, 240, 0.8);
+  backdrop-filter: blur(10px);
+  color: #64748b;
+  border: 1px solid rgba(226, 232, 240, 0.5);
+}
+
+.btn-cancel:hover {
+  background: rgba(203, 213, 225, 0.9);
   color: #475569;
+  transform: translateY(-2px);
 }
 
 .btn-confirm {
   background: linear-gradient(135deg, #10b981 0%, #059669 100%);
   color: white;
+  box-shadow: 0 8px 32px rgba(16, 185, 129, 0.3);
+}
+
+.btn-confirm:hover {
+  transform: translateY(-3px);
+  box-shadow: 0 12px 40px rgba(16, 185, 129, 0.4);
+}
+
+/* Responsive design */
+@media (max-width: 768px) {
+  .chat-container {
+    width: 95vw;
+    height: 95vh;
+  }
+  
+  .modal-actions {
+    flex-direction: column;
+  }
+  
+  .detail-row {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 0.5rem;
+  }
 }
 </style>
