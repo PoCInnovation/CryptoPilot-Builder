@@ -130,7 +130,6 @@
 
 <script>
 import { mapState, mapActions } from "vuex";
-import apiService from "../services/apiService";
 
 export default {
   name: "AuthModal",

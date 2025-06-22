@@ -78,7 +78,7 @@
 </template>
 
 <script setup>
-import { ref, inject, onMounted, watch, computed, nextTick } from "vue";
+import { ref, inject, onMounted, watch, computed } from "vue";
 import { useStore } from "vuex";
 import { useRouter } from "vue-router";
 import ChatSidebar from "./chatbot/ChatSidebar.vue";
