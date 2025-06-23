@@ -254,7 +254,7 @@ export default createStore({
       }
     },
 
-    async updateAIConfig({ commit, dispatch, rootState }, config) {
+    async updateAIConfig({ commit, rootState }, config) {
       // Mise à jour locale immédiate pour la réactivité
       commit("SET_AI_CONFIG", config);
 
@@ -274,7 +274,7 @@ export default createStore({
       }
     },
 
-    async setApiKey({ commit, dispatch, rootState }, apiKey) {
+    async setApiKey({ commit, rootState }, apiKey) {
       commit("SET_API_KEY", apiKey);
 
       if (rootState.auth.isAuthenticated) {
@@ -289,7 +289,7 @@ export default createStore({
       }
     },
 
-    async setModel({ commit, dispatch, rootState }, model) {
+    async setModel({ commit, rootState }, model) {
       commit("SET_MODEL", model);
 
       if (rootState.auth.isAuthenticated) {
@@ -304,7 +304,7 @@ export default createStore({
       }
     },
 
-    async setPrompt({ commit, dispatch, rootState }, prompt) {
+    async setPrompt({ commit, rootState }, prompt) {
       commit("SET_PROMPT", prompt);
 
       if (rootState.auth.isAuthenticated) {
@@ -319,7 +319,7 @@ export default createStore({
       }
     },
 
-    async setModules({ commit, dispatch, rootState }, modules) {
+    async setModules({ commit, rootState }, modules) {
       commit("SET_MODULES", modules);
 
       if (rootState.auth.isAuthenticated) {

@@ -118,9 +118,6 @@ defineExpose({
 <template>
   <div class="wallet-connect">
     <div class="top-bar">
-      <div v-if="address" class="wallet-info">
-        {{ shortenAddress(address) }}
-      </div>
       <div class="actions">
         <button
           v-if="!address && !showManualInput"
@@ -152,6 +149,11 @@ defineExpose({
         </button>
       </div>
     </div>
+    
+    <div v-if="address" class="wallet-info">
+      {{ shortenAddress(address) }}
+    </div>
+
     <div v-if="showManualInput && !address" class="manual-input">
       <input
         v-model="manualAddress"
@@ -176,7 +178,7 @@ defineExpose({
 
 .top-bar {
   display: flex;
-  justify-content: space-between;
+  justify-content: flex-end;
   align-items: center;
   width: 100%;
 }
@@ -185,7 +187,6 @@ defineExpose({
   display: flex;
   gap: 0.5rem;
   align-items: center;
-  margin-left: auto;
 }
 
 .connect-button,
@@ -242,6 +243,11 @@ defineExpose({
   border-radius: 6px;
   color: #2e7d32;
   border: 1px solid #c8e6c9;
+  margin-top: 1rem;
+  text-align: center;
+  width: 5%;
+  margin-right: 0;
+  margin-left: auto;
 }
 
 .manual-input {
