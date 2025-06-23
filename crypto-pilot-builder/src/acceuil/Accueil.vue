@@ -420,13 +420,96 @@ export default {
   left: 100%;
 }
 
+/* Scrollbar personnalisée pour la liste des chats */
 .chat-list-section {
   display: flex;
   flex-direction: column;
   gap: 10px;
   max-height: 70vh;
   overflow-y: auto;
-  padding-right: 5px;
+  padding-right: 8px; /* Légèrement augmenté pour laisser place à la scrollbar */
+  
+  /* Scrollbar WebKit (Chrome, Safari, Edge) */
+  scrollbar-width: thin;
+  scrollbar-color: rgba(118, 75, 162, 0.6) rgba(46, 27, 77, 0.3);
+}
+
+/* Style pour navigateurs WebKit */
+.chat-list-section::-webkit-scrollbar {
+  width: 8px;
+  background-color: transparent;
+}
+
+.chat-list-section::-webkit-scrollbar-track {
+  background: rgba(46, 27, 77, 0.3);
+  border-radius: 10px;
+  margin: 5px 0;
+  box-shadow: inset 0 0 3px rgba(0, 0, 0, 0.1);
+}
+
+.chat-list-section::-webkit-scrollbar-thumb {
+  background: linear-gradient(180deg, #764ba2 0%, #5a3494 100%);
+  border-radius: 10px;
+  box-shadow: 0 2px 6px rgba(118, 75, 162, 0.3);
+  transition: all 0.3s ease;
+}
+
+.chat-list-section::-webkit-scrollbar-thumb:hover {
+  background: linear-gradient(180deg, #9d4edd 0%, #764ba2 100%);
+  box-shadow: 0 3px 8px rgba(157, 78, 221, 0.4);
+  transform: scaleX(1.2);
+}
+
+.chat-list-section::-webkit-scrollbar-thumb:active {
+  background: linear-gradient(180deg, #a552cc 0%, #7a5195 100%);
+}
+
+/* Animation de fade pour la scrollbar */
+.chat-list-section::-webkit-scrollbar-thumb {
+  opacity: 0.7;
+}
+
+.chat-list-section:hover::-webkit-scrollbar-thumb {
+  opacity: 1;
+}
+
+/* Style alternatif pour Firefox */
+@supports (scrollbar-width: thin) {
+  .chat-list-section {
+    scrollbar-width: thin;
+    scrollbar-color: #764ba2 rgba(46, 27, 77, 0.3);
+  }
+}
+
+/* Effet de glow subtil au survol de la zone de scroll */
+.chat-list-section:hover {
+  box-shadow: inset 2px 0 0 rgba(118, 75, 162, 0.2);
+  transition: box-shadow 0.3s ease;
+}
+
+/* Variante encore plus stylée avec dégradé animé (optionnel) */
+.chat-list-section::-webkit-scrollbar-thumb {
+  position: relative;
+}
+
+.chat-list-section::-webkit-scrollbar-thumb::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: linear-gradient(45deg, 
+    rgba(255, 255, 255, 0.1) 0%, 
+    transparent 50%, 
+    rgba(255, 255, 255, 0.1) 100%);
+  border-radius: 10px;
+  opacity: 0;
+  transition: opacity 0.3s ease;
+}
+
+.chat-list-section::-webkit-scrollbar-thumb:hover::before {
+  opacity: 1;
 }
 
 .chat-item-container {
@@ -1100,6 +1183,12 @@ export default {
   }
   .login-form {
     padding: 25px;
+  }
+  .chat-list-section::-webkit-scrollbar {
+    width: 6px;
+  }
+  .chat-list-section {
+    padding-right: 6px;
   }
 }
 </style>
