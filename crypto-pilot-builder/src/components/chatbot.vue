@@ -51,13 +51,6 @@
               <div class="btn-shine"></div>
             </button>
           </div>
-        <div class="error-icon">🔒</div>
-        <h3>Authentification requise</h3>
-        <p>{{ authError }}</p>
-        <div class="auth-actions">
-          <button @click="redirectToLogin" class="btn btn-primary">
-            Se connecter
-          </button>
         </div>
       </div>
 
