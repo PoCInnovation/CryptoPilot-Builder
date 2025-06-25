@@ -38,35 +38,35 @@ def get_crypto_price(crypto_id: str, currency: str = "usd") -> str:
     except Exception as e:
         return f"Unexpected error: {str(e)}"
 
-
-
 def request_transaction(recipient_address: str, amount: str, currency: str = "sepolia") -> str:
     """
     Request a blockchain transaction via the chatbot.
-    Args:
-        recipient_address: Recipient Ethereum address (e.g. 0x72FA462C75aE174416db42EE79277D4927EfFE92)
-        amount: Amount to send (e.g. 0.001)
-        currency: Network/currency (default: sepolia)
-    Returns:
-        str: Confirmation message or error
+    Returns a raw string with structured transaction info.
     """
-    print(f"[TransactionTool] Transaction request: {amount} {currency} to {recipient_address}")
+    print(f"🔥 [TransactionTool] FONCTION APPELÉE!")
+    print(f"🔥 [TransactionTool] Transaction request: {amount} {currency} to {recipient_address}")
+
     if not recipient_address.startswith('0x') or len(recipient_address) != 42:
         return "❌ Invalid Ethereum address. Must start with 0x and be 42 characters."
+
     try:
         float_amount = float(amount)
         if float_amount <= 0:
             return "❌ Amount must be greater than 0."
     except ValueError:
         return "❌ Invalid amount. Please enter a valid number."
-    transaction_request = {
-        "type": "transaction_request",
-        "recipient": recipient_address,
-        "amount": amount,
-        "currency": currency,
-        "status": "pending_confirmation"
-    }
-    import json
+
+    # Retourner une chaîne brute avec un marqueur spécial pour le frontend
+    transaction_request = (
+        f"TRANSACTION_REQUEST:{{"
+        f"\"type\":\"transaction_request\","
+        f"\"recipient\":\"{recipient_address}\","
+        f"\"amount\":\"{amount}\","
+        f"\"currency\":\"{currency}\","
+        f"\"status\":\"pending_confirmation\""
+        f"}}"
+    )
+
     message = f"Transaction of {amount} {currency} to {recipient_address[:6]}...{recipient_address[-4:]} prepared."
-    transaction_json = json.dumps(transaction_request, separators=(',', ':'))
-    return f"{message}\n\nTRANSACTION_REQUEST:{transaction_json}"
+    print(f"🔥 [TransactionTool] RÉPONSE GÉNÉRÉE: {message}")
+    return f"{message}\n\n{transaction_request}"
