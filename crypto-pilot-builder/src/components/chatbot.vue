@@ -54,7 +54,7 @@
         </div>
       </div>
 
-      <!-- Modal de transaction améliorée -->
+      <!-- Modal de transaction -->
       <div
         v-if="pendingTransaction"
         class="modal-overlay"
@@ -65,7 +65,6 @@
             <div class="notification-icon">🔔</div>
             <h3>Confirmation de Transaction</h3>
           </div>
-          
           <div class="transaction-details">
             <div class="detail-row">
               <span class="detail-label">Destinataire</span>
@@ -83,7 +82,6 @@
               </span>
             </div>
           </div>
-          
           <div class="modal-actions">
             <button
               @click="rejectTransaction"
@@ -335,14 +333,13 @@ async function addNewChat() {
   await createNewSession();
 }
 
-// 1. Fonction de debug améliorée pour handleSendMessage
+// Gère l'envoi d'un message utilisateur et la détection d'une transaction
 async function handleSendMessage(text) {
   if (!text.trim()) return;
   if (!isAuthenticated.value) {
     authError.value = "Vous devez être connecté pour envoyer des messages.";
     return;
   }
-
   const newMessage = { text, isUser: true };
   messages.value.push(newMessage);
   const currentChatName = chats.value[selectedChat.value];
@@ -350,7 +347,6 @@ async function handleSendMessage(text) {
     chatSessions.value[currentChatName].messages.push(newMessage);
   }
   isLoading.value = true;
-
   try {
     console.log("📤 Envoi du message:", text);
     const data = await apiService.sendChatMessage(text, currentSessionId.value);
@@ -572,6 +568,8 @@ async function confirmTransaction() {
     } else if (error.message.includes("Wallet non connecté")) {
       errorText =
         "🔗 Wallet non connecté. Veuillez connecter MetaMask d'abord.";
+    } else if (error.message.includes("Failed to fetch")) {
+      errorText = "✅ Transaction réussie mais le serveur n'a pas répondu.";
     }
     const errorMessage = { text: errorText, isUser: false };
     messages.value.push(errorMessage);
