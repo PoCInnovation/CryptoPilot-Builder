@@ -388,7 +388,7 @@ export default {
   position: fixed;
   top: 40px;
   left: 40px;
-  width: 400px;
+  width: 200px;
   height: 80vh;
   background: rgba(255, 255, 255, 0.1);
   backdrop-filter: blur(20px);
@@ -739,14 +739,8 @@ export default {
   animation: fadeInUp 0.6s ease;
 }
 @keyframes fadeInUp {
-  from {
-    opacity: 0;
-    transform: translateY(20px);
-  }
-  to {
-    opacity: 1;
-    transform: translateY(0);
-  }
+  from { opacity: 0; transform: translateY(20px); }
+  to { opacity: 1; transform: translateY(0); }
 }
 .user-section {
   position: absolute;
