@@ -9,6 +9,10 @@
           <button class="new-chat-button" @click="createNewChat">
             + Nouveau Chat
           </button>
+          <button class="new-chat-button" @click="createNewChat">
+            + Nouveau Chat
+          </button>
+          <!-- rajouter des bouttons la -->
         </section>
         <section class="chat-list-section">
           <article
@@ -339,7 +343,7 @@ export default {
 .app-container {
   display: flex;
   height: 100vh;
-  font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+  font-family: 'Roboto', sans-serif;
   background: linear-gradient(135deg, #7a5195 0%, #a552cc 100%);
   overflow: hidden;
 }
@@ -348,7 +352,7 @@ export default {
   position: fixed;
   top: 40px;
   left: 40px;
-  width: 200px;
+  width: 400px;
   height: 80vh;
   background: rgba(255, 255, 255, 0.1);
   backdrop-filter: blur(20px);
@@ -372,8 +376,8 @@ export default {
 }
 
 .sidebar-title {
-  font-size: 24px;
-  font-weight: bold;
+  font-size: 80px;
+  font-weight: 600px;
   color: #f3e8ff;
   margin: 0;
   letter-spacing: 1px;
@@ -388,11 +392,16 @@ export default {
 
 .chat-controls-section {
   margin-bottom: 20px;
+  gap : 80px;
+  display: flex;
 }
 
 .new-chat-button {
-  width: 100%;
-  padding: 12px 18px;
+  width: 20%;
+  padding-top: 12px;
+  padding-right: 18px;
+  padding-bottom: 12px;
+  padding-left: 10px;
   background: linear-gradient(135deg, #9d4edd 0%, #764ba2 100%);
   border: none;
   color: white;
@@ -404,6 +413,10 @@ export default {
   box-shadow: 0 4px 15px rgba(125, 82, 204, 0.3);
   position: relative;
   overflow: hidden;
+  display: flex;
+  align-items: center;
+  justify-content: flex-start;
+  text-align: center;
 }
 
 .new-chat-button:hover {
@@ -554,7 +567,8 @@ export default {
   border-radius: 10px;
   cursor: pointer;
   transition: all 0.3s ease;
-  font-size: 15px;
+  font-size: 30px;
+  font-weight: 500;
   text-align: left;
   position: relative;
   overflow: hidden;
