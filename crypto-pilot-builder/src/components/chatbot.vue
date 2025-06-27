@@ -54,7 +54,7 @@
         </div>
       </div>
 
-      <!-- Modal de transaction améliorée -->
+      <!-- Modal de transaction -->
       <div
         v-if="pendingTransaction"
         class="modal-overlay"
@@ -65,7 +65,6 @@
             <div class="notification-icon">🔔</div>
             <h3>Confirmation de Transaction</h3>
           </div>
-          
           <div class="transaction-details">
             <div class="detail-row">
               <span class="detail-label">Destinataire</span>
@@ -83,7 +82,6 @@
               </span>
             </div>
           </div>
-          
           <div class="modal-actions">
             <button
               @click="rejectTransaction"
@@ -335,14 +333,13 @@ async function addNewChat() {
   await createNewSession();
 }
 
+// Gère l'envoi d'un message utilisateur et la détection d'une transaction
 async function handleSendMessage(text) {
   if (!text.trim()) return;
-
   if (!isAuthenticated.value) {
     authError.value = "Vous devez être connecté pour envoyer des messages.";
     return;
   }
-
   const newMessage = { text, isUser: true };
   messages.value.push(newMessage);
   const currentChatName = chats.value[selectedChat.value];
@@ -350,76 +347,93 @@ async function handleSendMessage(text) {
     chatSessions.value[currentChatName].messages.push(newMessage);
   }
   isLoading.value = true;
-
   try {
-    console.log("🚀 Envoi du message:", text);
-
+    console.log("📤 Envoi du message:", text);
     const data = await apiService.sendChatMessage(text, currentSessionId.value);
-
-    console.log("📥 Réponse complète du serveur:", data);
-
-    if (data.session_id) {
-      currentSessionId.value = data.session_id;
-      if (chatSessions.value[currentChatName]) {
-        chatSessions.value[currentChatName].sessionId = data.session_id;
-      }
+    
+    console.log("📥 Données reçues du backend (type):", typeof data);
+    console.log("📥 Données reçues du backend (contenu):", data);
+    
+    // Le backend renvoie soit une string directe, soit un objet avec une propriété response
+    const responseText = typeof data === "string" ? data : (data.response || "");
+    console.log("🔍 Réponse brute du backend:", responseText);
+    console.log("🔍 Longueur de la réponse:", responseText.length);
+    console.log("🔍 Contient TRANSACTION_REQUEST:", responseText.includes("TRANSACTION_REQUEST:"));
+    
+    // Debug: afficher les 200 premiers et derniers caractères pour voir si le marqueur est caché
+    if (responseText.length > 100) {
+      console.log("🔍 Début de la réponse:", responseText.substring(0, 200));
+      console.log("🔍 Fin de la réponse:", responseText.substring(responseText.length - 200));
     }
 
-    if (
-      data.transaction_request &&
-      typeof data.transaction_request === "object"
-    ) {
-      console.log(
-        "✅ Transaction détectée et valide:",
-        data.transaction_request
-      );
-      const requiredFields = ["recipient", "amount", "currency"];
-      const hasAllFields = requiredFields.every(
-        (field) => data.transaction_request[field]
-      );
-      if (hasAllFields) {
-        console.log(
-          "🔔 Tous les champs requis présents, affichage de la modal"
-        );
-        pendingTransaction.value = { ...data.transaction_request };
-        if (data.response && data.response.trim()) {
-          const botMessage = { text: data.response.trim(), isUser: false };
-          messages.value.push(botMessage);
-          if (chatSessions.value[currentChatName]) {
-            chatSessions.value[currentChatName].messages.push(botMessage);
+    let botResponse = "";
+    let transactionRequest = null;
+
+    // Vérifier s'il y a un marqueur TRANSACTION_REQUEST dans la réponse
+    if (responseText.includes("TRANSACTION_REQUEST:")) {
+      console.log("🔍 Marqueur TRANSACTION_REQUEST détecté");
+      
+      // Séparer le message du JSON
+      const parts = responseText.split("TRANSACTION_REQUEST:");
+      botResponse = parts[0].trim(); // Message avant le marqueur
+      
+      if (parts[1]) {
+        try {
+          // Parser le JSON après le marqueur
+          const jsonPart = parts[1].trim();
+          console.log("🔍 Partie JSON à parser:", jsonPart);
+          
+          transactionRequest = JSON.parse(jsonPart);
+          console.log("✅ Transaction parsée avec succès:", transactionRequest);
+          
+          // Vérifier que tous les champs requis sont présents
+          const requiredFields = ["recipient", "amount", "currency"];
+          const hasAllFields = requiredFields.every(field => transactionRequest[field]);
+          
+          if (!hasAllFields) {
+            console.warn("⚠️ Champs manquants dans la transaction:", transactionRequest);
+            transactionRequest = null;
+            // Garder le message complet si la transaction est invalide
+            botResponse = responseText;
           }
+        } catch (parseError) {
+          console.error("❌ Erreur parsing JSON transaction:", parseError);
+          console.error("❌ JSON à parser était:", parts[1]);
+          // En cas d'erreur de parsing, garder le message complet
+          botResponse = responseText;
+          transactionRequest = null;
         }
-      } else {
-        console.log(
-          "❌ Champs manquants dans transaction_request:",
-          data.transaction_request
-        );
       }
     } else {
-      let botResponse = data?.response || "";
-      console.log("💬 Réponse bot brute:", botResponse);
-      if (botResponse.trim()) {
-        const botMessage = { text: botResponse.trim(), isUser: false };
-        messages.value.push(botMessage);
-        if (chatSessions.value[currentChatName]) {
-          chatSessions.value[currentChatName].messages.push(botMessage);
-        }
-      } else {
-        throw new Error("Réponse vide de l'API.");
+      // Pas de transaction, message normal
+      botResponse = responseText;
+    }
+
+    console.log("📝 Message final à afficher:", botResponse);
+    console.log("💰 Transaction détectée:", !!transactionRequest);
+
+    // Afficher le message du bot s'il y en a un
+    if (botResponse.trim()) {
+      const botMessage = { text: botResponse.trim(), isUser: false };
+      messages.value.push(botMessage);
+      if (chatSessions.value[currentChatName]) {
+        chatSessions.value[currentChatName].messages.push(botMessage);
       }
     }
+
+    // Si une transaction est détectée, afficher la modal
+    if (transactionRequest) {
+      console.log("🚀 Affichage de la modal de transaction");
+      pendingTransaction.value = { ...transactionRequest };
+    }
+
   } catch (err) {
     console.error("❌ Erreur API complète:", err);
-
     if (err.message.includes("401") || err.message.includes("UNAUTHORIZED")) {
       authError.value = "Votre session a expiré. Veuillez vous reconnecter.";
       return;
     }
-
-    const errorMessage = {
-      text: `Erreur de communication: ${err.message}`,
-      isUser: false,
-    };
+    const errorMessage = { text: `Erreur de communication: ${err.message}`, isUser: false };
     messages.value.push(errorMessage);
     if (chatSessions.value[currentChatName]) {
       chatSessions.value[currentChatName].messages.push(errorMessage);
@@ -429,9 +443,28 @@ async function handleSendMessage(text) {
   }
 }
 
+// 2. Fonction de test pour forcer une transaction (pour debug)
+function forceTestTransaction() {
+  console.log("🧪 Test forcé de transaction");
+  pendingTransaction.value = {
+    type: "transaction_request",
+    recipient: "0xFa6D1Ff93Fa73f3105f24FF47911b8C544CDA195",
+    amount: "0.01",
+    currency: "sepolia",
+    status: "pending_confirmation"
+  };
+  console.log("✅ Modal de transaction forcée:", pendingTransaction.value);
+}
+
+// Ajouter la fonction de test au window pour debug
+if (typeof window !== "undefined") {
+  window.forceTestTransaction = forceTestTransaction;
+}
+
 async function confirmTransaction() {
   console.log("🔥 confirmTransaction() appelée");
   console.log("📋 pendingTransaction.value:", pendingTransaction.value);
+  console.log("💼 walletFunctions disponible:", !!walletFunctions);
   if (!pendingTransaction.value) {
     console.error("❌ Pas de transaction en attente");
     return;
@@ -535,6 +568,8 @@ async function confirmTransaction() {
     } else if (error.message.includes("Wallet non connecté")) {
       errorText =
         "🔗 Wallet non connecté. Veuillez connecter MetaMask d'abord.";
+    } else if (error.message.includes("Failed to fetch")) {
+      errorText = "✅ Transaction réussie mais le serveur n'a pas répondu.";
     }
     const errorMessage = { text: errorText, isUser: false };
     messages.value.push(errorMessage);
