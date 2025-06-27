@@ -344,7 +344,7 @@ export default {
   display: flex;
   height: 100vh;
   font-family: 'Roboto', sans-serif;
-  background: linear-gradient(135deg, #7a5195 0%, #a552cc 100%);
+  background: linear-gradient(120deg, rgba(28, 32, 51, 0), rgba(16, 21, 33, 0));  border: none;  transition: left 0.5s ease;
   overflow: hidden;
 }
 
@@ -402,15 +402,13 @@ export default {
   padding-right: 18px;
   padding-bottom: 12px;
   padding-left: 10px;
-  background: linear-gradient(135deg, #9d4edd 0%, #764ba2 100%);
-  border: none;
+  background: linear-gradient(120deg, rgba(28, 32, 51, 0), rgba(16, 21, 33, 0));  border: none;  border: none;
   color: white;
   border-radius: 10px;
   cursor: pointer;
   font-size: 15px;
   font-weight: bold;
   transition: all 0.3s ease;
-  box-shadow: 0 4px 15px rgba(125, 82, 204, 0.3);
   position: relative;
   overflow: hidden;
   display: flex;
@@ -431,8 +429,7 @@ export default {
   left: -100%;
   width: 100%;
   height: 100%;
-  background: linear-gradient(120deg, rgba(255,255,255,0.2) 0%, rgba(255,255,255,0.2) 50%, rgba(255,255,255,0) 80%);
-  transition: left 0.5s ease;
+  background: linear-gradient(120deg, rgba(28, 32, 51, 0), rgba(16, 21, 33, 0));  border: none;  transition: left 0.5s ease;
 }
 
 .new-chat-button:hover::after {
@@ -463,20 +460,20 @@ export default {
 }
 
 .chat-list-section::-webkit-scrollbar-thumb {
-  background: linear-gradient(180deg, #764ba2 0%, #5a3494 100%);
+  background: linear-gradient(120deg, rgba(28, 32, 51, 0), rgba(16, 21, 33, 0));  border: none;  transition: left 0.5s ease;
   border-radius: 10px;
   box-shadow: 0 2px 6px rgba(118, 75, 162, 0.3);
   transition: all 0.3s ease;
 }
 
 .chat-list-section::-webkit-scrollbar-thumb:hover {
-  background: linear-gradient(180deg, #9d4edd 0%, #764ba2 100%);
+  background: linear-gradient(120deg, rgba(28, 32, 51, 0), rgba(16, 21, 33, 0));  border: none;  transition: left 0.5s ease;
   box-shadow: 0 3px 8px rgba(157, 78, 221, 0.4);
   transform: scaleX(1.2);
 }
 
 .chat-list-section::-webkit-scrollbar-thumb:active {
-  background: linear-gradient(180deg, #a552cc 0%, #7a5195 100%);
+  background: linear-gradient(120deg, rgba(28, 32, 51, 0), rgba(16, 21, 33, 0));  border: none;  transition: left 0.5s ease;
 }
 
 .chat-list-section::-webkit-scrollbar-thumb {
@@ -561,7 +558,7 @@ export default {
 .chat-item-button {
   flex: 1;
   padding: 14px 18px;
-  background: rgba(255, 255, 255, 0.1);
+  background: linear-gradient(120deg, rgba(28, 32, 51, 0), rgba(16, 21, 33, 0));  border: none;  transition: left 0.5s ease;
   border: 1px solid rgba(255, 255, 255, 0.2);
   color: #f3e8ff;
   border-radius: 10px;
@@ -572,7 +569,6 @@ export default {
   text-align: left;
   position: relative;
   overflow: hidden;
-  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.2);
 }
 
 .chat-item-button:hover {
@@ -597,7 +593,7 @@ export default {
 }
 
 .chat-item-button--active {
-  background: linear-gradient(145deg, #764ba2 0%, #5a3494 100%);
+  background: linear-gradient(120deg, rgba(28, 32, 51, 0), rgba(16, 21, 33, 0));  border: none;  transition: left 0.5s ease;
   font-weight: bold;
   box-shadow: 0 4px 12px rgba(118, 75, 162, 0.3);
   transform: translateX(5px);
@@ -718,8 +714,8 @@ export default {
 }
 
 .user-welcome {
-  color: #2e1b4d;
-  font-weight: 600;
+  color: white;
+  font-weight: bold;
   font-size: 16px;
   text-shadow: 0 1px 2px rgba(0,0,0,0.05);
 }
@@ -729,8 +725,10 @@ export default {
   align-items: center;
   gap: 10px;
   padding: 14px 24px;
-  background: linear-gradient(135deg, #764ba2 0%, #5a3494 100%);
-  border: none;
+  background: rgba(28, 32, 51, 0.1);
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
+  border: 1px solid rgba(255, 255, 255, 0.1);
   color: white;
   border-radius: 30px;
   cursor: pointer;
@@ -741,6 +739,7 @@ export default {
 }
 
 .login-button:hover {
+  background: rgba(28, 32, 51, 0.2);
   transform: translateY(-2px);
   box-shadow: 0 8px 24px rgba(118, 75, 162, 0.4);
 }
@@ -750,20 +749,23 @@ export default {
   align-items: center;
   gap: 10px;
   padding: 10px 20px;
-  background: linear-gradient(135deg, #e74c3c 0%, #c0392b 100%);
-  border: none;
+  background: rgba(28, 32, 51, 0.1);
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
+  border: 1px solid rgba(255, 255, 255, 0.1);
   color: white;
   border-radius: 25px;
   cursor: pointer;
   font-size: 14px;
   font-weight: 600;
   transition: all 0.3s ease;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
 }
 
 .logout-button:hover {
-  background: linear-gradient(135deg, #c0392b 0%, #e74c3c 100%);
+  background: rgba(28, 32, 51, 0.2);
+  box-shadow: 0 8px 20px rgba(192, 57, 43, 0.4);
   transform: translateY(-1px);
-  box-shadow: 0 4px 12px rgba(192, 57, 43, 0.3);
 }
 
 .login-icon,
@@ -793,7 +795,6 @@ export default {
 .news-widget {
   width: 160px;
   height: 140px;
-  background: linear-gradient(135deg, #764ba2 0%, #5a3494 100%);
   border-radius: 16px;
   display: flex;
   flex-direction: column;
@@ -801,7 +802,6 @@ export default {
   justify-content: center;
   color: white;
   font-weight: bold;
-  box-shadow: 0 6px 20px rgba(118, 75, 162, 0.3);
   transition: all 0.4s ease;
   position: relative;
   overflow: hidden;
@@ -840,7 +840,8 @@ export default {
 }
 
 .news-widget {
-  background: linear-gradient(135deg, #a552cc 0%, #764ba2 100%);
+  background: linear-gradient(120deg, rgba(28, 32, 51, 0), rgba(16, 21, 33, 0));
+  border: none;
 }
 
 .news-title {
@@ -870,7 +871,7 @@ export default {
   padding: 18px 35px;
   font-size: 20px;
   font-weight: bold;
-  background: linear-gradient(135deg, #764ba2 0%, #5a3494 100%);
+  background: linear-gradient(120deg, rgba(28, 32, 51, 0), rgba(16, 21, 33, 0));  border: none;  transition: left 0.5s ease;
   border: none;
   color: white;
   border-radius: 12px;
@@ -907,7 +908,7 @@ export default {
   padding: 18px 35px;
   font-size: 20px;
   font-weight: bold;
-  background: linear-gradient(135deg, #a552cc 0%, #764ba2 100%);
+  background: linear-gradient(120deg, rgba(28, 32, 51, 0), rgba(16, 21, 33, 0));  border: none;  transition: left 0.5s ease;
   border: none;
   color: white;
   border-radius: 12px;
@@ -951,48 +952,52 @@ export default {
   padding: 18px 35px;
   font-size: 20px;
   font-weight: bold;
-  background: linear-gradient(135deg, #95a5a6 0%, #7f8c8d 100%);
-  border: none;
+  background: rgba(28, 32, 51, 0.1); /* Fond semi-transparent */
+  backdrop-filter: blur(10px); /* Effet flou */
+  -webkit-backdrop-filter: blur(10px); /* Pour Safari */
+  border: 1px solid rgba(255, 255, 255, 0.1); /* Bordure subtile */
   color: white;
   border-radius: 12px;
   cursor: pointer;
   transition: all 0.3s ease;
-  box-shadow: 0 6px 18px rgba(149, 165, 166, 0.3);
+  box-shadow: 0 6px 18px rgba(0, 0, 0, 0.1); /* Ombre subtile */
   position: relative;
   overflow: hidden;
+  text-align: center;
 }
 
 .talk-to-agent-button-disabled:hover {
-  background: linear-gradient(135deg, #764ba2 0%, #5a3494 100%);
+  background: rgba(28, 32, 51, 0.2); /* Fond plus foncé au survol */
   transform: translateY(-3px);
-  box-shadow: 0 8px 24px rgba(118, 75, 162, 0.4);
+  box-shadow: 0 8px 24px rgba(118, 75, 162, 0.4); /* Ombre plus forte */
 }
 
 .talk-to-agent-button-disabled:hover::after {
-  content: "Cliquer pour se connecter";
   position: absolute;
   top: 0;
   left: 0;
   right: 0;
   bottom: 0;
-  background: rgba(118, 75, 162, 0.9);
+  background: rgba(28, 32, 51, 0.4); /* Fond semi-transparent */
   display: flex;
   align-items: center;
   justify-content: center;
   font-size: 14px;
   font-weight: 500;
+  color: #fff;
+  text-shadow: 0 1px 2px rgba(0, 0, 0, 0.2);
   animation: fadeInUp 0.3s ease;
 }
 
 .auth-message {
   margin: 0;
-  color: #5a3494;
+  color: white;
   font-size: 15px;
   text-align: center;
   max-width: 320px;
   line-height: 1.5;
   font-style: italic;
-  text-shadow: 0 1px 2px rgba(255,255,255,0.3);
+  text-shadow: 0 1px 2px rgba(0, 0, 0, 0.2);
 }
 
 .modal-overlay {
@@ -1028,7 +1033,7 @@ export default {
 }
 
 .modal-header {
-  background: linear-gradient(135deg, #764ba2 0%, #5a3494 100%);
+  background: linear-gradient(120deg, rgba(28, 32, 51, 0), rgba(16, 21, 33, 0));  border: none;  transition: left 0.5s ease;
   color: white;
   padding: 25px;
   display: flex;
@@ -1130,7 +1135,7 @@ export default {
 
 .btn-primary {
   padding: 12px 24px;
-  background: linear-gradient(135deg, #764ba2 0%, #5a3494 100%);
+  background: linear-gradient(120deg, rgba(28, 32, 51, 0), rgba(16, 21, 33, 0));  border: none;  transition: left 0.5s ease;
   border: none;
   color: white;
   border-radius: 10px;
