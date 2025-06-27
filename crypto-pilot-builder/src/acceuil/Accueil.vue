@@ -952,24 +952,24 @@ export default {
   padding: 18px 35px;
   font-size: 20px;
   font-weight: bold;
-  background: rgba(28, 32, 51, 0.1); /* Fond semi-transparent */
-  backdrop-filter: blur(10px); /* Effet flou */
-  -webkit-backdrop-filter: blur(10px); /* Pour Safari */
-  border: 1px solid rgba(255, 255, 255, 0.1); /* Bordure subtile */
+  background: rgba(28, 32, 51, 0.1);
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
+  border: 1px solid rgba(255, 255, 255, 0.1);
   color: white;
   border-radius: 12px;
   cursor: pointer;
   transition: all 0.3s ease;
-  box-shadow: 0 6px 18px rgba(0, 0, 0, 0.1); /* Ombre subtile */
+  box-shadow: 0 6px 18px rgba(0, 0, 0, 0.1);
   position: relative;
   overflow: hidden;
   text-align: center;
 }
 
 .talk-to-agent-button-disabled:hover {
-  background: rgba(28, 32, 51, 0.2); /* Fond plus foncé au survol */
+  background: rgba(28, 32, 51, 0.2);
   transform: translateY(-3px);
-  box-shadow: 0 8px 24px rgba(118, 75, 162, 0.4); /* Ombre plus forte */
+  box-shadow: 0 8px 24px rgba(118, 75, 162, 0.4);
 }
 
 .talk-to-agent-button-disabled:hover::after {
@@ -978,7 +978,7 @@ export default {
   left: 0;
   right: 0;
   bottom: 0;
-  background: rgba(28, 32, 51, 0.4); /* Fond semi-transparent */
+  background: rgba(28, 32, 51, 0.4);
   display: flex;
   align-items: center;
   justify-content: center;
