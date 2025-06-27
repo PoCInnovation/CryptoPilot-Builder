@@ -382,13 +382,16 @@ export default {
   background: linear-gradient(120deg, rgba(28, 32, 51, 0), rgba(16, 21, 33, 0));
   border: none;
   transition: left 0.5s ease;
+  font-family: "Segoe UI", Tahoma, Geneva, Verdana, sans-serif;
+  font-family: 'Roboto', sans-serif;
+  background: linear-gradient(135deg, #7a5195 0%, #a552cc 100%);
   overflow: hidden;
 }
 .sidebar {
   position: fixed;
   top: 40px;
   left: 40px;
-  width: 200px;
+  width: 400px;
   height: 80vh;
   background: rgba(255, 255, 255, 0.1);
   backdrop-filter: blur(20px);
@@ -431,6 +434,8 @@ export default {
   margin-bottom: 20px;
   display: flex;
   gap: 80px;
+  gap : 80px;
+  display: flex;
 }
 .new-chat-button {
   width: 20%;
@@ -439,6 +444,7 @@ export default {
   padding-bottom: 12px;
   padding-left: 10px;
   background: linear-gradient(120deg, rgba(28, 32, 51, 0), rgba(16, 21, 33, 0));
+  background: linear-gradient(135deg, #9d4edd 0%, #764ba2 100%);
   border: none;
   color: white;
   border-radius: 10px;
