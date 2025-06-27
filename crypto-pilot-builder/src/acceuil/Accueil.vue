@@ -58,7 +58,6 @@
     </aside>
     <main class="main-content">
       <header class="main-header">
-        <h1 class="welcome-title">Welcome</h1>
         <div class="user-section">
           <div v-if="isAuthenticated" class="user-info">
             <span class="user-welcome"
@@ -346,12 +345,19 @@ export default {
 }
 
 .sidebar {
-  width: 280px;
-  background: linear-gradient(180deg, #4b2e83 0%, #2e1b4d 100%);
-  color: white;
-  padding: 25px;
-  box-shadow: 4px 0 10px rgba(0, 0, 0, 0.2);
-  transition: all 0.3s ease;
+  position: fixed;
+  top: 40px;
+  left: 40px;
+  width: 200px;
+  height: 80vh;
+  background: rgba(255, 255, 255, 0.1);
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
+  border-radius: 24px;
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  padding: 20px;
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.3);
+  color: #fff;
 }
 
 .sidebar-header {
@@ -420,21 +426,17 @@ export default {
   left: 100%;
 }
 
-/* Scrollbar personnalisée pour la liste des chats */
 .chat-list-section {
   display: flex;
   flex-direction: column;
   gap: 10px;
   max-height: 70vh;
   overflow-y: auto;
-  padding-right: 8px; /* Légèrement augmenté pour laisser place à la scrollbar */
-  
-  /* Scrollbar WebKit (Chrome, Safari, Edge) */
+  padding-right: 8px;
   scrollbar-width: thin;
   scrollbar-color: rgba(118, 75, 162, 0.6) rgba(46, 27, 77, 0.3);
 }
 
-/* Style pour navigateurs WebKit */
 .chat-list-section::-webkit-scrollbar {
   width: 8px;
   background-color: transparent;
@@ -464,7 +466,6 @@ export default {
   background: linear-gradient(180deg, #a552cc 0%, #7a5195 100%);
 }
 
-/* Animation de fade pour la scrollbar */
 .chat-list-section::-webkit-scrollbar-thumb {
   opacity: 0.7;
 }
@@ -473,7 +474,6 @@ export default {
   opacity: 1;
 }
 
-/* Style alternatif pour Firefox */
 @supports (scrollbar-width: thin) {
   .chat-list-section {
     scrollbar-width: thin;
@@ -481,13 +481,11 @@ export default {
   }
 }
 
-/* Effet de glow subtil au survol de la zone de scroll */
 .chat-list-section:hover {
   box-shadow: inset 2px 0 0 rgba(118, 75, 162, 0.2);
   transition: box-shadow 0.3s ease;
 }
 
-/* Variante encore plus stylée avec dégradé animé (optionnel) */
 .chat-list-section::-webkit-scrollbar-thumb {
   position: relative;
 }
@@ -499,9 +497,9 @@ export default {
   left: 0;
   right: 0;
   bottom: 0;
-  background: linear-gradient(45deg, 
-    rgba(255, 255, 255, 0.1) 0%, 
-    transparent 50%, 
+  background: linear-gradient(45deg,
+    rgba(255, 255, 255, 0.1) 0%,
+    transparent 50%,
     rgba(255, 255, 255, 0.1) 100%);
   border-radius: 10px;
   opacity: 0;
@@ -550,8 +548,8 @@ export default {
 .chat-item-button {
   flex: 1;
   padding: 14px 18px;
-  background: linear-gradient(145deg, #5a3494 0%, #3c2366 100%);
-  border: none;
+  background: rgba(255, 255, 255, 0.1);
+  border: 1px solid rgba(255, 255, 255, 0.2);
   color: #f3e8ff;
   border-radius: 10px;
   cursor: pointer;
@@ -560,12 +558,13 @@ export default {
   text-align: left;
   position: relative;
   overflow: hidden;
-  box-shadow: 0 2px 6px rgba(0,0,0,0.1);
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.2);
 }
 
 .chat-item-button:hover {
+  background: rgba(255, 255, 255, 0.2);
+  border-color: rgba(255, 255, 255, 0.3);
   transform: translateX(8px);
-  background: linear-gradient(145deg, #764ba2 0%, #5a3494 100%);
 }
 
 .chat-item-button::after {
@@ -665,7 +664,7 @@ export default {
   display: flex;
   flex-direction: column;
   align-items: center;
-  background: linear-gradient(135deg, #e0d6f6 0%, #f0eaff 100%);
+  background: linear-gradient(135deg, #111421 0%, #111421 100%);
   overflow-y: auto;
 }
 
@@ -682,17 +681,6 @@ export default {
 @keyframes fadeInUp {
   from { opacity: 0; transform: translateY(20px); }
   to { opacity: 1; transform: translateY(0); }
-}
-
-.welcome-title {
-  font-size: 120px;
-  font-weight: 900;
-  color: #4b2e83;
-  margin: 0;
-  text-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
-  background: linear-gradient(45deg, #7a5195 0%, #a552cc 100%);
-  -webkit-background-clip: text;
-  -webkit-text-fill-color: transparent;
 }
 
 .user-section {
