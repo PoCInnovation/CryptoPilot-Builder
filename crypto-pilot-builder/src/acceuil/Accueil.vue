@@ -652,9 +652,7 @@ export default {
   left: 100%;
 }
 .chat-item-button--active {
-  background: linear-gradient(120deg, rgba(28, 32, 51, 0), rgba(16, 21, 33, 0));
-  border: none;
-  transition: left 0.5s ease;
+  background: linear-gradient(120deg, rgba(28, 32, 51, 0), rgba(16, 21, 33, 0));  border: none;  transition: left 0.5s ease;
   font-weight: bold;
   box-shadow: 0 4px 12px rgba(118, 75, 162, 0.3);
   transform: translateX(5px);
@@ -777,6 +775,31 @@ export default {
   font-size: 16px;
   text-shadow: 0 1px 2px rgba(0, 0, 0, 0.05);
 }
+
+.login-button {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 14px 24px;
+  background: rgba(28, 32, 51, 0.1);
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  color: white;
+  border-radius: 30px;
+  cursor: pointer;
+  font-size: 15px;
+  font-weight: 700;
+  transition: all 0.3s ease;
+  box-shadow: 0 6px 18px rgba(118, 75, 162, 0.3);
+}
+
+.login-button:hover {
+  background: rgba(28, 32, 51, 0.2);
+  transform: translateY(-2px);
+  box-shadow: 0 8px 24px rgba(118, 75, 162, 0.4);
+}
+
 .logout-button {
   display: flex;
   align-items: center;
@@ -892,7 +915,7 @@ export default {
   padding: 18px 35px;
   font-size: 20px;
   font-weight: bold;
-  background: linear-gradient(120deg, rgba(28, 32, 51, 0), rgba(16, 21, 33, 0));
+  background: linear-gradient(120deg, rgba(28, 32, 51, 0), rgba(16, 21, 33, 0));  border: none;  transition: left 0.5s ease;
   border: none;
   color: white;
   border-radius: 12px;
@@ -1033,7 +1056,7 @@ export default {
 .talk-to-agent-button-disabled:hover {
   background: rgba(28, 32, 51, 0.2);
   transform: translateY(-3px);
-  box-shadow: 0 8px 24px rgba(118, 75, 162, 0.4);
+  box-shadow: 0 8px 24px rgba(118, 75, 162, 0.4); /* Ombre plus forte */
 }
 .talk-to-agent-button-disabled:hover::after {
   position: absolute;
@@ -1077,8 +1100,7 @@ export default {
   }
 }
 .modal-header {
-  background: linear-gradient(120deg, rgba(28, 32, 51, 0), rgba(16, 21, 33, 0));
-  border: none;
+  background: linear-gradient(120deg, rgba(28, 32, 51, 0), rgba(16, 21, 33, 0));  border: none;  transition: left 0.5s ease;
   color: white;
   padding: 25px;
   display: flex;
