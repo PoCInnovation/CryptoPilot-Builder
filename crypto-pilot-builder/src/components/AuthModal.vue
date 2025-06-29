@@ -311,31 +311,35 @@ export default {
   left: 0;
   right: 0;
   bottom: 0;
-  background: linear-gradient(135deg, rgba(118, 75, 162, 0.7) 0%, rgba(90, 52, 148, 0.7) 100%);
+  background: linear-gradient(135deg, rgba(118, 75, 162, 0.8) 0%, rgba(90, 52, 148, 0.8) 100%);
   display: flex;
   justify-content: center;
   align-items: center;
   z-index: 2000;
-  backdrop-filter: blur(6px);
+  backdrop-filter: blur(8px);
   animation: fadeIn 0.3s ease;
 }
 
 @keyframes fadeIn {
-  from { opacity: 0; }
-  to { opacity: 1; }
+  from { 
+    opacity: 0; 
+  }
+  to { 
+    opacity: 1; 
+  }
 }
 
 .modal-container {
   background: white;
   border-radius: 20px;
-  box-shadow: 0 25px 50px rgba(118, 75, 162, 0.3);
+  box-shadow: 0 25px 50px rgba(118, 75, 162, 0.4);
   width: 90%;
   max-width: 450px;
-  overflow: hidden;
+  max-height: 90vh;
+  overflow-y: auto;
   transform: scale(0.95);
   animation: modalAppear 0.4s ease forwards;
   position: relative;
-  overflow: hidden;
 }
 
 @keyframes modalAppear {
@@ -347,12 +351,13 @@ export default {
 .modal-header {
   background: linear-gradient(135deg, #764ba2 0%, #5a3494 100%);
   color: white;
-  padding: 28px 28px 20px;
+  padding: 24px 28px 20px;
   display: flex;
   justify-content: space-between;
   align-items: center;
   box-shadow: 0 4px 15px rgba(118, 75, 162, 0.3);
   position: relative;
+  border-radius: 20px 20px 0 0;
 }
 
 .modal-header::after {
@@ -366,21 +371,21 @@ export default {
 }
 
 .modal-title {
-  font-size: 26px;
-  font-weight: bold;
+  font-size: 24px;
+  font-weight: 700;
   margin: 0;
   letter-spacing: 0.5px;
-  text-shadow: 0 1px 3px rgba(0, 0, 0, 0.2);
+  text-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
 }
 
 .modal-close {
   background: none;
   border: none;
   color: white;
-  font-size: 28px;
+  font-size: 24px;
   cursor: pointer;
-  width: 40px;
-  height: 40px;
+  width: 36px;
+  height: 36px;
   display: flex;
   align-items: center;
   justify-content: center;
@@ -395,204 +400,181 @@ export default {
   transform: rotate(90deg);
 }
 
+.modal-close:focus {
+  outline: 2px solid rgba(255, 255, 255, 0.5);
+  outline-offset: 2px;
+}
+
 .close-icon {
-  position: relative;
-  transition: transform 0.3s ease;
+  font-weight: 300;
+  line-height: 1;
+  font-size: 20px;
 }
 
-.modal-close:hover .close-icon {
-  transform: rotate(90deg);
-}
-
+/* Messages d'erreur/succès */
 .message {
-  margin: 20px 24px 16px;
+  margin: 20px 28px 0;
   padding: 16px 20px;
   border-radius: 12px;
+  font-size: 14px;
   font-weight: 500;
-  display: flex;
-  align-items: center;
-  gap: 12px;
-  border-left: 4px solid;
   animation: slideDown 0.3s ease;
 }
 
 @keyframes slideDown {
-  from { transform: translateY(-10px); opacity: 0; }
-  to { transform: translateY(0); opacity: 1; }
-}
-
-.message.success {
-  background-color: #d1fae5;
-  color: #065f46;
-  border-color: #10b981;
+  from {
+    opacity: 0;
+    transform: translateY(-10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
 }
 
 .message.error {
-  background-color: #fee2e2;
-  color: #991b1b;
-  border-color: #ef4444;
+  background: linear-gradient(135deg, #ff6b6b 0%, #ee5a52 100%);
+  color: white;
+  box-shadow: 0 4px 15px rgba(255, 107, 107, 0.3);
+}
+
+.message.success {
+  background: linear-gradient(135deg, #51cf66 0%, #40c057 100%);
+  color: white;
+  box-shadow: 0 4px 15px rgba(81, 207, 102, 0.3);
 }
 
 .message-content {
   display: flex;
   align-items: center;
-  gap: 10px;
+  gap: 12px;
 }
 
 .message-icon {
-  font-size: 18px;
-  min-width: 20px;
+  font-size: 16px;
+  flex-shrink: 0;
 }
 
+/* Formulaire */
 .auth-form {
-  padding: 20px 28px 32px;
+  padding: 28px;
 }
 
 .form-group {
-  margin-bottom: 24px;
+  margin-bottom: 20px;
 }
 
 .form-label {
   display: block;
-  margin-bottom: 8px;
+  font-size: 14px;
   font-weight: 600;
-  color: #4b2e83;
-  font-size: 15px;
-  text-transform: uppercase;
-  letter-spacing: 0.5px;
+  color: #333;
+  margin-bottom: 8px;
+  letter-spacing: 0.3px;
 }
 
 .input-wrapper {
   position: relative;
-  overflow: hidden;
 }
 
 .form-input {
   width: 100%;
-  padding: 14px 18px;
-  border: 2px solid #dcdcdc;
-  border-radius: 12px;
+  padding: 14px 16px;
+  border: 2px solid #e1e5e9;
+  border-radius: 10px;
   font-size: 15px;
+  background: #fafbfc;
   transition: all 0.3s ease;
-  background-color: #f8f6ff;
   box-sizing: border-box;
+  outline: none;
   font-family: inherit;
-  z-index: 1;
-  position: relative;
 }
 
 .form-input:focus {
-  outline: none;
   border-color: #764ba2;
-  background-color: white;
-  box-shadow: 0 0 0 4px rgba(118, 75, 162, 0.15);
+  background: white;
+  box-shadow: 0 0 0 3px rgba(118, 75, 162, 0.1);
+  transform: translateY(-1px);
 }
 
 .form-input::placeholder {
-  color: #aaa;
+  color: #9ca3af;
+  font-size: 14px;
 }
 
-.form-input:focus + .input-decoration,
-.input-wrapper:hover .input-decoration {
-  transform: translateX(0);
-}
-
-.input-decoration {
-  content: '';
-  position: absolute;
-  top: 0;
-  left: -100%;
-  width: 100%;
-  height: 100%;
-  background: linear-gradient(90deg, transparent, rgba(118, 75, 162, 0.1), transparent);
-  transition: transform 0.5s ease;
-  z-index: 0;
-}
-
+/* Actions du formulaire */
 .form-actions {
   display: flex;
-  gap: 16px;
-  justify-content: flex-end;
-  margin-top: 30px;
-  flex-wrap: wrap;
+  gap: 12px;
+  margin-top: 28px;
 }
 
+.btn-primary,
 .btn-secondary {
-  padding: 12px 24px;
-  border: 2px solid #e1e8ed;
-  background: white;
-  color: #4b2e83;
-  border-radius: 12px;
-  cursor: pointer;
-  font-size: 15px;
-  font-weight: 600;
-  transition: all 0.3s ease;
-  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.05);
-  position: relative;
-  overflow: hidden;
-  z-index: 1;
-}
-
-.btn-secondary:hover {
-  background-color: #f3e8ff;
-  border-color: #c5b3f4;
-  transform: translateY(-2px);
-  box-shadow: 0 4px 12px rgba(197, 179, 244, 0.3);
-}
-
-.btn-secondary::after {
-  content: '';
-  position: absolute;
-  top: 0;
-  left: -100%;
-  width: 100%;
-  height: 100%;
-  background: linear-gradient(90deg, transparent, rgba(118, 75, 162, 0.1), transparent);
-  transition: left 0.5s ease;
-  z-index: -1;
-}
-
-.btn-secondary:hover::after {
-  left: 100%;
-}
-
-.btn-primary {
-  padding: 12px 24px;
-  background: linear-gradient(135deg, #764ba2 0%, #5a3494 100%);
+  flex: 1;
+  padding: 14px 20px;
   border: none;
-  color: white;
-  border-radius: 12px;
-  cursor: pointer;
+  border-radius: 10px;
   font-size: 15px;
   font-weight: 600;
+  cursor: pointer;
   transition: all 0.3s ease;
-  box-shadow: 0 6px 18px rgba(118, 75, 162, 0.3);
-  position: relative;
-  overflow: hidden;
-  z-index: 1;
   display: flex;
   align-items: center;
   justify-content: center;
+  gap: 8px;
+  letter-spacing: 0.3px;
+  position: relative;
+  overflow: hidden;
+  font-family: inherit;
+}
+
+.btn-primary {
+  background: linear-gradient(135deg, #764ba2 0%, #5a3494 100%);
+  color: white;
+  box-shadow: 0 4px 15px rgba(118, 75, 162, 0.3);
 }
 
 .btn-primary:hover:not(:disabled) {
   transform: translateY(-2px);
-  box-shadow: 0 8px 24px rgba(118, 75, 162, 0.4);
+  box-shadow: 0 6px 20px rgba(118, 75, 162, 0.4);
+}
+
+.btn-primary:active:not(:disabled) {
+  transform: translateY(0);
+  box-shadow: 0 4px 15px rgba(118, 75, 162, 0.3);
 }
 
 .btn-primary:disabled {
-  background: linear-gradient(135deg, #95a5a6 0%, #7f8c8d 100%);
+  opacity: 0.7;
   cursor: not-allowed;
   transform: none;
 }
 
+.btn-secondary {
+  background: #f8f9fa;
+  color: #6c757d;
+  border: 2px solid #e9ecef;
+}
+
+.btn-secondary:hover {
+  background: #e9ecef;
+  border-color: #dee2e6;
+  transform: translateY(-1px);
+}
+
+.btn-primary:focus,
+.btn-secondary:focus {
+  outline: 2px solid #764ba2;
+  outline-offset: 2px;
+}
+
+/* Spinner de chargement */
 .spinner {
-  display: inline-block;
-  width: 18px;
-  height: 18px;
-  margin-right: 8px;
-  border: 2px solid #ffffff;
-  border-top-color: transparent;
+  width: 16px;
+  height: 16px;
+  border: 2px solid rgba(255, 255, 255, 0.3);
+  border-top: 2px solid white;
   border-radius: 50%;
   animation: spin 1s linear infinite;
 }
@@ -602,84 +584,139 @@ export default {
   100% { transform: rotate(360deg); }
 }
 
+/* Pied de formulaire */
 .form-footer {
-  text-align: center;
   margin-top: 24px;
+  text-align: center;
   padding-top: 20px;
-  border-top: 1px solid #eee;
+  border-top: 1px solid #f0f0f0;
 }
 
 .form-footer p {
   margin: 0;
-  color: #4b2e83;
+  color: #6c757d;
   font-size: 14px;
-  line-height: 1.5;
 }
 
 .link-button {
   background: none;
   border: none;
   color: #764ba2;
-  cursor: pointer;
   font-weight: 600;
+  cursor: pointer;
   text-decoration: none;
+  transition: all 0.2s ease;
   font-size: 14px;
-  transition: all 0.3s ease;
-  position: relative;
+  font-family: inherit;
 }
 
 .link-button:hover {
   color: #5a3494;
-  transform: translateX(5px);
+  text-decoration: underline;
 }
 
-.link-button::after {
-  content: '';
-  position: absolute;
-  bottom: -2px;
-  left: 0;
-  width: 0%;
-  height: 1px;
-  background: #764ba2;
-  transition: width 0.3s ease;
+.link-button:focus {
+  outline: 2px solid #764ba2;
+  outline-offset: 2px;
+  border-radius: 2px;
 }
 
-.link-button:hover::after {
-  width: 100%;
-}
-
-.modal-container::before {
-  content: '';
-  position: absolute;
-  top: -50%;
-  left: -50%;
-  width: 200%;
-  height: 200%;
-  background: radial-gradient(circle at center, rgba(118, 75, 162, 0.05) 0%, transparent 60%);
-  animation: rotateBackground 20s linear infinite;
-  z-index: 0;
-  pointer-events: none;
-}
-
-@keyframes rotateBackground {
-  0% { transform: rotate(0deg); }
-  100% { transform: rotate(360deg); }
-}
-
-@media (max-width: 768px) {
+/* Responsive */
+@media (max-width: 500px) {
   .modal-container {
+    width: 95%;
     margin: 20px;
+    max-height: 95vh;
   }
+  
+  .modal-header {
+    padding: 20px;
+  }
+  
   .modal-title {
-    font-size: 22px;
+    font-size: 20px;
   }
-  .form-input {
-    font-size: 14px;
+  
+  .auth-form {
+    padding: 20px;
   }
+  
+  .form-actions {
+    flex-direction: column;
+    gap: 10px;
+  }
+  
   .btn-primary,
   .btn-secondary {
-    font-size: 14px;
-    padding: 10px 20px;
+    width: 100%;
   }
+  
+  .message {
+    margin: 16px 20px 0;
+    padding: 14px 16px;
+  }
+}
+
+/* Animation pour les champs d'erreur */
+.form-input.error {
+  border-color: #ff6b6b;
+  background: #fff8f8;
+  animation: shake 0.5s ease-in-out;
+}
+
+@keyframes shake {
+  0%, 100% { transform: translateX(0); }
+  25% { transform: translateX(-4px); }
+  75% { transform: translateX(4px); }
+}
+
+/* Styles pour les états de validation */
+.form-input.valid {
+  border-color: #51cf66;
+  background: #f8fff8;
+}
+
+.form-input.invalid {
+  border-color: #ff6b6b;
+  background: #fff8f8;
+}
+
+/* Scrollbar personnalisée pour modal-container */
+.modal-container::-webkit-scrollbar {
+  width: 6px;
+}
+
+.modal-container::-webkit-scrollbar-track {
+  background: #f1f1f1;
+  border-radius: 3px;
+}
+
+.modal-container::-webkit-scrollbar-thumb {
+  background: #764ba2;
+  border-radius: 3px;
+}
+
+.modal-container::-webkit-scrollbar-thumb:hover {
+  background: #5a3494;
+}
+
+/* Amélioration de l'accessibilité */
+@media (prefers-reduced-motion: reduce) {
+  .modal-overlay,
+  .modal-container,
+  .message,
+  .form-input,
+  .btn-primary,
+  .btn-secondary,
+  .modal-close,
+  .spinner {
+    animation: none;
+    transition: none;
+  }
+}
+
+.form-input:focus-visible {
+  outline: 2px solid #764ba2;
+  outline-offset: 2px;
 }
 </style>
