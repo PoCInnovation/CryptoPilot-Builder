@@ -311,12 +311,12 @@ export default {
   left: 0;
   right: 0;
   bottom: 0;
-  background: linear-gradient(120deg, rgba(28, 32, 51, 0), rgba(16, 21, 33, 0));
+  background: linear-gradient(135deg, rgba(28, 32, 51, 0.8), rgba(16, 21, 33, 0.9));
   display: flex;
   justify-content: center;
   align-items: center;
   z-index: 2000;
-  backdrop-filter: blur(8px);
+  backdrop-filter: blur(15px);
   animation: fadeIn 0.3s ease;
 }
 
@@ -330,9 +330,14 @@ export default {
 }
 
 .modal-container {
-  background: white;
-  border-radius: 20px;
-  box-shadow: 0 25px 50px rgba(118, 75, 162, 0.4);
+  background: rgba(255, 255, 255, 0.1);
+  backdrop-filter: blur(20px);
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  border-radius: 24px;
+  box-shadow: 
+    0 25px 50px rgba(0, 0, 0, 0.25),
+    0 0 0 1px rgba(255, 255, 255, 0.05),
+    inset 0 1px 0 rgba(255, 255, 255, 0.1);
   width: 90%;
   max-width: 450px;
   max-height: 90vh;
@@ -349,15 +354,17 @@ export default {
 }
 
 .modal-header {
-  background: linear-gradient(135deg, #764ba2 0%, #5a3494 100%);
+  background: linear-gradient(135deg, rgba(118, 75, 162, 0.8) 0%, rgba(90, 52, 148, 0.9) 100%);
+  backdrop-filter: blur(10px);
   color: white;
   padding: 24px 28px 20px;
   display: flex;
   justify-content: space-between;
   align-items: center;
-  box-shadow: 0 4px 15px rgba(118, 75, 162, 0.3);
+  box-shadow: 0 4px 20px rgba(118, 75, 162, 0.3);
   position: relative;
-  border-radius: 20px 20px 0 0;
+  border-radius: 24px 24px 0 0;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.1);
 }
 
 .modal-header::after {
@@ -367,7 +374,7 @@ export default {
   left: 0;
   width: 100%;
   height: 3px;
-  background: linear-gradient(90deg, #764ba2 0%, #a552cc 100%);
+  background: linear-gradient(90deg, rgba(118, 75, 162, 0.6) 0%, rgba(165, 82, 204, 0.8) 100%);
 }
 
 .modal-title {
@@ -375,12 +382,13 @@ export default {
   font-weight: 700;
   margin: 0;
   letter-spacing: 0.5px;
-  text-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
+  text-shadow: 0 2px 4px rgba(0, 0, 0, 0.3);
 }
 
 .modal-close {
-  background: none;
-  border: none;
+  background: rgba(255, 255, 255, 0.1);
+  backdrop-filter: blur(10px);
+  border: 1px solid rgba(255, 255, 255, 0.2);
   color: white;
   font-size: 24px;
   cursor: pointer;
@@ -396,8 +404,9 @@ export default {
 }
 
 .modal-close:hover {
-  background-color: rgba(255, 255, 255, 0.2);
+  background: rgba(255, 255, 255, 0.2);
   transform: rotate(90deg);
+  box-shadow: 0 4px 15px rgba(0, 0, 0, 0.2);
 }
 
 .modal-close:focus {
@@ -419,6 +428,8 @@ export default {
   font-size: 14px;
   font-weight: 500;
   animation: slideDown 0.3s ease;
+  backdrop-filter: blur(10px);
+  border: 1px solid rgba(255, 255, 255, 0.1);
 }
 
 @keyframes slideDown {
@@ -433,13 +444,13 @@ export default {
 }
 
 .message.error {
-  background: linear-gradient(135deg, #ff6b6b 0%, #ee5a52 100%);
+  background: rgba(255, 107, 107, 0.9);
   color: white;
   box-shadow: 0 4px 15px rgba(255, 107, 107, 0.3);
 }
 
 .message.success {
-  background: linear-gradient(135deg, #51cf66 0%, #40c057 100%);
+  background: rgba(81, 207, 102, 0.9);
   color: white;
   box-shadow: 0 4px 15px rgba(81, 207, 102, 0.3);
 }
@@ -468,9 +479,10 @@ export default {
   display: block;
   font-size: 14px;
   font-weight: 600;
-  color: #333;
+  color: rgba(255, 255, 255, 0.9);
   margin-bottom: 8px;
   letter-spacing: 0.3px;
+  text-shadow: 0 1px 2px rgba(0, 0, 0, 0.1);
 }
 
 .input-wrapper {
@@ -480,10 +492,12 @@ export default {
 .form-input {
   width: 100%;
   padding: 14px 16px;
-  border: 2px solid #e1e5e9;
-  border-radius: 10px;
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  border-radius: 12px;
   font-size: 15px;
-  background: #fafbfc;
+  background: rgba(255, 255, 255, 0.1);
+  backdrop-filter: blur(10px);
+  color: white;
   transition: all 0.3s ease;
   box-sizing: border-box;
   outline: none;
@@ -491,14 +505,16 @@ export default {
 }
 
 .form-input:focus {
-  border-color: #764ba2;
-  background: white;
-  box-shadow: 0 0 0 3px rgba(118, 75, 162, 0.1);
+  border-color: rgba(118, 75, 162, 0.8);
+  background: rgba(255, 255, 255, 0.15);
+  box-shadow: 
+    0 0 0 3px rgba(118, 75, 162, 0.2),
+    0 4px 20px rgba(118, 75, 162, 0.1);
   transform: translateY(-1px);
 }
 
 .form-input::placeholder {
-  color: #9ca3af;
+  color: rgba(255, 255, 255, 0.6);
   font-size: 14px;
 }
 
@@ -514,7 +530,7 @@ export default {
   flex: 1;
   padding: 14px 20px;
   border: none;
-  border-radius: 10px;
+  border-radius: 12px;
   font-size: 15px;
   font-weight: 600;
   cursor: pointer;
@@ -527,17 +543,20 @@ export default {
   position: relative;
   overflow: hidden;
   font-family: inherit;
+  backdrop-filter: blur(10px);
 }
 
 .btn-primary {
-  background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.1), transparent);
+  background: linear-gradient(135deg, rgba(118, 75, 162, 0.8) 0%, rgba(90, 52, 148, 0.9) 100%);
   color: white;
-  box-shadow: 0 4px 15px rgba(118, 75, 162, 0.3);
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  box-shadow: 0 4px 20px rgba(118, 75, 162, 0.3);
 }
 
 .btn-primary:hover:not(:disabled) {
+  background: linear-gradient(135deg, rgba(118, 75, 162, 0.9) 0%, rgba(90, 52, 148, 1) 100%);
   transform: translateY(-2px);
-  box-shadow: 0 6px 20px rgba(118, 75, 162, 0.4);
+  box-shadow: 0 6px 25px rgba(118, 75, 162, 0.4);
 }
 
 .btn-primary:active:not(:disabled) {
@@ -552,20 +571,21 @@ export default {
 }
 
 .btn-secondary {
-  background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.1), transparent);
-  color: #6c757d;
-  border: 2px solid #e9ecef;
+  background: rgba(255, 255, 255, 0.1);
+  color: rgba(255, 255, 255, 0.8);
+  border: 1px solid rgba(255, 255, 255, 0.2);
 }
 
 .btn-secondary:hover {
-  background: #e9ecef;
-  border-color: #dee2e6;
+  background: rgba(255, 255, 255, 0.15);
+  color: white;
   transform: translateY(-1px);
+  box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
 }
 
 .btn-primary:focus,
 .btn-secondary:focus {
-  outline: 2px solid #764ba2;
+  outline: 2px solid rgba(118, 75, 162, 0.5);
   outline-offset: 2px;
 }
 
@@ -589,34 +609,36 @@ export default {
   margin-top: 24px;
   text-align: center;
   padding-top: 20px;
-  border-top: 1px solid #f0f0f0;
+  border-top: 1px solid rgba(255, 255, 255, 0.1);
 }
 
 .form-footer p {
   margin: 0;
-  color: #6c757d;
+  color: rgba(255, 255, 255, 0.7);
   font-size: 14px;
 }
 
 .link-button {
   background: none;
   border: none;
-  color: #764ba2;
+  color: rgba(118, 75, 162, 1);
   font-weight: 600;
   cursor: pointer;
   text-decoration: none;
   transition: all 0.2s ease;
   font-size: 14px;
   font-family: inherit;
+  text-shadow: 0 0 10px rgba(118, 75, 162, 0.5);
 }
 
 .link-button:hover {
-  color: #5a3494;
+  color: rgba(165, 82, 204, 1);
   text-decoration: underline;
+  text-shadow: 0 0 15px rgba(165, 82, 204, 0.7);
 }
 
 .link-button:focus {
-  outline: 2px solid #764ba2;
+  outline: 2px solid rgba(118, 75, 162, 0.5);
   outline-offset: 2px;
   border-radius: 2px;
 }
@@ -639,7 +661,6 @@ export default {
   
   .auth-form {
     padding: 20px;
-    color: black
   }
   
   .form-actions {
@@ -660,8 +681,8 @@ export default {
 
 /* Animation pour les champs d'erreur */
 .form-input.error {
-  border-color: #ff6b6b;
-  background: #fff8f8;
+  border-color: rgba(255, 107, 107, 0.8);
+  background: rgba(255, 107, 107, 0.1);
   animation: shake 0.5s ease-in-out;
 }
 
@@ -673,13 +694,13 @@ export default {
 
 /* Styles pour les états de validation */
 .form-input.valid {
-  border-color: #51cf66;
-  background: #f8fff8;
+  border-color: rgba(81, 207, 102, 0.8);
+  background: rgba(81, 207, 102, 0.1);
 }
 
 .form-input.invalid {
-  border-color: #ff6b6b;
-  background: #fff8f8;
+  border-color: rgba(255, 107, 107, 0.8);
+  background: rgba(255, 107, 107, 0.1);
 }
 
 /* Scrollbar personnalisée pour modal-container */
@@ -688,17 +709,18 @@ export default {
 }
 
 .modal-container::-webkit-scrollbar-track {
-  background: #f1f1f1;
+  background: rgba(255, 255, 255, 0.1);
   border-radius: 3px;
 }
 
 .modal-container::-webkit-scrollbar-thumb {
-  background: #764ba2;
+  background: rgba(118, 75, 162, 0.6);
   border-radius: 3px;
+  backdrop-filter: blur(10px);
 }
 
 .modal-container::-webkit-scrollbar-thumb:hover {
-  background: #5a3494;
+  background: rgba(118, 75, 162, 0.8);
 }
 
 /* Amélioration de l'accessibilité */
@@ -717,7 +739,7 @@ export default {
 }
 
 .form-input:focus-visible {
-  outline: 2px solid #764ba2;
+  outline: 2px solid rgba(118, 75, 162, 0.5);
   outline-offset: 2px;
 }
 </style>
