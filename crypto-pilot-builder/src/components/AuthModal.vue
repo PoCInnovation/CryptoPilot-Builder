@@ -311,7 +311,7 @@ export default {
   left: 0;
   right: 0;
   bottom: 0;
-  background: linear-gradient(135deg, rgba(118, 75, 162, 0.8) 0%, rgba(90, 52, 148, 0.8) 100%);
+  background: linear-gradient(120deg, rgba(28, 32, 51, 0), rgba(16, 21, 33, 0));
   display: flex;
   justify-content: center;
   align-items: center;
@@ -530,7 +530,7 @@ export default {
 }
 
 .btn-primary {
-  background: linear-gradient(135deg, #764ba2 0%, #5a3494 100%);
+  background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.1), transparent);
   color: white;
   box-shadow: 0 4px 15px rgba(118, 75, 162, 0.3);
 }
@@ -552,7 +552,7 @@ export default {
 }
 
 .btn-secondary {
-  background: #f8f9fa;
+  background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.1), transparent);
   color: #6c757d;
   border: 2px solid #e9ecef;
 }
@@ -639,6 +639,7 @@ export default {
   
   .auth-form {
     padding: 20px;
+    color: black
   }
   
   .form-actions {

@@ -1000,20 +1000,7 @@ export default {
   text-shadow: 0 1px 2px rgba(0, 0, 0, 0.2);
 }
 
-.modal-overlay {
-  position: fixed;
-  top: 0;
-  left: 0;
-  right: 0;
-  bottom: 0;
-  background-color: rgba(75, 25, 140, 0.7);
-  display: flex;
-  justify-content: center;
-  align-items: center;
-  z-index: 2000;
-  backdrop-filter: blur(6px);
-  animation: fadeIn 0.3s ease;
-}
+
 
 .modal-container {
   background: white;
