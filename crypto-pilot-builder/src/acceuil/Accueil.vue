@@ -1,4 +1,3 @@
-
 <template>
   <div class="app-container">
     <aside class="sidebar">
@@ -158,6 +157,8 @@
 <script>
 import { mapState, mapActions, mapGetters } from "vuex";
 import AuthModal from "../components/AuthModal.vue";
+import apiService from "../services/apiService";
+
 export default {
   name: "Accueil",
   components: {
@@ -165,8 +166,8 @@ export default {
   },
   data() {
     return {
-      activeChat: 1,
-      nextChatId: 2,
+      activeChat: null,
+      nextChatId: 1,
       editingChatId: null,
       tempChatName: "",
       showContextMenu: false,
@@ -175,7 +176,7 @@ export default {
       contextMenuChatId: null,
       showAuthModal: false,
       redirectAfterAuth: null,
-      chats: [{ id: 1, name: "Trading Analysis" }],
+      chats: [],
     };
   },
   computed: {
@@ -274,17 +275,43 @@ export default {
         this.hideContextMenu();
       }
     },
-    deleteChat(chatId) {
+    async loadChatsFromApi() {
+      try {
+        const response = await apiService.listSessions();
+        const sessions = response.sessions || [];
+        this.chats = sessions.map((session, idx) => ({
+          id: session.session_id, // Utilise bien le vrai ID de session
+          name: session.session_name || `Chat ${idx + 1}`,
+        }));
+        if (this.chats.length > 0) {
+          this.activeChat = this.chats[0].id;
+          this.nextChatId = this.chats.length + 1;
+        }
+      } catch (error) {
+        console.error("Erreur lors du chargement des chats:", error);
+        this.chats = [{ id: 1, name: "Trading Analysis" }];
+        this.activeChat = 1;
+        this.nextChatId = 2;
+      }
+    },
+    async deleteChat(chatId) {
       if (this.chats.length <= 1) {
         alert("Vous devez garder au moins un chat");
         return;
       }
-      const index = this.chats.findIndex((chat) => chat.id === chatId);
-      if (index !== -1) {
-        this.chats.splice(index, 1);
-        if (this.activeChat === chatId) {
-          this.activeChat = this.chats[0].id;
+      try {
+        await apiService.deleteSession(chatId); // Suppression côté API
+        // Suppression locale si succès
+        const index = this.chats.findIndex((chat) => chat.id === chatId);
+        if (index !== -1) {
+          this.chats.splice(index, 1);
+          if (this.activeChat === chatId && this.chats.length > 0) {
+            this.activeChat = this.chats[0].id;
+          }
         }
+      } catch (error) {
+        console.error("Erreur lors de la suppression du chat:", error);
+        alert("Erreur lors de la suppression du chat.");
       }
     },
     handleEditKeydown(event) {
@@ -306,10 +333,11 @@ export default {
       this.$router.push("/");
     },
   },
-  mounted() {
+  async mounted() {
     this.$store.dispatch("auth/checkAuth");
     if (this.isAuthenticated) {
-      this.loadAgentConfig();
+      await this.loadAgentConfig();
+      await this.loadChatsFromApi(); // Charge les chats réels dès l'accueil
     }
     const urlParams = new URLSearchParams(window.location.search);
     if (urlParams.get("authRequired") === "true") {
