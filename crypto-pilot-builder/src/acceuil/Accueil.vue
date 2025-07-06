@@ -111,7 +111,9 @@
       <!-- Chat -->
       <section v-else class="chat-section">
         <div class="chat-header">
-          <button class="back-dashboard-btn" @click="showChat = false">← Retour au Dashboard</button>
+          <button class="configure-agent-button back-dashboard-btn" @click="showChat = false">
+            ← Retour au Dashboard
+          </button>
           <h3 class="chat-title">Chat avec votre Agent IA</h3>
         </div>
         <div class="chat-container">
@@ -413,8 +415,12 @@ export default {
   left: -100%;
   width: 100%;
   height: 100%;
-  background: linear-gradient(120deg, rgba(28, 32, 51, 0), rgba(16, 21, 33, 0));
-  border: none;
+  background: linear-gradient(
+    120deg,
+    rgba(255, 255, 255, 0.2) 0%,
+    rgba(255, 255, 255, 0.2) 50%,
+    rgba(255, 255, 255, 0) 80%
+  );
   transition: left 0.5s ease;
 }
 .new-chat-button:hover::after {
@@ -453,7 +459,9 @@ export default {
   gap: 10px;
   max-height: 70vh;
   overflow-y: auto;
-  padding-right: 8px;
+  padding-right: 8px; /* Légèrement augmenté pour laisser place à la scrollbar */
+
+  /* Scrollbar WebKit (Chrome, Safari, Edge) */
   scrollbar-width: thin;
   scrollbar-color: rgba(118, 75, 162, 0.6) rgba(46, 27, 77, 0.3);
 }
@@ -728,6 +736,47 @@ export default {
 .logout-icon {
   font-size: 18px;
 }
+
+.back-dashboard-btn {
+  /* Hérite des styles de .configure-agent-button */
+  padding: 18px 35px;
+  font-size: 20px;
+  font-weight: bold;
+  background: linear-gradient(120deg, rgba(28, 32, 51, 0), rgba(16, 21, 33, 0));
+  border: none;
+  color: white;
+  border-radius: 12px;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  box-shadow: 0 6px 18px rgba(118, 75, 162, 0.3);
+  position: relative;
+  overflow: hidden;
+  z-index: 1;
+  margin-bottom: 20px; /* Espace sous le bouton */
+}
+
+/* Effet hover (identique aux autres boutons) */
+.back-dashboard-btn::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: -100%;
+  width: 100%;
+  height: 100%;
+  background: linear-gradient(120deg, rgba(255,255,255,0.2) 0%, rgba(255,255,255,0.2) 50%, rgba(255,255,255,0) 80%);
+  transition: left 0.5s ease;
+  z-index: -1;
+}
+
+.back-dashboard-btn:hover::before {
+  left: 100%;
+}
+
+.back-dashboard-btn:hover {
+  transform: translateY(-3px);
+  box-shadow: 0 8px 24px rgba(118, 75, 162, 0.4);
+}
+
 .dashboard-section {
   display: flex;
   flex-direction: column;
@@ -1057,12 +1106,93 @@ export default {
   left: 0; top: 0;
   z-index: 2000;
   background: #fff;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
 }
-.back-dashboard-btn {
-  position: absolute;
-  top: 20px; left: 20px;
-  z-index: 10;
-  background: #764ba2;
+.modal-title {
+  font-size: 22px;
+  font-weight: bold;
+  margin: 0;
+  letter-spacing: 0.5px;
+}
+.modal-close {
+  background: none;
+  border: none;
+  color: white;
+  font-size: 26px;
+  cursor: pointer;
+  width: 35px;
+  height: 35px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 50%;
+  transition: background-color 0.2s ease;
+}
+.modal-close:hover {
+  background-color: rgba(255, 255, 255, 0.2);
+}
+.login-form {
+  padding: 35px;
+}
+.form-group {
+  margin-bottom: 25px;
+}
+.form-label {
+  display: block;
+  margin-bottom: 10px;
+  font-weight: 700;
+  color: #4b2e83;
+  font-size: 15px;
+}
+.form-input {
+  width: 100%;
+  padding: 14px 18px;
+  border: 2px solid #dcdcdc;
+  border-radius: 12px;
+  font-size: 15px;
+  transition: all 0.3s ease;
+  background-color: #f8f6ff;
+  box-sizing: border-box;
+  font-family: inherit;
+  box-shadow: inset 0 2px 4px rgba(0, 0, 0, 0.05);
+}
+.form-input:focus {
+  outline: none;
+  border-color: #764ba2;
+  background-color: white;
+  box-shadow: 0 0 0 4px rgba(118, 75, 162, 0.15);
+}
+.form-input::placeholder {
+  color: #aaa;
+}
+.form-actions {
+  display: flex;
+  gap: 15px;
+  justify-content: flex-end;
+  margin-top: 35px;
+}
+.btn-secondary {
+  padding: 12px 24px;
+  border: 2px solid #e1e8ed;
+  background: white;
+  color: #4b2e83;
+  border-radius: 10px;
+  cursor: pointer;
+  font-size: 15px;
+  font-weight: 600;
+  transition: all 0.3s ease;
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.05);
+}
+.btn-secondary:hover {
+  background-color: #f3e8ff;
+  border-color: #c5b3f4;
+}
+.btn-primary {
+  padding: 12px 24px;
+  background: linear-gradient(120deg, rgba(28, 32, 51, 0), rgba(16, 21, 33, 0));
   color: #fff;
   border: none;
   border-radius: 8px;
