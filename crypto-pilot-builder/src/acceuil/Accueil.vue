@@ -103,6 +103,13 @@
             >
               <button class="chat-access-button">💬 Accéder au Chat</button>
             </router-link>
+            <router-link
+              v-if="hasValidConfig"
+              to="/memory"
+              class="agent-navigation-link"
+            >
+              <button class="memory-button">🧠 Mémoire de l'IA</button>
+            </router-link>
           </div>
           <div v-else class="auth-required-section">
             <button
@@ -340,7 +347,7 @@ export default {
 .app-container {
   display: flex;
   height: 100vh;
-  font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+  font-family: "Segoe UI", Tahoma, Geneva, Verdana, sans-serif;
   background: linear-gradient(135deg, #7a5195 0%, #a552cc 100%);
   overflow: hidden;
 }
@@ -361,8 +368,14 @@ export default {
 }
 
 @keyframes fadeIn {
-  from { opacity: 0; transform: translateY(-10px); }
-  to { opacity: 1; transform: translateY(0); }
+  from {
+    opacity: 0;
+    transform: translateY(-10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
 }
 
 .sidebar-title {
@@ -371,7 +384,7 @@ export default {
   color: #f3e8ff;
   margin: 0;
   letter-spacing: 1px;
-  text-shadow: 0 2px 4px rgba(0,0,0,0.3);
+  text-shadow: 0 2px 4px rgba(0, 0, 0, 0.3);
 }
 
 .chat-navigation {
@@ -406,13 +419,18 @@ export default {
 }
 
 .new-chat-button::after {
-  content: '';
+  content: "";
   position: absolute;
   top: 0;
   left: -100%;
   width: 100%;
   height: 100%;
-  background: linear-gradient(120deg, rgba(255,255,255,0.2) 0%, rgba(255,255,255,0.2) 50%, rgba(255,255,255,0) 80%);
+  background: linear-gradient(
+    120deg,
+    rgba(255, 255, 255, 0.2) 0%,
+    rgba(255, 255, 255, 0.2) 50%,
+    rgba(255, 255, 255, 0) 80%
+  );
   transition: left 0.5s ease;
 }
 
@@ -428,7 +446,7 @@ export default {
   max-height: 70vh;
   overflow-y: auto;
   padding-right: 8px; /* Légèrement augmenté pour laisser place à la scrollbar */
-  
+
   /* Scrollbar WebKit (Chrome, Safari, Edge) */
   scrollbar-width: thin;
   scrollbar-color: rgba(118, 75, 162, 0.6) rgba(46, 27, 77, 0.3);
@@ -493,16 +511,18 @@ export default {
 }
 
 .chat-list-section::-webkit-scrollbar-thumb::before {
-  content: '';
+  content: "";
   position: absolute;
   top: 0;
   left: 0;
   right: 0;
   bottom: 0;
-  background: linear-gradient(45deg, 
-    rgba(255, 255, 255, 0.1) 0%, 
-    transparent 50%, 
-    rgba(255, 255, 255, 0.1) 100%);
+  background: linear-gradient(
+    45deg,
+    rgba(255, 255, 255, 0.1) 0%,
+    transparent 50%,
+    rgba(255, 255, 255, 0.1) 100%
+  );
   border-radius: 10px;
   opacity: 0;
   transition: opacity 0.3s ease;
@@ -539,7 +559,7 @@ export default {
   font-family: inherit;
   outline: none;
   transition: all 0.3s ease;
-  box-shadow: inset 0 2px 4px rgba(0,0,0,0.05);
+  box-shadow: inset 0 2px 4px rgba(0, 0, 0, 0.05);
 }
 
 .chat-name-input:focus {
@@ -560,7 +580,7 @@ export default {
   text-align: left;
   position: relative;
   overflow: hidden;
-  box-shadow: 0 2px 6px rgba(0,0,0,0.1);
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.1);
 }
 
 .chat-item-button:hover {
@@ -569,13 +589,18 @@ export default {
 }
 
 .chat-item-button::after {
-  content: '';
+  content: "";
   position: absolute;
   top: 0;
   left: -50%;
   width: 100%;
   height: 100%;
-  background: linear-gradient(120deg, rgba(255,255,255,0.1) 0%, rgba(255,255,255,0.1) 50%, rgba(255,255,255,0) 80%);
+  background: linear-gradient(
+    120deg,
+    rgba(255, 255, 255, 0.1) 0%,
+    rgba(255, 255, 255, 0.1) 50%,
+    rgba(255, 255, 255, 0) 80%
+  );
   transition: left 0.5s ease;
 }
 
@@ -604,7 +629,7 @@ export default {
   align-items: center;
   justify-content: center;
   transition: all 0.3s ease;
-  box-shadow: 0 2px 6px rgba(0,0,0,0.2);
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.2);
   position: relative;
 }
 
@@ -626,8 +651,14 @@ export default {
 }
 
 @keyframes slideDown {
-  from { transform: translateY(-10px); opacity: 0; }
-  to { transform: translateY(0); opacity: 1; }
+  from {
+    transform: translateY(-10px);
+    opacity: 0;
+  }
+  to {
+    transform: translateY(0);
+    opacity: 1;
+  }
 }
 
 .context-menu-item {
@@ -680,8 +711,14 @@ export default {
 }
 
 @keyframes fadeInUp {
-  from { opacity: 0; transform: translateY(20px); }
-  to { opacity: 1; transform: translateY(0); }
+  from {
+    opacity: 0;
+    transform: translateY(20px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
 }
 
 .welcome-title {
@@ -705,8 +742,14 @@ export default {
 }
 
 @keyframes fadeInRight {
-  from { opacity: 0; transform: translateX(20px); }
-  to { opacity: 1; transform: translateX(0); }
+  from {
+    opacity: 0;
+    transform: translateX(20px);
+  }
+  to {
+    opacity: 1;
+    transform: translateX(0);
+  }
 }
 
 .user-info {
@@ -719,7 +762,7 @@ export default {
   color: #2e1b4d;
   font-weight: 600;
   font-size: 16px;
-  text-shadow: 0 1px 2px rgba(0,0,0,0.05);
+  text-shadow: 0 1px 2px rgba(0, 0, 0, 0.05);
 }
 
 .login-button {
@@ -808,13 +851,17 @@ export default {
 
 .crypto-widget::before,
 .news-widget::before {
-  content: '';
+  content: "";
   position: absolute;
   top: -50%;
   left: -50%;
   width: 200%;
   height: 200%;
-  background: radial-gradient(circle at center, rgba(255,255,255,0.2) 0%, transparent 70%);
+  background: radial-gradient(
+    circle at center,
+    rgba(255, 255, 255, 0.2) 0%,
+    transparent 70%
+  );
   transform: rotate(45deg);
   pointer-events: none;
 }
@@ -828,13 +875,13 @@ export default {
 .crypto-percentage {
   font-size: 28px;
   margin-bottom: 8px;
-  text-shadow: 0 2px 4px rgba(0,0,0,0.2);
+  text-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
 }
 
 .crypto-symbol {
   font-size: 18px;
   opacity: 0.9;
-  text-shadow: 0 1px 2px rgba(0,0,0,0.2);
+  text-shadow: 0 1px 2px rgba(0, 0, 0, 0.2);
 }
 
 .news-widget {
@@ -844,7 +891,7 @@ export default {
 .news-title {
   font-size: 20px;
   text-align: center;
-  text-shadow: 0 1px 3px rgba(0,0,0,0.2);
+  text-shadow: 0 1px 3px rgba(0, 0, 0, 0.2);
 }
 
 .action-section {
@@ -881,13 +928,18 @@ export default {
 }
 
 .configure-agent-button::before {
-  content: '';
+  content: "";
   position: absolute;
   top: 0;
   left: -100%;
   width: 100%;
   height: 100%;
-  background: linear-gradient(120deg, rgba(255,255,255,0.2) 0%, rgba(255,255,255,0.2) 50%, rgba(255,255,255,0) 80%);
+  background: linear-gradient(
+    120deg,
+    rgba(255, 255, 255, 0.2) 0%,
+    rgba(255, 255, 255, 0.2) 50%,
+    rgba(255, 255, 255, 0) 80%
+  );
   transition: left 0.5s ease;
   z-index: -1;
 }
@@ -918,13 +970,18 @@ export default {
 }
 
 .chat-access-button::before {
-  content: '';
+  content: "";
   position: absolute;
   top: 0;
   left: -100%;
   width: 100%;
   height: 100%;
-  background: linear-gradient(120deg, rgba(255,255,255,0.2) 0%, rgba(255,255,255,0.2) 50%, rgba(255,255,255,0) 80%);
+  background: linear-gradient(
+    120deg,
+    rgba(255, 255, 255, 0.2) 0%,
+    rgba(255, 255, 255, 0.2) 50%,
+    rgba(255, 255, 255, 0) 80%
+  );
   transition: left 0.5s ease;
   z-index: -1;
 }
@@ -936,6 +993,48 @@ export default {
 .chat-access-button:hover {
   transform: translateY(-3px);
   box-shadow: 0 8px 24px rgba(165, 82, 204, 0.4);
+}
+
+.memory-button {
+  padding: 18px 35px;
+  font-size: 20px;
+  font-weight: bold;
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  border: none;
+  color: white;
+  border-radius: 12px;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  box-shadow: 0 6px 18px rgba(102, 126, 234, 0.3);
+  position: relative;
+  overflow: hidden;
+  z-index: 1;
+}
+
+.memory-button::before {
+  content: "";
+  position: absolute;
+  top: 0;
+  left: -100%;
+  width: 100%;
+  height: 100%;
+  background: linear-gradient(
+    120deg,
+    rgba(255, 255, 255, 0.2) 0%,
+    rgba(255, 255, 255, 0.2) 50%,
+    rgba(255, 255, 255, 0) 80%
+  );
+  transition: left 0.5s ease;
+  z-index: -1;
+}
+
+.memory-button:hover::before {
+  left: 100%;
+}
+
+.memory-button:hover {
+  transform: translateY(-3px);
+  box-shadow: 0 8px 24px rgba(102, 126, 234, 0.4);
 }
 
 .auth-required-section {
@@ -990,7 +1089,7 @@ export default {
   max-width: 320px;
   line-height: 1.5;
   font-style: italic;
-  text-shadow: 0 1px 2px rgba(255,255,255,0.3);
+  text-shadow: 0 1px 2px rgba(255, 255, 255, 0.3);
 }
 
 .modal-overlay {
@@ -1032,7 +1131,7 @@ export default {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
 }
 
 .modal-title {
@@ -1058,7 +1157,7 @@ export default {
 }
 
 .modal-close:hover {
-  background-color: rgba(255,255,255,0.2);
+  background-color: rgba(255, 255, 255, 0.2);
 }
 
 .login-form {
@@ -1087,7 +1186,7 @@ export default {
   background-color: #f8f6ff;
   box-sizing: border-box;
   font-family: inherit;
-  box-shadow: inset 0 2px 4px rgba(0,0,0,0.05);
+  box-shadow: inset 0 2px 4px rgba(0, 0, 0, 0.05);
 }
 
 .form-input:focus {
@@ -1118,7 +1217,7 @@ export default {
   font-size: 15px;
   font-weight: 600;
   transition: all 0.3s ease;
-  box-shadow: 0 2px 6px rgba(0,0,0,0.05);
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.05);
 }
 
 .btn-secondary:hover {

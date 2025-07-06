@@ -74,32 +74,45 @@ class SessionManager:
         
         return result
 
-    def add_message(self, session_id: str, role: str, content: str):
-        """Add message to session"""
+    def add_message(self, session_id: str, role: str, content: str) -> str:
+        """Add message to session and return message ID"""
         if not self.db or not self.ChatMessage or not self.ChatSession:
-            return
+            return None
 
-        # Créer la session si elle n'existe pas
-        session = self.ChatSession.query.get(session_id)
-        if not session:
-            session = self.ChatSession(
-                id=session_id,
-                session_name='New Chat'
+        try:
+            # Créer la session si elle n'existe pas
+            session = self.ChatSession.query.get(session_id)
+            if not session:
+                session = self.ChatSession(
+                    id=session_id,
+                    session_name='New Chat'
+                )
+                self.db.session.add(session)
+
+            # Générer un ID pour le message
+            message_id = str(uuid.uuid4())
+            
+            # Ajouter le message
+            message = self.ChatMessage(
+                id=message_id,
+                session_id=session_id,
+                role=role,
+                content=content
             )
-            self.db.session.add(session)
-
-        # Ajouter le message
-        message = self.ChatMessage(
-            session_id=session_id,
-            role=role,
-            content=content
-        )
-        self.db.session.add(message)
-        
-        # Mettre à jour le timestamp de la session
-        session.updated_at = datetime.utcnow()
-        
-        self.db.session.commit()
+            self.db.session.add(message)
+            
+            # Mettre à jour le timestamp de la session
+            session.updated_at = datetime.utcnow()
+            
+            self.db.session.commit()
+            
+            return message_id
+            
+        except Exception as e:
+            logger.error(f"Erreur lors de l'ajout de message: {e}")
+            if self.db:
+                self.db.session.rollback()
+            return None
 
     def get_context(self, session_id: str, max_messages: int = 10) -> str:
         """Build conversation context for recent messages"""
