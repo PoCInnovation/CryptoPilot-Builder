@@ -38,3 +38,22 @@ CREATE TABLE IF NOT EXISTS agent_configs (
     updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     description TEXT
 );
+
+-- Table pour la mémoire générale de l'utilisateur
+CREATE TABLE IF NOT EXISTS user_memory (
+    id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+    user_id UUID REFERENCES users(id) ON DELETE CASCADE,
+    memory_type VARCHAR(50) NOT NULL, -- 'personal_info', 'preferences', 'expertise', 'goals', 'context'
+    key_info VARCHAR(200) NOT NULL, -- clé courte décrivant l'info (ex: "nom", "crypto_préférée", "niveau_expertise")
+    value_info TEXT NOT NULL, -- valeur détaillée
+    confidence_score FLOAT DEFAULT 1.0, -- score de confiance (0.0 à 1.0)
+    source_message_id UUID, -- référence au message qui a généré cette info (optionnel)
+    is_active BOOLEAN DEFAULT true,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    UNIQUE(user_id, key_info) -- Un utilisateur ne peut avoir qu'une seule valeur par clé
+);
+
+-- Index pour les requêtes fréquentes
+CREATE INDEX IF NOT EXISTS idx_user_memory_user_active ON user_memory(user_id, is_active);
+CREATE INDEX IF NOT EXISTS idx_user_memory_type ON user_memory(memory_type);

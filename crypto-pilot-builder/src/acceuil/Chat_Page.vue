@@ -15,6 +15,14 @@
         <span class="home-icon">🏠</span>
         Accueil
       </router-link>
+      <router-link
+        to="/memory"
+        class="memory-button"
+        title="Voir la mémoire de l'IA"
+      >
+        <span class="memory-icon">🧠</span>
+        Mémoire IA
+      </router-link>
     </header>
 
     <Wallet ref="walletComponent" />
@@ -122,8 +130,31 @@ provide("walletFunctions", {
   box-shadow: 0 6px 20px rgba(102, 126, 234, 0.4);
 }
 
+.memory-button {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 10px 16px;
+  background: linear-gradient(135deg, #764ba2 0%, #667eea 100%);
+  border: none;
+  color: white;
+  border-radius: 25px;
+  cursor: pointer;
+  font-size: 14px;
+  font-weight: 600;
+  transition: all 0.3s ease;
+  box-shadow: 0 4px 15px rgba(118, 75, 162, 0.3);
+  text-decoration: none;
+}
+
+.memory-button:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 6px 20px rgba(118, 75, 162, 0.4);
+}
+
 .logout-icon,
-.home-icon {
+.home-icon,
+.memory-icon {
   font-size: 16px;
 }
 </style>
