@@ -175,7 +175,7 @@ async function checkAuthentication() {
 }
 
 async function redirectToLogin() {
-  router.push("/AI");
+  router.push("/");
 }
 
 onMounted(async () => {
