@@ -149,7 +149,7 @@ defineExpose({
         </button>
       </div>
     </div>
-    
+
     <div v-if="address" class="wallet-info">
       {{ shortenAddress(address) }}
     </div>

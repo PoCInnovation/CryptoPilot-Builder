@@ -350,16 +350,16 @@ async function handleSendMessage(text) {
   try {
     console.log("📤 Envoi du message:", text);
     const data = await apiService.sendChatMessage(text, currentSessionId.value);
-    
+
     console.log("📥 Données reçues du backend (type):", typeof data);
     console.log("📥 Données reçues du backend (contenu):", data);
-    
+
     // Le backend renvoie soit une string directe, soit un objet avec une propriété response
     const responseText = typeof data === "string" ? data : (data.response || "");
     console.log("🔍 Réponse brute du backend:", responseText);
     console.log("🔍 Longueur de la réponse:", responseText.length);
     console.log("🔍 Contient TRANSACTION_REQUEST:", responseText.includes("TRANSACTION_REQUEST:"));
-    
+
     // Debug: afficher les 200 premiers et derniers caractères pour voir si le marqueur est caché
     if (responseText.length > 100) {
       console.log("🔍 Début de la réponse:", responseText.substring(0, 200));
@@ -372,24 +372,24 @@ async function handleSendMessage(text) {
     // Vérifier s'il y a un marqueur TRANSACTION_REQUEST dans la réponse
     if (responseText.includes("TRANSACTION_REQUEST:")) {
       console.log("🔍 Marqueur TRANSACTION_REQUEST détecté");
-      
+
       // Séparer le message du JSON
       const parts = responseText.split("TRANSACTION_REQUEST:");
       botResponse = parts[0].trim(); // Message avant le marqueur
-      
+
       if (parts[1]) {
         try {
           // Parser le JSON après le marqueur
           const jsonPart = parts[1].trim();
           console.log("🔍 Partie JSON à parser:", jsonPart);
-          
+
           transactionRequest = JSON.parse(jsonPart);
           console.log("✅ Transaction parsée avec succès:", transactionRequest);
-          
+
           // Vérifier que tous les champs requis sont présents
           const requiredFields = ["recipient", "amount", "currency"];
           const hasAllFields = requiredFields.every(field => transactionRequest[field]);
-          
+
           if (!hasAllFields) {
             console.warn("⚠️ Champs manquants dans la transaction:", transactionRequest);
             transactionRequest = null;
@@ -643,7 +643,7 @@ if (typeof window !== "undefined") {
   width: 80vw;
   border: 1px solid rgba(255, 255, 255, 0.1);
   border-radius: 24px;
-  box-shadow: 
+  box-shadow:
     0 25px 50px -12px rgba(0, 0, 0, 0.25),
     0 0 0 1px rgba(255, 255, 255, 0.05);
   overflow: hidden;
@@ -945,13 +945,13 @@ if (typeof window !== "undefined") {
 }
 
 @keyframes modalSlideIn {
-  from { 
-    opacity: 0; 
-    transform: scale(0.9) translateY(30px); 
+  from {
+    opacity: 0;
+    transform: scale(0.9) translateY(30px);
   }
-  to { 
-    opacity: 1; 
-    transform: scale(1) translateY(0); 
+  to {
+    opacity: 1;
+    transform: scale(1) translateY(0);
   }
 }
 

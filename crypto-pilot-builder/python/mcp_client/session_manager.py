@@ -30,7 +30,7 @@ class SessionManager:
         if not self.db:
             logger.error("Base de données non initialisée")
             raise Exception("Base de données non initialisée")
-        
+
         if not self.ChatSession:
             logger.error("Modèle ChatSession non configuré")
             raise Exception("Modèle ChatSession non configuré")
@@ -42,12 +42,12 @@ class SessionManager:
                 user_id=user_id,
                 session_name=session_name
             )
-            
+
             self.db.session.add(session)
             self.db.session.commit()
-            
+
             return session_id
-            
+
         except Exception as e:
             logger.error(f"Erreur lors de la création de session: {e}")
             if self.db:
@@ -71,7 +71,7 @@ class SessionManager:
             'created_at': session.created_at.isoformat() if session.created_at else None,
             'updated_at': session.updated_at.isoformat() if session.updated_at else None
         }
-        
+
         return result
 
     def add_message(self, session_id: str, role: str, content: str) -> str:
@@ -91,7 +91,7 @@ class SessionManager:
 
             # Générer un ID pour le message
             message_id = str(uuid.uuid4())
-            
+
             # Ajouter le message
             message = self.ChatMessage(
                 id=message_id,
@@ -100,14 +100,14 @@ class SessionManager:
                 content=content
             )
             self.db.session.add(message)
-            
+
             # Mettre à jour le timestamp de la session
             session.updated_at = datetime.utcnow()
-            
+
             self.db.session.commit()
-            
+
             return message_id
-            
+
         except Exception as e:
             logger.error(f"Erreur lors de l'ajout de message: {e}")
             if self.db:
@@ -122,7 +122,7 @@ class SessionManager:
         messages = self.ChatMessage.query.filter_by(session_id=session_id)\
                                         .order_by(self.ChatMessage.created_at.desc())\
                                         .limit(max_messages).all()
-        
+
         # Inverser l'ordre pour avoir les messages du plus ancien au plus récent
         messages = list(reversed(messages))
 
@@ -187,7 +187,7 @@ class SessionManager:
         for session in sessions:
             # Compter les messages
             message_count = self.ChatMessage.query.filter_by(session_id=session.id).count()
-            
+
             # Récupérer le dernier message
             last_message = self.ChatMessage.query.filter_by(session_id=session.id)\
                                                 .order_by(self.ChatMessage.created_at.desc()).first()
@@ -228,7 +228,7 @@ class SessionManager:
         """Compatibility property for existing code"""
         if not self.db or not self.ChatSession:
             return {}
-        
+
         # Retourner un dictionnaire des sessions pour compatibilité
         sessions_list = self.list_sessions()
         return {s['session_id']: s for s in sessions_list}

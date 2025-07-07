@@ -69,4 +69,4 @@ defineEmits(['select-chat', 'add-chat'])
   color: #4caf50;
   font-weight: bold;
 }
-</style> 
+</style>
