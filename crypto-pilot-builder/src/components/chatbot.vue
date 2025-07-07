@@ -30,6 +30,16 @@
             </span>
           </h3>
         </div>
+        <!-- Menu déroulant de sélection de modèle -->
+        <div class="model-select-wrapper">
+          <select v-model="selectedModel" class="model-select">
+            <option value="gpt-4o-mini">GPT-4o Mini</option>
+            <option value="gpt-4">GPT-4</option>
+            <option value="gpt-3.5-turbo">GPT-3.5 Turbo</option>
+            <!-- Ajoute d'autres modèles si besoin -->
+          </select>
+          <span class="model-select-label">Modèle IA</span>
+        </div>
         <div class="header-glow"></div>
       </div>
 
@@ -136,6 +146,7 @@ const currentSessionId = ref(null);
 const isProcessingTransaction = ref(false);
 const chatSessions = ref({});
 const walletFunctions = inject("walletFunctions", null);
+const selectedModel = ref("gpt-4o-mini");
 
 async function checkAuthentication() {
   if (!isAuthenticated.value) {
@@ -1350,5 +1361,38 @@ if (typeof window !== "undefined") {
   .modal-actions {
     padding: 1rem;
   }
+}
+
+.model-select-wrapper {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-left: auto;
+}
+
+.model-select {
+  padding: 8px 24px 8px 12px;
+  border-radius: 12px;
+  border: 1px solid rgba(118, 75, 162, 0.25);
+  background: rgba(255,255,255,0.15);
+  color: #764ba2;
+  font-weight: 600;
+  font-size: 1rem;
+  outline: none;
+  transition: border 0.2s, background 0.2s;
+  box-shadow: 0 2px 8px rgba(118, 75, 162, 0.08);
+  font-family: 'Roboto', 'Inter', 'Poppins', Arial, sans-serif;
+}
+
+.model-select:focus {
+  border-color: #764ba2;
+  background: rgba(255,255,255,0.25);
+}
+
+.model-select-label {
+  font-size: 0.95rem;
+  color: #764ba2;
+  font-weight: 700;
+  margin-left: 4px;
 }
 </style>
