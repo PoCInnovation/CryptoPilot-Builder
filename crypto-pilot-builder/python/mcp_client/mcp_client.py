@@ -105,10 +105,10 @@ class MCPClient:
         """Communication with OpenAI agent using user configuration"""
         # Extraire la configuration de l'agent depuis le contexte
         agent_config = context.get('agent_config', {})
-        
+
         # Construire le prompt système basé sur la configuration utilisateur ET la mémoire
         system_prompt = self._build_system_prompt(agent_config, context)
-        
+
         # Préparer les arguments avec la configuration
         arguments = {
             "message": message,
@@ -118,52 +118,52 @@ class MCPClient:
             "system_prompt": system_prompt,
             "modules": json.dumps(agent_config.get('modules', {}))
         }
-        
+
         return await self.call_tool("agent_chat_configured", arguments)
 
     def _build_system_prompt(self, agent_config: Dict[str, Any], context: Dict[str, Any] = None) -> str:
         """Construire le prompt système basé sur la configuration de l'agent ET la mémoire utilisateur"""
-        
+
         # Prompt de base
         base_prompt = agent_config.get('prompt', '')
         if not base_prompt:
             base_prompt = "Tu es un assistant IA spécialisé en cryptomonnaies. Tu es précis, utile et professionnel."
-        
+
         # NOUVELLE FONCTIONNALITÉ: Intégrer la mémoire utilisateur
         user_memory = ""
         if context and context.get('user_memory'):
             memory_text = context.get('user_memory', '').strip()
             if memory_text:
                 user_memory = f"\n\n{memory_text}\n\nUtilise ces informations pour personnaliser tes réponses et maintenir une conversation cohérente avec l'utilisateur."
-        
+
         # Ajouter les capacités des modules activés
         modules = agent_config.get('modules', {})
         module_capabilities = []
-        
+
         if modules.get('chatAdvanced', False):
             module_capabilities.append("- Tu as une mémoire contextuelle avancée pour maintenir des conversations naturelles")
-        
+
         if modules.get('dataAnalysis', False):
             module_capabilities.append("- Tu peux analyser et visualiser des données complexes")
-        
+
         if modules.get('webSearch', False):
             module_capabilities.append("- Tu as accès aux informations en temps réel via la recherche web")
-        
+
         if modules.get('creativeGeneration', False):
             module_capabilities.append("- Tu peux créer du contenu artistique et créatif")
-        
+
         # Construire le prompt final
         system_prompt = base_prompt
-        
+
         # Ajouter la mémoire utilisateur si disponible
         if user_memory:
             system_prompt += user_memory
-        
+
         # Ajouter les capacités des modules
         if module_capabilities:
             capabilities_text = "\n".join(module_capabilities)
             system_prompt += f"\n\nTes capacités spéciales incluent:\n{capabilities_text}"
-        
+
         return system_prompt
 
     def is_connected(self) -> bool:

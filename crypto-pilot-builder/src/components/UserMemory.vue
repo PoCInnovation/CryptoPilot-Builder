@@ -192,6 +192,10 @@ export default {
         projet: "🛠️",
         horizon: "⏰",
         tolerance: "🎚️",
+        contacts: "👥",
+        relations: "🤝",
+        portefeuille: "💳",
+        wallet: "💳",
       };
 
       // Chercher une correspondance dans le nom du type

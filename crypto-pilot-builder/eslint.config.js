@@ -6,7 +6,7 @@ import { defineConfig } from "eslint/config";
 export default defineConfig([
   // Configuration de base pour JavaScript
   js.configs.recommended,
-  
+
   // Configuration pour les fichiers Node.js (main.js, vite.config.js, etc.)
   {
     files: ["main.js", "vite.config.js", "**/*.config.js"],
@@ -14,7 +14,7 @@ export default defineConfig([
       globals: globals.node
     }
   },
-  
+
   // Configuration pour les tests
   {
     files: ["**/*.test.js", "**/tests/**/*.js", "**/setup.js"],
@@ -25,7 +25,7 @@ export default defineConfig([
       }
     }
   },
-  
+
   // Configuration pour les fichiers Vue et JS côté client
   {
     files: ["src/**/*.{js,vue}"],
@@ -33,7 +33,7 @@ export default defineConfig([
       globals: globals.browser
     }
   },
-  
+
   // Configuration pour les fichiers de couverture et utilitaires navigateur
   {
     files: ["coverage/**/*.js", "**/block-navigation.js", "**/sorter.js"],
@@ -41,10 +41,10 @@ export default defineConfig([
       globals: globals.browser
     }
   },
-  
+
   // Configuration Vue
   ...pluginVue.configs["flat/essential"],
-  
+
   // Règles personnalisées
   {
     files: ["**/*.vue"],
@@ -53,7 +53,7 @@ export default defineConfig([
       "no-unused-vars": ["error", { "argsIgnorePattern": "^_" }]
     }
   },
-  
+
   {
     ignores: [
       "**/node_modules/**",

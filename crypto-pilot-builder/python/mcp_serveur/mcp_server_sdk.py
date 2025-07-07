@@ -46,8 +46,8 @@ class OpenAIAgent:
         except Exception as e:
             return f"❌ OpenAI agent error: {str(e)}"
 
-    async def process_message_with_config(self, message: str, context: str = "", 
-                                        system_prompt: str = "", model: str = "gpt-4o-mini", 
+    async def process_message_with_config(self, message: str, context: str = "",
+                                        system_prompt: str = "", model: str = "gpt-4o-mini",
                                         api_key: str = "", modules: dict = None) -> str:
         """Process message with custom configuration"""
         try:

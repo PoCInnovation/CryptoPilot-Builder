@@ -36,10 +36,10 @@ describe('Chatbot.vue', () => {
   beforeEach(() => {
     // Reset des mocks
     vi.clearAllMocks()
-    
+
     // Mock de fetch
     global.fetch = vi.fn()
-    
+
     // Mock des wallet functions
     mockWalletFunctions = {
       isConnected: vi.fn(() => true),
@@ -272,7 +272,7 @@ describe('Chatbot.vue', () => {
 
     it('devrait gérer les erreurs de wallet non connecté', async () => {
       mockWalletFunctions.isConnected.mockReturnValue(false)
-      
+
       wrapper.vm.pendingTransaction = {
         recipient: '0x1234567890123456789012345678901234567890',
         amount: '0.1',
@@ -322,8 +322,6 @@ describe('Chatbot.vue', () => {
     beforeEach(() => {
       wrapper = createWrapper()
     })
-
-
     it('devrait gérer l\'absence de wallet', () => {
       wrapper = createWrapper({
         global: {
@@ -345,7 +343,7 @@ describe('Chatbot.vue', () => {
           }
         }
       })
-      
+
     })
   })
 
