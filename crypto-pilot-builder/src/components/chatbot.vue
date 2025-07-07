@@ -148,6 +148,21 @@ const chatSessions = ref({});
 const walletFunctions = inject("walletFunctions", null);
 const selectedModel = ref("gpt-4o-mini");
 
+// Récupère la config IA du store (comme dans Ai.vue)
+const aiConfig = computed(() => store.getters.aiConfig);
+
+// Restaure le modèle au montage
+onMounted(() => {
+  selectedModel.value = aiConfig.value.selectedModel || "gpt-4o-mini";
+});
+
+// Met à jour le store à chaque changement
+watch(selectedModel, (newVal) => {
+  if (newVal) {
+    store.dispatch("setModel", newVal);
+  }
+});
+
 async function checkAuthentication() {
   if (!isAuthenticated.value) {
     authError.value =

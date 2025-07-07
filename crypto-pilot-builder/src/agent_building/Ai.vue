@@ -22,6 +22,8 @@
             >
               <option value="">Choisir un modèle</option>
               <option value="gpt-4o-mini">GPT-4o Mini</option>
+              <option value="gpt-4">GPT-4</option>
+              <option value="gpt-3.5-turbo">GPT-3.5 Turbo</option>
             </select>
             <div class="select-arrow">
               <svg width="20" height="20" viewBox="0 0 20 20" fill="none">
