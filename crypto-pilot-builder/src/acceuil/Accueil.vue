@@ -409,7 +409,7 @@ export default {
   box-shadow: 0 6px 20px rgba(125, 82, 204, 0.4);
 }
 .new-chat-button::after {
-  content: "";
+  content: '';
   position: absolute;
   top: 0;
   left: -100%;
@@ -515,7 +515,7 @@ export default {
   position: relative;
 }
 .chat-list-section::-webkit-scrollbar-thumb::before {
-  content: "";
+  content: '';
   position: absolute;
   top: 0;
   left: 0;
@@ -638,14 +638,8 @@ export default {
   animation: slideDown 0.3s ease;
 }
 @keyframes slideDown {
-  from {
-    transform: translateY(-10px);
-    opacity: 0;
-  }
-  to {
-    transform: translateY(0);
-    opacity: 1;
-  }
+  from { transform: translateY(-10px); opacity: 0; }
+  to { transform: translateY(0); opacity: 1; }
 }
 .context-menu-item {
   width: 100%;
@@ -691,14 +685,8 @@ export default {
   animation: fadeInUp 0.6s ease;
 }
 @keyframes fadeInUp {
-  from {
-    opacity: 0;
-    transform: translateY(20px);
-  }
-  to {
-    opacity: 1;
-    transform: translateY(0);
-  }
+  from { opacity: 0; transform: translateY(20px); }
+  to { opacity: 1; transform: translateY(0); }
 }
 .user-section {
   position: absolute;
@@ -709,14 +697,8 @@ export default {
   animation: fadeInRight 0.5s ease;
 }
 @keyframes fadeInRight {
-  from {
-    opacity: 0;
-    transform: translateX(20px);
-  }
-  to {
-    opacity: 1;
-    transform: translateX(0);
-  }
+  from { opacity: 0; transform: translateX(20px); }
+  to { opacity: 1; transform: translateX(0); }
 }
 .user-info {
   display: flex;
@@ -893,7 +875,7 @@ export default {
   z-index: 1;
 }
 .configure-agent-button::before {
-  content: "";
+  content: '';
   position: absolute;
   top: 0;
   left: -100%;
@@ -1020,7 +1002,7 @@ export default {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+  box-shadow: 0 4px 12px rgba(0,0,0,0.1);
 }
 .modal-title {
   font-size: 22px;
@@ -1043,7 +1025,7 @@ export default {
   transition: background-color 0.2s ease;
 }
 .modal-close:hover {
-  background-color: rgba(255, 255, 255, 0.2);
+  background-color: rgba(255,255,255,0.2);
 }
 .login-form {
   padding: 35px;
@@ -1068,7 +1050,7 @@ export default {
   background-color: #f8f6ff;
   box-sizing: border-box;
   font-family: inherit;
-  box-shadow: inset 0 2px 4px rgba(0, 0, 0, 0.05);
+  box-shadow: inset 0 2px 4px rgba(0,0,0,0.05);
 }
 .form-input:focus {
   outline: none;
@@ -1095,7 +1077,7 @@ export default {
   font-size: 15px;
   font-weight: 600;
   transition: all 0.3s ease;
-  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.05);
+  box-shadow: 0 2px 6px rgba(0,0,0,0.05);
 }
 .btn-secondary:hover {
   background-color: #f3e8ff;
