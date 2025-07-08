@@ -120,7 +120,6 @@
 import { ref, inject, onMounted, watch, computed } from "vue";
 import { useStore } from "vuex";
 import { useRouter } from "vue-router";
-import ChatSidebar from "./chatbot/ChatSidebar.vue";
 import ChatMessages from "./chatbot/ChatMessages.vue";
 import ChatInput from "./chatbot/ChatInput.vue";
 import apiService from "../services/apiService";
@@ -663,8 +662,9 @@ if (typeof window !== "undefined") {
 
 <style scoped>
 .chat-container {
-  display: flex;
-  height: 90vh;
+  display: fixed;
+  top: 1vh;
+  left: 33.33vw;
   width: 80vw;
   border: 1px solid rgba(255, 255, 255, 0.1);
   border-radius: 24px;

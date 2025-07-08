@@ -1,32 +1,30 @@
 <template>
   <div class="app-container">
+    <!-- Sidebar -->
     <aside class="sidebar">
       <header class="sidebar-header">
         <h2 class="sidebar-title">CryptoPilot Builder</h2>
       </header>
+      
+      <!-- Contrôles utilisateur -->
       <nav class="chat-navigation">
         <section class="chat-controls-section">
-          <!-- Bouton Nouveau Chat uniquement pour les utilisateurs authentifiés -->
           <button v-if="isAuthenticated" class="new-chat-button" @click="createNewChat">
             + Nouveau Chat
           </button>
-          <!-- Bouton Se connecter pour les utilisateurs non authentifiés -->
           <button v-else class="login-button" @click="showAuthModal = true">
-            <span class="login-icon">👤</span>
-            Se connecter
+            <span class="login-icon">👤</span> Se connecter
           </button>
         </section>
+
+        <!-- Liste des chats -->
         <section class="chat-list-section">
-          <article
-            v-for="chat in chats"
-            :key="chat.id"
+          <article 
+            v-for="chat in chats" 
+            :key="chat.id" 
             class="chat-item-container"
           >
-            <form
-              v-if="editingChatId === chat.id"
-              class="chat-edit-form"
-              @submit.prevent="saveEditingChat"
-            >
+            <form v-if="editingChatId === chat.id" class="chat-edit-form" @submit.prevent="saveEditingChat">
               <input
                 v-model="tempChatName"
                 @keydown="handleEditKeydown"
@@ -37,11 +35,12 @@
                 type="text"
               />
             </form>
+            
             <button
               v-else
               :class="[
                 'chat-item-button',
-                { 'chat-item-button--active': chat.id === activeChat },
+                { 'chat-item-button--active': chat.id === activeChat }
               ]"
               @click="selectChat(chat.id)"
               @dblclick="startEditingChat(chat.id)"
@@ -50,10 +49,10 @@
             >
               {{ chat.name }}
             </button>
+            
             <button
               class="chat-delete-button"
               @click="deleteChat(chat.id)"
-              title="Supprimer ce chat"
               :aria-label="`Supprimer le chat ${chat.name}`"
             >
               ×
@@ -62,27 +61,22 @@
         </section>
       </nav>
     </aside>
+
+    <!-- Contenu principal -->
     <main class="main-content">
+      <!-- En-tête utilisateur -->
       <header class="main-header">
         <div class="user-section">
-          <!-- Affichage uniquement pour les utilisateurs authentifiés -->
           <div v-if="isAuthenticated" class="user-info">
-            <span class="user-welcome"
-              >Bonjour, {{ user?.username || user?.email }}</span
-            >
-            <button
-              class="logout-button"
-              @click="handleLogout"
-              title="Se déconnecter"
-            >
-              <span class="logout-icon">🚪</span>
-              Déconnexion
+            <span class="user-welcome">Bonjour, {{ user?.username || user?.email }}</span>
+            <button class="logout-button" @click="handleLogout">
+              <span class="logout-icon">🚪</span> Déconnexion
             </button>
           </div>
         </div>
       </header>
-      
-      <!-- Section Dashboard (widgets + actions) -->
+
+      <!-- Dashboard -->
       <section v-if="!showChat" class="dashboard-section">
         <div class="widgets-container">
           <article class="crypto-widget">
@@ -93,42 +87,31 @@
             <span class="news-title">Actu by lulu</span>
           </article>
         </div>
+
+        <!-- Actions -->
         <section class="action-section">
           <div v-if="isAuthenticated" class="authenticated-actions">
             <router-link to="/AI" class="agent-navigation-link">
-              <button class="configure-agent-button">
-                ⚙️ Configurer mon Agent
-              </button>
+              <button class="configure-agent-button">⚙️ Configurer mon Agent</button>
             </router-link>
-            <button
-              v-if="hasValidConfig"
-              class="chat-access-button"
-              @click="showChat = true"
-            >
+            <button v-if="hasValidConfig" class="chat-access-button" @click="showChat = true">
               💬 Accéder au Chat
             </button>
           </div>
+          
           <div v-else class="auth-required-section">
-            <button
-              class="talk-to-agent-button-disabled"
-              @click="showAuthModal = true"
-            >
+            <button class="talk-to-agent-button-disabled" @click="showAuthModal = true">
               🔒 Configurer mon Agent
             </button>
-            <p class="auth-message">
-              Veuillez vous connecter pour configurer votre agent IA
-              personnalisé
-            </p>
+            <p class="auth-message">Veuillez vous connecter pour configurer votre agent IA personnalisé</p>
           </div>
         </section>
       </section>
-      
-      <!-- Section Chat intégrée -->
+
+      <!-- Chat -->
       <section v-else class="chat-section">
         <div class="chat-header">
-          <button class="back-dashboard-btn" @click="showChat = false">
-            ← Retour au Dashboard
-          </button>
+          <button class="back-dashboard-btn" @click="showChat = false">← Retour au Dashboard</button>
           <h3 class="chat-title">Chat avec votre Agent IA</h3>
         </div>
         <div class="chat-container">
@@ -136,38 +119,17 @@
         </div>
       </section>
     </main>
-    
-    <aside
-      v-if="showContextMenu"
-      class="context-menu"
-      :style="{ left: contextMenuX + 'px', top: contextMenuY + 'px' }"
-      role="menu"
-    >
-      <button
-        @click="renameFromContextMenu"
-        class="context-menu-item"
-        role="menuitem"
-      >
-        ✏️ Renommer
-      </button>
-      <button @click="duplicateChat" class="context-menu-item" role="menuitem">
-        📋 Dupliquer
-      </button>
-      <hr class="context-menu-divider" role="separator" />
-      <button
-        @click="deleteChatFromContextMenu"
-        class="context-menu-item context-menu-item--danger"
-        role="menuitem"
-      >
-        🗑️ Supprimer
-      </button>
+
+    <!-- Menu contextuel -->
+    <aside v-if="showContextMenu" class="context-menu" :style="{ left: contextMenuX + 'px', top: contextMenuY + 'px' }">
+      <button @click="renameFromContextMenu" class="context-menu-item">✏️ Renommer</button>
+      <button @click="duplicateChat" class="context-menu-item">📋 Dupliquer</button>
+      <hr class="context-menu-divider" />
+      <button @click="deleteChatFromContextMenu" class="context-menu-item context-menu-item--danger">🗑️ Supprimer</button>
     </aside>
-    
-    <AuthModal
-      :show="showAuthModal"
-      @close="showAuthModal = false"
-      @authenticated="handleAuthenticated"
-    />
+
+    <!-- Modale d'authentification -->
+    <AuthModal :show="showAuthModal" @close="showAuthModal = false" @authenticated="handleAuthenticated" />
   </div>
 </template>
 
@@ -379,9 +341,9 @@ export default {
 }
 .sidebar {
   position: fixed;
-  top: 40px;
-  left: 40px;
-  width: 400px;
+  top: 10vh;
+  left: 5vh;
+  width: 40vh;
   height: 80vh;
   background: rgba(255, 255, 255, 0.1);
   backdrop-filter: blur(20px);
