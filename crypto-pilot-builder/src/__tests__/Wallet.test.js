@@ -23,22 +23,22 @@ describe('Wallet.vue', () => {
   beforeEach(() => {
     // Reset des mocks
     vi.clearAllMocks()
-    
+
     // Mock de window.ethereum
     mockEthereum = {
       request: vi.fn(),
       isMetaMask: true
     }
-    
+
     // Mock du wallet client
     mockWalletClient = {
       sendTransaction: vi.fn()
     }
-    
+
     // Configuration des mocks viem
     createWalletClient.mockReturnValue(mockWalletClient)
     custom.mockReturnValue('mocked-transport')
-    
+
     // Simuler la présence de MetaMask
     global.window = {
       ethereum: mockEthereum

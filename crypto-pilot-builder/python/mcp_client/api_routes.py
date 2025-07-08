@@ -13,8 +13,10 @@ from flask import request, jsonify
 from flask_sqlalchemy import SQLAlchemy
 from flask_bcrypt import Bcrypt
 from flask_jwt_extended import JWTManager, create_access_token, jwt_required, get_jwt_identity
+from sqlalchemy.dialects.postgresql import UUID
 from mcp_client import mcp_client
 from session_manager import session_manager
+from user_memory import user_memory_manager
 import uuid
 
 # Configuration du logging
@@ -33,8 +35,11 @@ def create_api_routes(app):
     if database_url:
         app.config['SQLALCHEMY_DATABASE_URI'] = database_url
     else:
-        postgres_host = os.getenv('POSTGRES_HOST', 'localhost')
-        app.config['SQLALCHEMY_DATABASE_URI'] = f"postgresql://{os.getenv('POSTGRES_USER', 'cryptopilot_user')}:{os.getenv('POSTGRES_PASSWORD', 'cryptopilot_password')}@{postgres_host}/{os.getenv('POSTGRES_DB', 'cryptopilot')}"
+        postgres_host = os.getenv('POSTGRES_HOST', 'database')
+        postgres_user = os.getenv('POSTGRES_USER', 'cryptopilot')
+        postgres_password = os.getenv('POSTGRES_PASSWORD', 'cryptopilot123')
+        postgres_db = os.getenv('POSTGRES_DB', 'cryptopilot')
+        app.config['SQLALCHEMY_DATABASE_URI'] = f"postgresql://{postgres_user}:{postgres_password}@{postgres_host}:5432/{postgres_db}"
 
     app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
     app.config['JWT_SECRET_KEY'] = os.getenv('JWT_SECRET_KEY', 'votre-clé-secrète-super-sécurisée')
@@ -46,31 +51,31 @@ def create_api_routes(app):
 
     class User(db.Model):
         __tablename__ = 'users'
-        id = db.Column(db.String(36), primary_key=True, default=lambda: str(uuid.uuid4()))
+        id = db.Column(UUID(as_uuid=True), primary_key=True, default=lambda: uuid.uuid4())
         username = db.Column(db.String(50), unique=True, nullable=False)
         email = db.Column(db.String(100), unique=True, nullable=False)
         password_hash = db.Column(db.String(255), nullable=False)
         wallet_address = db.Column(db.String(42), nullable=True)
         created_at = db.Column(db.DateTime, default=db.func.current_timestamp())
-        
+
         # Relation avec les configurations d'agent
         agent_configs = db.relationship('AgentConfig', backref='user', lazy=True, cascade='all, delete-orphan')
 
     class AgentConfig(db.Model):
         __tablename__ = 'agent_configs'
-        id = db.Column(db.String(36), primary_key=True, default=lambda: str(uuid.uuid4()))
-        user_id = db.Column(db.String(36), db.ForeignKey('users.id'), nullable=False)
-        
+        id = db.Column(UUID(as_uuid=True), primary_key=True, default=lambda: uuid.uuid4())
+        user_id = db.Column(UUID(as_uuid=True), db.ForeignKey('users.id'), nullable=False)
+
         # Configuration IA
         selected_model = db.Column(db.String(100), nullable=False)
         api_key = db.Column(db.Text, nullable=False)  # Chiffré en production
-        
+
         # Configuration des modules
         modules_config = db.Column(db.JSON, nullable=True, default=dict)
-        
+
         # Comportement de l'assistant
         prompt = db.Column(db.Text, nullable=True)
-        
+
         # Métadonnées
         name = db.Column(db.String(100), nullable=False, default='Mon Assistant')
         description = db.Column(db.Text, nullable=True)
@@ -80,24 +85,41 @@ def create_api_routes(app):
 
     class ChatSession(db.Model):
         __tablename__ = 'chat_sessions'
-        
-        id = db.Column(db.String(36), primary_key=True)
-        user_id = db.Column(db.String(36), db.ForeignKey('users.id'), nullable=True)  # Nullable pour les sessions anonymes
+
+        id = db.Column(UUID(as_uuid=True), primary_key=True)
+        user_id = db.Column(UUID(as_uuid=True), db.ForeignKey('users.id'), nullable=True)  # Nullable pour les sessions anonymes
         session_name = db.Column(db.String(100), default='New Chat')
         created_at = db.Column(db.DateTime, default=db.func.current_timestamp())
         updated_at = db.Column(db.DateTime, default=db.func.current_timestamp(), onupdate=db.func.current_timestamp())
-        
+
         # Relations
         messages = db.relationship('ChatMessage', backref='session', lazy=True, cascade='all, delete-orphan', order_by='ChatMessage.created_at')
 
     class ChatMessage(db.Model):
         __tablename__ = 'chat_messages'
-        
-        id = db.Column(db.String(36), primary_key=True, default=lambda: str(uuid.uuid4()))
-        session_id = db.Column(db.String(36), db.ForeignKey('chat_sessions.id'), nullable=False)
+
+        id = db.Column(UUID(as_uuid=True), primary_key=True, default=lambda: uuid.uuid4())
+        session_id = db.Column(UUID(as_uuid=True), db.ForeignKey('chat_sessions.id'), nullable=False)
         role = db.Column(db.String(20), nullable=False)  # 'user', 'assistant', 'system'
         content = db.Column(db.Text, nullable=False)
         created_at = db.Column(db.DateTime, default=db.func.current_timestamp())
+
+    class UserMemory(db.Model):
+        __tablename__ = 'user_memory'
+
+        id = db.Column(UUID(as_uuid=True), primary_key=True, default=lambda: uuid.uuid4())
+        user_id = db.Column(UUID(as_uuid=True), db.ForeignKey('users.id'), nullable=False)
+        memory_type = db.Column(db.String(50), nullable=False)  # 'personal_info', 'preferences', 'expertise', 'goals', 'context'
+        key_info = db.Column(db.String(200), nullable=False)  # clé courte décrivant l'info
+        value_info = db.Column(db.Text, nullable=False)  # valeur détaillée
+        confidence_score = db.Column(db.Float, default=1.0)  # score de confiance (0.0 à 1.0)
+        source_message_id = db.Column(UUID(as_uuid=True), nullable=True)  # référence au message source
+        is_active = db.Column(db.Boolean, default=True)
+        created_at = db.Column(db.DateTime, default=db.func.current_timestamp())
+        updated_at = db.Column(db.DateTime, default=db.func.current_timestamp(), onupdate=db.func.current_timestamp())
+
+        # Contrainte unique par utilisateur et clé
+        __table_args__ = (db.UniqueConstraint('user_id', 'key_info', name='uq_user_memory_key'),)
 
     def validate_email(email):
         pattern = r'^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$'
@@ -118,20 +140,20 @@ def create_api_routes(app):
         """Valider le format d'une clé API OpenAI"""
         if not api_key or not isinstance(api_key, str):
             return False
-        
+
         # Les clés OpenAI commencent par "sk-" et font généralement 51 caractères
         if not api_key.startswith('sk-'):
             return False
-        
+
         # Longueur attendue pour les clés OpenAI (peut varier mais généralement 51 caractères)
         if len(api_key) < 20 or len(api_key) > 100:
             return False
-        
+
         # Caractères autorisés : lettres, chiffres, tirets et underscores
         allowed_pattern = r'^sk-[A-Za-z0-9_-]+$'
         if not re.match(allowed_pattern, api_key):
             return False
-        
+
         return True
 
     with app.app_context():
@@ -146,7 +168,13 @@ def create_api_routes(app):
         logger.info("Initialisation du session_manager avec la base de données")
         session_manager.db = db
         session_manager.set_models(ChatSession, ChatMessage)
-        logger.info("Session manager initialisé avec succès")
+
+        # Initialiser le user_memory_manager avec la base de données
+        logger.info("Initialisation du user_memory_manager avec la base de données")
+        user_memory_manager.db = db
+        user_memory_manager.set_models(UserMemory)
+
+        logger.info("Session manager et memory manager initialisés avec succès")
 
     # ===== AUTHENTICATION ROUTES =====
 
@@ -236,17 +264,17 @@ def create_api_routes(app):
         try:
             user_id = get_jwt_identity()
             data = request.get_json()
-            
+
             if not data:
                 return jsonify({'error': 'Aucune donnée fournie'}), 400
-            
+
             # Validation des données requises
             selected_model = data.get('selectedModel')
             api_key = data.get('apiKey')
-            
+
             if not selected_model or not api_key:
                 return jsonify({'error': 'Modèle et clé API sont requis'}), 400
-            
+
             # Normaliser la structure des modules
             modules_config = {}
             if 'modules' in data:
@@ -259,10 +287,10 @@ def create_api_routes(app):
                 for key in module_keys:
                     if key in data:
                         modules_config[key] = data[key]
-            
+
             # Chercher une configuration existante pour cet utilisateur
             existing_config = AgentConfig.query.filter_by(user_id=user_id, is_active=True).first()
-            
+
             if existing_config:
                 # Mettre à jour la configuration existante
                 existing_config.selected_model = selected_model
@@ -272,7 +300,7 @@ def create_api_routes(app):
                 existing_config.name = data.get('name', 'Mon Assistant')
                 existing_config.description = data.get('description', '')
                 existing_config.updated_at = db.func.current_timestamp()
-                
+
                 config = existing_config
             else:
                 # Créer une nouvelle configuration
@@ -286,9 +314,9 @@ def create_api_routes(app):
                     description=data.get('description', '')
                 )
                 db.session.add(config)
-            
+
             db.session.commit()
-            
+
             return jsonify({
                 'message': 'Configuration sauvegardée avec succès',
                 'config': {
@@ -303,7 +331,7 @@ def create_api_routes(app):
                     'updatedAt': config.updated_at.isoformat()
                 }
             }), 201
-            
+
         except Exception as e:
             db.session.rollback()
             return jsonify({'error': f'Erreur serveur: {str(e)}'}), 500
@@ -315,10 +343,10 @@ def create_api_routes(app):
         try:
             user_id = get_jwt_identity()
             config = AgentConfig.query.filter_by(user_id=user_id, is_active=True).first()
-            
+
             if not config:
                 return jsonify({'error': 'Aucune configuration trouvée'}), 404
-            
+
             return jsonify({
                 'config': {
                     'id': config.id,
@@ -332,7 +360,7 @@ def create_api_routes(app):
                     'updatedAt': config.updated_at.isoformat()
                 }
             }), 200
-            
+
         except Exception as e:
             return jsonify({'error': f'Erreur serveur: {str(e)}'}), 500
 
@@ -343,13 +371,13 @@ def create_api_routes(app):
         try:
             user_id = get_jwt_identity()
             data = request.get_json()
-            
+
             if not data:
                 return jsonify({'error': 'Aucune donnée fournie'}), 400
-            
+
             # Chercher ou créer une configuration
             config = AgentConfig.query.filter_by(user_id=user_id, is_active=True).first()
-            
+
             if not config:
                 config = AgentConfig(
                     user_id=user_id,
@@ -359,7 +387,7 @@ def create_api_routes(app):
                     prompt=''
                 )
                 db.session.add(config)
-            
+
             # Mettre à jour les champs fournis
             if 'selectedModel' in data:
                 config.selected_model = data['selectedModel']
@@ -384,10 +412,10 @@ def create_api_routes(app):
                 config.name = data['name']
             if 'description' in data:
                 config.description = data['description']
-            
+
             config.updated_at = db.func.current_timestamp()
             db.session.commit()
-            
+
             return jsonify({
                 'message': 'Configuration mise à jour avec succès',
                 'config': {
@@ -401,7 +429,7 @@ def create_api_routes(app):
                     'updatedAt': config.updated_at.isoformat()
                 }
             }), 200
-            
+
         except Exception as e:
             db.session.rollback()
             return jsonify({'error': f'Erreur serveur: {str(e)}'}), 500
@@ -413,7 +441,7 @@ def create_api_routes(app):
         try:
             user_id = get_jwt_identity()
             configs = AgentConfig.query.filter_by(user_id=user_id).order_by(AgentConfig.created_at.desc()).all()
-            
+
             configs_data = []
             for config in configs:
                 configs_data.append({
@@ -425,9 +453,9 @@ def create_api_routes(app):
                     'createdAt': config.created_at.isoformat(),
                     'updatedAt': config.updated_at.isoformat()
                 })
-            
+
             return jsonify({'configs': configs_data}), 200
-            
+
         except Exception as e:
             return jsonify({'error': f'Erreur serveur: {str(e)}'}), 500
 
@@ -499,13 +527,13 @@ def create_api_routes(app):
         """Create new session"""
         try:
             user_id = get_jwt_identity()
-            
+
             # Utiliser silent=True pour éviter l'erreur si pas de JSON
             data = request.get_json(silent=True) or {}
             session_name = data.get('session_name', 'New Chat')
-            
+
             session_id = session_manager.create_session(user_id=user_id, session_name=session_name)
-            
+
             return jsonify({'session_id': session_id})
         except Exception as e:
             logger.error(f"Erreur lors de la création de la session: {str(e)}")
@@ -514,7 +542,7 @@ def create_api_routes(app):
     @app.route('/chat', methods=['POST'])
     @jwt_required()
     def chat():
-        """Intelligent chat via OpenAI MCP agent with user config"""
+        """Intelligent chat via OpenAI MCP agent with user config and automatic memory"""
         data = request.get_json()
         if not data or 'message' not in data:
             return jsonify({'error': 'Missing message'}), 400
@@ -541,13 +569,32 @@ def create_api_routes(app):
                 session_id = session_manager.create_session(user_id=user_id, session_name='New Chat')
 
         try:
-            # Save user message
-            session_manager.add_message(session_id, "user", user_input)
+            # Save user message et extraire les informations importantes pour la mémoire
+            message_id = session_manager.add_message(session_id, "user", user_input)
 
-            # Build conversation context with user config
+            # NOUVELLE FONCTIONNALITÉ: Extraction automatique d'informations importantes
+            try:
+                memory_extractions = user_memory_manager.process_user_message(
+                    user_id=user_id,
+                    message=user_input,
+                    openai_api_key=config.api_key,
+                    message_id=message_id
+                )
+
+                if memory_extractions > 0:
+                    logger.info(f"💾 {memory_extractions} information(s) extraite(s) et stockée(s) pour l'utilisateur {user_id}")
+            except Exception as e:
+                logger.warning(f"⚠️ Erreur lors de l'extraction de mémoire (continuer sans): {e}")
+
+            # Build conversation context with user config ET mémoire utilisateur
             conversation_history = session_manager.get_context(session_id)
+
+            # NOUVELLE FONCTIONNALITÉ: Intégrer la mémoire utilisateur dans le contexte
+            user_memory_summary = user_memory_manager.get_user_memory_summary(user_id)
+
             context = {
                 'conversation_history': conversation_history,
+                'user_memory': user_memory_summary,  # Nouvelle clé pour la mémoire utilisateur
                 'agent_config': {
                     'model': config.selected_model,
                     'prompt': config.prompt,
@@ -579,7 +626,8 @@ def create_api_routes(app):
                 'response': ai_response,
                 'session_id': session_id,
                 'agent': config.name,
-                'model': config.selected_model
+                'model': config.selected_model,
+                'memory_extractions': memory_extractions if 'memory_extractions' in locals() else 0  # Info pour le debug
             })
 
         except Exception as e:
@@ -607,13 +655,13 @@ def create_api_routes(app):
         """Get session details"""
         user_id = get_jwt_identity()
         session = session_manager.get_session(session_id)
-        
+
         if not session:
             return jsonify({'error': 'Session not found'}), 404
-        
+
         # Vérifier que la session appartient à l'utilisateur
         session_user_id = session.get('user_id')
-        
+
         if session_user_id != user_id:
             return jsonify({'error': 'Access denied'}), 403
 
@@ -631,14 +679,14 @@ def create_api_routes(app):
         """Delete a session"""
         user_id = get_jwt_identity()
         session = session_manager.get_session(session_id)
-        
+
         if not session:
             return jsonify({'error': 'Session not found'}), 404
-        
+
         # Vérifier que la session appartient à l'utilisateur
         if session.get('user_id') != user_id:
             return jsonify({'error': 'Access denied'}), 403
-        
+
         success = session_manager.delete_session(session_id)
         if success:
             return jsonify({'status': 'deleted'})
@@ -651,22 +699,22 @@ def create_api_routes(app):
         """Rename a session"""
         user_id = get_jwt_identity()
         data = request.get_json()
-        
+
         if not data or 'session_name' not in data:
             return jsonify({'error': 'session_name required'}), 400
-        
+
         new_name = data['session_name'].strip()
         if not new_name:
             return jsonify({'error': 'session_name cannot be empty'}), 400
-        
+
         session = session_manager.get_session(session_id)
         if not session:
             return jsonify({'error': 'Session not found'}), 404
-        
+
         # Vérifier que la session appartient à l'utilisateur
         if session.get('user_id') != user_id:
             return jsonify({'error': 'Access denied'}), 403
-        
+
         success = session_manager.rename_session(session_id, new_name)
         if success:
             return jsonify({
@@ -676,6 +724,101 @@ def create_api_routes(app):
             })
         else:
             return jsonify({'error': 'Failed to rename session'}), 500
+
+    # ===== NOUVELLES ROUTES POUR LA MÉMOIRE UTILISATEUR =====
+
+    @app.route('/user-memory', methods=['GET'])
+    @jwt_required()
+    def get_user_memory():
+        """Récupère toutes les informations de mémoire de l'utilisateur"""
+        user_id = get_jwt_identity()
+        memories = user_memory_manager.get_user_memories(user_id)
+
+        return jsonify({
+            'memories': memories,
+            'summary': user_memory_manager.get_user_memory_summary(user_id)
+        })
+
+    @app.route('/user-memory/<memory_id>', methods=['DELETE'])
+    @jwt_required()
+    def delete_user_memory(memory_id):
+        """Supprime une information spécifique de la mémoire utilisateur"""
+        user_id = get_jwt_identity()
+        success = user_memory_manager.delete_memory(user_id, memory_id)
+
+        if success:
+            return jsonify({'status': 'deleted', 'memory_id': memory_id})
+        else:
+            return jsonify({'error': 'Memory not found or deletion failed'}), 404
+
+    @app.route('/user-memory/<memory_id>', methods=['PUT'])
+    @jwt_required()
+    def update_user_memory(memory_id):
+        """Modifie une information spécifique de la mémoire utilisateur"""
+        user_id = get_jwt_identity()
+        data = request.get_json()
+
+        if not data or not any(key in data for key in ['key_info', 'value_info']):
+            return jsonify({'error': 'Missing required fields: key_info or value_info'}), 400
+
+        try:
+            # Vérifier que la mémoire existe et appartient à l'utilisateur
+            memory = UserMemory.query.filter_by(
+                id=memory_id,
+                user_id=user_id,
+                is_active=True
+            ).first()
+
+            if not memory:
+                return jsonify({'error': 'Memory not found'}), 404
+
+            # Mettre à jour les champs fournis
+            if 'key_info' in data:
+                memory.key_info = data['key_info'].strip()[:200]
+            if 'value_info' in data:
+                memory.value_info = data['value_info'].strip()
+
+            memory.updated_at = db.func.current_timestamp()
+            db.session.commit()
+
+            return jsonify({
+                'status': 'updated',
+                'memory': {
+                    'id': memory.id,
+                    'memory_type': memory.memory_type,
+                    'key_info': memory.key_info,
+                    'value_info': memory.value_info,
+                    'confidence_score': memory.confidence_score,
+                    'updated_at': memory.updated_at.isoformat()
+                }
+            })
+
+        except Exception as e:
+            db.session.rollback()
+            return jsonify({'error': f'Failed to update memory: {str(e)}'}), 500
+
+    @app.route('/user-memory', methods=['POST'])
+    @jwt_required()
+    def add_user_memory():
+        """Ajoute manuellement une information à la mémoire utilisateur"""
+        user_id = get_jwt_identity()
+        data = request.get_json()
+
+        if not data or not all(key in data for key in ['memory_type', 'key_info', 'value_info']):
+            return jsonify({'error': 'Missing required fields: memory_type, key_info, value_info'}), 400
+
+        success = user_memory_manager.store_memory_info(
+            user_id=user_id,
+            memory_type=data['memory_type'],
+            key_info=data['key_info'],
+            value_info=data['value_info'],
+            confidence_score=data.get('confidence_score', 1.0)
+        )
+
+        if success:
+            return jsonify({'status': 'stored', 'message': 'Memory information added successfully'})
+        else:
+            return jsonify({'error': 'Failed to store memory information'}), 500
 
     # ===== HEALTH =====
 

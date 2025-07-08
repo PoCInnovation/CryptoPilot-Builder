@@ -4,6 +4,7 @@ import AI from "../agent_building/Ai.vue";
 import Module from "../agent_building/Module.vue";
 import Prompte from "../agent_building/Prompte.vue";
 import ChatPage from "../acceuil/Chat_Page.vue";
+import UserMemory from "../components/UserMemory.vue";
 import store from "../store";
 
 const routes = [
@@ -38,6 +39,12 @@ const routes = [
     path: "/chat",
     name: "Chat",
     component: ChatPage,
+    meta: { requiresAuth: true },
+  },
+  {
+    path: "/memory",
+    name: "UserMemory",
+    component: UserMemory,
     meta: { requiresAuth: true },
   },
 ];

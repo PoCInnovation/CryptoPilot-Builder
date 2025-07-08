@@ -9,7 +9,7 @@ def get_crypto_price(crypto_id: str, currency: str = "eur") -> str:
         crypto_id: L'identifiant de la cryptomonnaie (ex: bitcoin, ethereum)
         currency: La devise souhaitée (ex: eur, usd, gbp). Par défaut: eur
     """
-    url = "https://api.coingecko.com/api/v3/simple/price" 
+    url = "https://api.coingecko.com/api/v3/simple/price"
     params = {
         "ids": crypto_id.lower(),
         "vs_currencies": currency.lower()

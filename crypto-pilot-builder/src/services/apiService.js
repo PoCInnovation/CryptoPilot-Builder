@@ -151,6 +151,25 @@ class ApiService {
   async healthCheck() {
     return this.request("/health");
   }
+
+  // ===== MÉMOIRE UTILISATEUR =====
+
+  async getUserMemory() {
+    return this.request("/user-memory");
+  }
+
+  async addUserMemory(memoryData) {
+    return this.request("/user-memory", {
+      method: "POST",
+      body: memoryData,
+    });
+  }
+
+  async deleteUserMemory(memoryId) {
+    return this.request(`/user-memory/${memoryId}`, {
+      method: "DELETE",
+    });
+  }
 }
 
 // Instance singleton
@@ -175,4 +194,7 @@ export const {
   listMCPTools,
   getCryptoPrice,
   healthCheck,
+  getUserMemory,
+  addUserMemory,
+  deleteUserMemory,
 } = apiService;

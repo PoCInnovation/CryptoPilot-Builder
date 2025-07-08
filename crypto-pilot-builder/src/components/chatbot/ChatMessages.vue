@@ -52,7 +52,7 @@ function scrollToBottom() {
 
 function handleScroll() {
   if (!messagesContainer.value) return
-  
+
   const { scrollTop, scrollHeight, clientHeight } = messagesContainer.value
   const isAtBottom = scrollHeight - scrollTop - clientHeight < 10
   shouldAutoScroll.value = isAtBottom
@@ -125,10 +125,10 @@ watch(() => props.messages, () => {
 }
 
 @keyframes bounce {
-  0%, 80%, 100% { 
+  0%, 80%, 100% {
     transform: scale(0);
   }
-  40% { 
+  40% {
     transform: scale(1);
   }
 }
@@ -140,4 +140,4 @@ watch(() => props.messages, () => {
   display: flex;
   align-items: center;
 }
-</style> 
+</style>
