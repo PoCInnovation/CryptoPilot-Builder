@@ -105,15 +105,8 @@
               class="chat-access-button"
               @click="showChat = true"
             >
-              <button class="chat-access-button">💬 Accéder au Chat</button>
-            </router-link>
-            <router-link
-              v-if="hasValidConfig"
-              to="/memory"
-              class="agent-navigation-link"
-            >
-              <button class="memory-button">🧠 Mémoire de l'IA</button>
-            </router-link>
+              💬 Accéder au Chat
+            </button>
           </div>
           <div v-else class="auth-required-section">
             <button
@@ -382,9 +375,6 @@ export default {
   background: linear-gradient(120deg, rgba(28, 32, 51, 0), rgba(16, 21, 33, 0));
   border: none;
   transition: left 0.5s ease;
-  font-family: "Segoe UI", Tahoma, Geneva, Verdana, sans-serif;
-  font-family: 'Roboto', sans-serif;
-  background: linear-gradient(135deg, #7a5195 0%, #a552cc 100%);
   overflow: hidden;
 }
 .sidebar {
@@ -408,14 +398,8 @@ export default {
   animation: fadeIn 0.5s ease;
 }
 @keyframes fadeIn {
-  from {
-    opacity: 0;
-    transform: translateY(-10px);
-  }
-  to {
-    opacity: 1;
-    transform: translateY(0);
-  }
+  from { opacity: 0; transform: translateY(-10px); }
+  to { opacity: 1; transform: translateY(0); }
 }
 .sidebar-title {
   font-size: 80px;
@@ -423,7 +407,7 @@ export default {
   color: #f3e8ff;
   margin: 0;
   letter-spacing: 1px;
-  text-shadow: 0 2px 4px rgba(0, 0, 0, 0.3);
+  text-shadow: 0 2px 4px rgba(0,0,0,0.3);
 }
 .chat-navigation {
   display: flex;
@@ -434,8 +418,6 @@ export default {
   margin-bottom: 20px;
   display: flex;
   gap: 80px;
-  gap : 80px;
-  display: flex;
 }
 .new-chat-button {
   width: 20%;
@@ -444,7 +426,6 @@ export default {
   padding-bottom: 12px;
   padding-left: 10px;
   background: linear-gradient(120deg, rgba(28, 32, 51, 0), rgba(16, 21, 33, 0));
-  background: linear-gradient(135deg, #9d4edd 0%, #764ba2 100%);
   border: none;
   color: white;
   border-radius: 10px;
@@ -464,7 +445,7 @@ export default {
   box-shadow: 0 6px 20px rgba(125, 82, 204, 0.4);
 }
 .new-chat-button::after {
-  content: "";
+  content: '';
   position: absolute;
   top: 0;
   left: -100%;
@@ -564,7 +545,7 @@ export default {
   position: relative;
 }
 .chat-list-section::-webkit-scrollbar-thumb::before {
-  content: "";
+  content: '';
   position: absolute;
   top: 0;
   left: 0;
@@ -605,7 +586,7 @@ export default {
   font-family: inherit;
   outline: none;
   transition: all 0.3s ease;
-  box-shadow: inset 0 2px 4px rgba(0, 0, 0, 0.05);
+  box-shadow: inset 0 2px 4px rgba(0,0,0,0.05);
 }
 .chat-name-input:focus {
   border-color: #764ba2;
@@ -634,25 +615,22 @@ export default {
   transform: translateX(8px);
 }
 .chat-item-button::after {
-  content: "";
+  content: '';
   position: absolute;
   top: 0;
   left: -50%;
   width: 100%;
   height: 100%;
-  background: linear-gradient(
-    120deg,
-    rgba(255, 255, 255, 0.1) 0%,
-    rgba(255, 255, 255, 0.1) 50%,
-    rgba(255, 255, 255, 0) 80%
-  );
+  background: linear-gradient(120deg, rgba(255,255,255,0.1) 0%, rgba(255,255,255,0.1) 50%, rgba(255,255,255,0) 80%);
   transition: left 0.5s ease;
 }
 .chat-item-button:hover::after {
   left: 100%;
 }
 .chat-item-button--active {
-  background: linear-gradient(120deg, rgba(28, 32, 51, 0), rgba(16, 21, 33, 0));  border: none;  transition: left 0.5s ease;
+  background: linear-gradient(120deg, rgba(28, 32, 51, 0), rgba(16, 21, 33, 0));
+  border: none;
+  transition: left 0.5s ease;
   font-weight: bold;
   box-shadow: 0 4px 12px rgba(118, 75, 162, 0.3);
   transform: translateX(5px);
@@ -671,7 +649,7 @@ export default {
   align-items: center;
   justify-content: center;
   transition: all 0.3s ease;
-  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.2);
+  box-shadow: 0 2px 6px rgba(0,0,0,0.2);
   position: relative;
 }
 .chat-delete-button:hover {
@@ -690,14 +668,8 @@ export default {
   animation: slideDown 0.3s ease;
 }
 @keyframes slideDown {
-  from {
-    transform: translateY(-10px);
-    opacity: 0;
-  }
-  to {
-    transform: translateY(0);
-    opacity: 1;
-  }
+  from { transform: translateY(-10px); opacity: 0; }
+  to { transform: translateY(0); opacity: 1; }
 }
 .context-menu-item {
   width: 100%;
@@ -755,14 +727,8 @@ export default {
   animation: fadeInRight 0.5s ease;
 }
 @keyframes fadeInRight {
-  from {
-    opacity: 0;
-    transform: translateX(20px);
-  }
-  to {
-    opacity: 1;
-    transform: translateX(0);
-  }
+  from { opacity: 0; transform: translateX(20px); }
+  to { opacity: 1; transform: translateX(0); }
 }
 .user-info {
   display: flex;
@@ -773,33 +739,8 @@ export default {
   color: white;
   font-weight: bold;
   font-size: 16px;
-  text-shadow: 0 1px 2px rgba(0, 0, 0, 0.05);
+  text-shadow: 0 1px 2px rgba(0,0,0,0.05);
 }
-
-.login-button {
-  display: flex;
-  align-items: center;
-  gap: 10px;
-  padding: 14px 24px;
-  background: rgba(28, 32, 51, 0.1);
-  backdrop-filter: blur(10px);
-  -webkit-backdrop-filter: blur(10px);
-  border: 1px solid rgba(255, 255, 255, 0.1);
-  color: white;
-  border-radius: 30px;
-  cursor: pointer;
-  font-size: 15px;
-  font-weight: 700;
-  transition: all 0.3s ease;
-  box-shadow: 0 6px 18px rgba(118, 75, 162, 0.3);
-}
-
-.login-button:hover {
-  background: rgba(28, 32, 51, 0.2);
-  transform: translateY(-2px);
-  box-shadow: 0 8px 24px rgba(118, 75, 162, 0.4);
-}
-
 .logout-button {
   display: flex;
   align-items: center;
@@ -859,17 +800,13 @@ export default {
 }
 .crypto-widget::before,
 .news-widget::before {
-  content: "";
+  content: '';
   position: absolute;
   top: -50%;
   left: -50%;
   width: 200%;
   height: 200%;
-  background: radial-gradient(
-    circle at center,
-    rgba(255, 255, 255, 0.2) 0%,
-    transparent 70%
-  );
+  background: radial-gradient(circle at center, rgba(255,255,255,0.2) 0%, transparent 70%);
   transform: rotate(45deg);
   pointer-events: none;
 }
@@ -881,12 +818,12 @@ export default {
 .crypto-percentage {
   font-size: 28px;
   margin-bottom: 8px;
-  text-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
+  text-shadow: 0 2px 4px rgba(0,0,0,0.2);
 }
 .crypto-symbol {
   font-size: 18px;
   opacity: 0.9;
-  text-shadow: 0 1px 2px rgba(0, 0, 0, 0.2);
+  text-shadow: 0 1px 2px rgba(0,0,0,0.2);
 }
 .news-widget {
   background: linear-gradient(120deg, rgba(28, 32, 51, 0), rgba(16, 21, 33, 0));
@@ -895,7 +832,7 @@ export default {
 .news-title {
   font-size: 20px;
   text-align: center;
-  text-shadow: 0 1px 3px rgba(0, 0, 0, 0.2);
+  text-shadow: 0 1px 3px rgba(0,0,0,0.2);
 }
 .action-section {
   width: 100%;
@@ -915,7 +852,7 @@ export default {
   padding: 18px 35px;
   font-size: 20px;
   font-weight: bold;
-  background: linear-gradient(120deg, rgba(28, 32, 51, 0), rgba(16, 21, 33, 0));  border: none;  transition: left 0.5s ease;
+  background: linear-gradient(120deg, rgba(28, 32, 51, 0), rgba(16, 21, 33, 0));
   border: none;
   color: white;
   border-radius: 12px;
@@ -927,18 +864,13 @@ export default {
   z-index: 1;
 }
 .configure-agent-button::before {
-  content: "";
+  content: '';
   position: absolute;
   top: 0;
   left: -100%;
   width: 100%;
   height: 100%;
-  background: linear-gradient(
-    120deg,
-    rgba(255, 255, 255, 0.2) 0%,
-    rgba(255, 255, 255, 0.2) 50%,
-    rgba(255, 255, 255, 0) 80%
-  );
+  background: linear-gradient(120deg, rgba(255,255,255,0.2) 0%, rgba(255,255,255,0.2) 50%, rgba(255,255,255,0) 80%);
   transition: left 0.5s ease;
   z-index: -1;
 }
@@ -965,18 +897,13 @@ export default {
   z-index: 1;
 }
 .chat-access-button::before {
-  content: "";
+  content: '';
   position: absolute;
   top: 0;
   left: -100%;
   width: 100%;
   height: 100%;
-  background: linear-gradient(
-    120deg,
-    rgba(255, 255, 255, 0.2) 0%,
-    rgba(255, 255, 255, 0.2) 50%,
-    rgba(255, 255, 255, 0) 80%
-  );
+  background: linear-gradient(120deg, rgba(255,255,255,0.2) 0%, rgba(255,255,255,0.2) 50%, rgba(255,255,255,0) 80%);
   transition: left 0.5s ease;
   z-index: -1;
 }
@@ -987,49 +914,6 @@ export default {
   transform: translateY(-3px);
   box-shadow: 0 8px 24px rgba(165, 82, 204, 0.4);
 }
-
-.memory-button {
-  padding: 18px 35px;
-  font-size: 20px;
-  font-weight: bold;
-  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-  border: none;
-  color: white;
-  border-radius: 12px;
-  cursor: pointer;
-  transition: all 0.3s ease;
-  box-shadow: 0 6px 18px rgba(102, 126, 234, 0.3);
-  position: relative;
-  overflow: hidden;
-  z-index: 1;
-}
-
-.memory-button::before {
-  content: "";
-  position: absolute;
-  top: 0;
-  left: -100%;
-  width: 100%;
-  height: 100%;
-  background: linear-gradient(
-    120deg,
-    rgba(255, 255, 255, 0.2) 0%,
-    rgba(255, 255, 255, 0.2) 50%,
-    rgba(255, 255, 255, 0) 80%
-  );
-  transition: left 0.5s ease;
-  z-index: -1;
-}
-
-.memory-button:hover::before {
-  left: 100%;
-}
-
-.memory-button:hover {
-  transform: translateY(-3px);
-  box-shadow: 0 8px 24px rgba(102, 126, 234, 0.4);
-}
-
 .auth-required-section {
   display: flex;
   flex-direction: column;
@@ -1056,7 +940,7 @@ export default {
 .talk-to-agent-button-disabled:hover {
   background: rgba(28, 32, 51, 0.2);
   transform: translateY(-3px);
-  box-shadow: 0 8px 24px rgba(118, 75, 162, 0.4); /* Ombre plus forte */
+  box-shadow: 0 8px 24px rgba(118, 75, 162, 0.4);
 }
 .talk-to-agent-button-disabled:hover::after {
   position: absolute;
@@ -1100,13 +984,14 @@ export default {
   }
 }
 .modal-header {
-  background: linear-gradient(120deg, rgba(28, 32, 51, 0), rgba(16, 21, 33, 0));  border: none;  transition: left 0.5s ease;
+  background: linear-gradient(120deg, rgba(28, 32, 51, 0), rgba(16, 21, 33, 0));
+  border: none;
   color: white;
   padding: 25px;
   display: flex;
   justify-content: space-between;
   align-items: center;
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+  box-shadow: 0 4px 12px rgba(0,0,0,0.1);
 }
 .modal-title {
   font-size: 22px;
@@ -1129,7 +1014,7 @@ export default {
   transition: background-color 0.2s ease;
 }
 .modal-close:hover {
-  background-color: rgba(255, 255, 255, 0.2);
+  background-color: rgba(255,255,255,0.2);
 }
 .login-form {
   padding: 35px;
@@ -1154,7 +1039,7 @@ export default {
   background-color: #f8f6ff;
   box-sizing: border-box;
   font-family: inherit;
-  box-shadow: inset 0 2px 4px rgba(0, 0, 0, 0.05);
+  box-shadow: inset 0 2px 4px rgba(0,0,0,0.05);
 }
 .form-input:focus {
   outline: none;
@@ -1181,7 +1066,7 @@ export default {
   font-size: 15px;
   font-weight: 600;
   transition: all 0.3s ease;
-  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.05);
+  box-shadow: 0 2px 6px rgba(0,0,0,0.05);
 }
 .btn-secondary:hover {
   background-color: #f3e8ff;
