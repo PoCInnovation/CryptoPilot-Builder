@@ -878,9 +878,10 @@ if (typeof window !== "undefined") {
 <style scoped>
 .chat-container {
   display: fixed;
-  top: 1vh;
-  left: 33.33vw;
-  width: 80vw;
+  top: 30vh;
+  right: 2px;
+  width: 74vw;
+  height : 64vh;
   border: 1px solid rgba(255, 255, 255, 0.1);
   border-radius: 24px;
   box-shadow:
@@ -888,7 +889,7 @@ if (typeof window !== "undefined") {
     0 0 0 1px rgba(255, 255, 255, 0.05);
   overflow: hidden;
   background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-  position: relative;
+  position: fixed;
 }
 
 /* Animation de fond */
@@ -947,6 +948,7 @@ if (typeof window !== "undefined") {
   backdrop-filter: blur(20px);
   position: relative;
   border-radius: 0 24px 24px 0;
+  height : 100%;
 }
 
 /* Header moderne avec glassmorphism */
@@ -1441,7 +1443,7 @@ if (typeof window !== "undefined") {
 /* Responsive design */
 @media (max-width: 768px) {
   .chat-container {
-    width: 95vw;
+    width: 74vw;
     height: 95vh;
     border-radius: 16px;
     margin: 10px;
@@ -1553,7 +1555,7 @@ if (typeof window !== "undefined") {
 
 @media (max-width: 480px) {
   .chat-container {
-    width: 100vw;
+    width: 74vw;
     height: 100vh;
     border-radius: 0;
     margin: 0;
