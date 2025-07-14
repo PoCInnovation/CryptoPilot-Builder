@@ -1,26 +1,30 @@
 <template>
   <div class="app-container">
+    <!-- Sidebar -->
     <aside class="sidebar">
       <header class="sidebar-header">
         <h2 class="sidebar-title">CryptoPilot Builder</h2>
       </header>
+      
+      <!-- Contrôles utilisateur -->
       <nav class="chat-navigation">
         <section class="chat-controls-section">
-          <button class="new-chat-button" @click="createNewChat">
+          <button v-if="isAuthenticated" class="new-chat-button" @click="createNewChat">
             + Nouveau Chat
           </button>
+          <button v-else class="login-button" @click="showAuthModal = true">
+            <span class="login-icon">👤</span> Se connecter
+          </button>
         </section>
+
+        <!-- Liste des chats -->
         <section class="chat-list-section">
-          <article
-            v-for="chat in chats"
-            :key="chat.id"
+          <article 
+            v-for="chat in chats" 
+            :key="chat.id" 
             class="chat-item-container"
           >
-            <form
-              v-if="editingChatId === chat.id"
-              class="chat-edit-form"
-              @submit.prevent="saveEditingChat"
-            >
+            <form v-if="editingChatId === chat.id" class="chat-edit-form" @submit.prevent="saveEditingChat">
               <input
                 v-model="tempChatName"
                 @keydown="handleEditKeydown"
@@ -31,11 +35,12 @@
                 type="text"
               />
             </form>
+            
             <button
               v-else
               :class="[
                 'chat-item-button',
-                { 'chat-item-button--active': chat.id === activeChat },
+                { 'chat-item-button--active': chat.id === activeChat }
               ]"
               @click="selectChat(chat.id)"
               @dblclick="startEditingChat(chat.id)"
@@ -44,10 +49,10 @@
             >
               {{ chat.name }}
             </button>
+            
             <button
               class="chat-delete-button"
               @click="deleteChat(chat.id)"
-              title="Supprimer ce chat"
               :aria-label="`Supprimer le chat ${chat.name}`"
             >
               ×
@@ -56,30 +61,23 @@
         </section>
       </nav>
     </aside>
+
+    <!-- Contenu principal -->
     <main class="main-content">
+      <!-- En-tête utilisateur -->
       <header class="main-header">
-        <h1 class="welcome-title">Welcome</h1>
         <div class="user-section">
           <div v-if="isAuthenticated" class="user-info">
-            <span class="user-welcome"
-              >Bonjour, {{ user?.username || user?.email }}</span
-            >
-            <button
-              class="logout-button"
-              @click="handleLogout"
-              title="Se déconnecter"
-            >
-              <span class="logout-icon">🚪</span>
-              Déconnexion
+            <span class="user-welcome">Bonjour, {{ user?.username || user?.email }}</span>
+            <button class="logout-button" @click="handleLogout">
+              <span class="logout-icon">🚪</span> Déconnexion
             </button>
           </div>
-          <button v-else class="login-button" @click="showAuthModal = true">
-            <span class="login-icon">👤</span>
-            Se connecter
-          </button>
         </div>
       </header>
-      <section class="dashboard-section">
+
+      <!-- Dashboard -->
+      <section v-if="!showChat" class="dashboard-section">
         <div class="widgets-container">
           <article class="crypto-widget">
             <span class="crypto-percentage">+27%</span>
@@ -89,89 +87,70 @@
             <span class="news-title">Actu by lulu</span>
           </article>
         </div>
+
+        <!-- Actions -->
         <section class="action-section">
           <div v-if="isAuthenticated" class="authenticated-actions">
             <router-link to="/AI" class="agent-navigation-link">
-              <button class="configure-agent-button">
-                ⚙️ Configurer mon Agent
-              </button>
+              <button class="configure-agent-button">⚙️ Configurer mon Agent</button>
             </router-link>
-            <router-link
-              v-if="hasValidConfig"
-              to="/chat"
-              class="agent-navigation-link"
-            >
-              <button class="chat-access-button">💬 Accéder au Chat</button>
-            </router-link>
-            <router-link
-              v-if="hasValidConfig"
-              to="/memory"
-              class="agent-navigation-link"
-            >
-              <button class="memory-button">🧠 Mémoire de l'IA</button>
-            </router-link>
+            <button v-if="hasValidConfig" class="chat-access-button" @click="showChat = true">
+              💬 Accéder au Chat
+            </button>
           </div>
+          
           <div v-else class="auth-required-section">
-            <button
-              class="talk-to-agent-button-disabled"
-              @click="showAuthModal = true"
-            >
+            <button class="talk-to-agent-button-disabled" @click="showAuthModal = true">
               🔒 Configurer mon Agent
             </button>
-            <p class="auth-message">
-              Veuillez vous connecter pour configurer votre agent IA
-              personnalisé
-            </p>
+            <p class="auth-message">Veuillez vous connecter pour configurer votre agent IA personnalisé</p>
           </div>
         </section>
       </section>
+
+      <!-- Chat -->
+      <section v-else class="chat-section">
+        <div class="chat-header">
+          <button class="configure-agent-button back-dashboard-btn" @click="showChat = false">
+            ← Retour au Dashboard
+          </button>
+          <h3 class="chat-title">Chat avec votre Agent IA</h3>
+        </div>
+        <div class="chat-container">
+          <Chatbot />
+        </div>
+      </section>
     </main>
-    <aside
-      v-if="showContextMenu"
-      class="context-menu"
-      :style="{ left: contextMenuX + 'px', top: contextMenuY + 'px' }"
-      role="menu"
-    >
-      <button
-        @click="renameFromContextMenu"
-        class="context-menu-item"
-        role="menuitem"
-      >
-        ✏️ Renommer
-      </button>
-      <button @click="duplicateChat" class="context-menu-item" role="menuitem">
-        📋 Dupliquer
-      </button>
-      <hr class="context-menu-divider" role="separator" />
-      <button
-        @click="deleteChatFromContextMenu"
-        class="context-menu-item context-menu-item--danger"
-        role="menuitem"
-      >
-        🗑️ Supprimer
-      </button>
+
+    <!-- Menu contextuel -->
+    <aside v-if="showContextMenu" class="context-menu" :style="{ left: contextMenuX + 'px', top: contextMenuY + 'px' }">
+      <button @click="renameFromContextMenu" class="context-menu-item">✏️ Renommer</button>
+      <button @click="duplicateChat" class="context-menu-item">📋 Dupliquer</button>
+      <hr class="context-menu-divider" />
+      <button @click="deleteChatFromContextMenu" class="context-menu-item context-menu-item--danger">🗑️ Supprimer</button>
     </aside>
-    <AuthModal
-      :show="showAuthModal"
-      @close="showAuthModal = false"
-      @authenticated="handleAuthenticated"
-    />
+
+    <!-- Modale d'authentification -->
+    <AuthModal :show="showAuthModal" @close="showAuthModal = false" @authenticated="handleAuthenticated" />
   </div>
 </template>
 
 <script>
 import { mapState, mapActions, mapGetters } from "vuex";
 import AuthModal from "../components/AuthModal.vue";
+import apiService from "../services/apiService";
+import Chatbot from '../components/chatbot.vue';
 
 export default {
   name: "Accueil",
   components: {
     AuthModal,
+    Chatbot,
   },
   data() {
     return {
-      activeChat: 1,
-      nextChatId: 2,
+      activeChat: null,
+      nextChatId: 1,
       editingChatId: null,
       tempChatName: "",
       showContextMenu: false,
@@ -180,14 +159,13 @@ export default {
       contextMenuChatId: null,
       showAuthModal: false,
       redirectAfterAuth: null,
-      chats: [{ id: 1, name: "Trading Analysis" }],
+      chats: [],
+      showChat: false,
     };
   },
   computed: {
     ...mapState("auth", ["isAuthenticated", "user"]),
     ...mapGetters(["aiConfig"]),
-
-    // Vérifier si la configuration est valide
     hasValidConfig() {
       return (
         this.aiConfig &&
@@ -200,7 +178,6 @@ export default {
   methods: {
     ...mapActions("auth", ["logout"]),
     ...mapActions(["loadAgentConfig"]),
-
     selectChat(chatId) {
       this.activeChat = chatId;
       console.log(`Chat sélectionné: ${chatId}`);
@@ -282,17 +259,42 @@ export default {
         this.hideContextMenu();
       }
     },
-    deleteChat(chatId) {
+    async loadChatsFromApi() {
+      try {
+        const response = await apiService.listSessions();
+        const sessions = response.sessions || [];
+        this.chats = sessions.map((session, idx) => ({
+          id: session.session_id,
+          name: session.session_name || `Chat ${idx + 1}`,
+        }));
+        if (this.chats.length > 0) {
+          this.activeChat = this.chats[0].id;
+          this.nextChatId = this.chats.length + 1;
+        }
+      } catch (error) {
+        console.error("Erreur lors du chargement des chats:", error);
+        this.chats = [{ id: 1, name: "Trading Analysis" }];
+        this.activeChat = 1;
+        this.nextChatId = 2;
+      }
+    },
+    async deleteChat(chatId) {
       if (this.chats.length <= 1) {
         alert("Vous devez garder au moins un chat");
         return;
       }
-      const index = this.chats.findIndex((chat) => chat.id === chatId);
-      if (index !== -1) {
-        this.chats.splice(index, 1);
-        if (this.activeChat === chatId) {
-          this.activeChat = this.chats[0].id;
+      try {
+        await apiService.deleteSession(chatId);
+        const index = this.chats.findIndex((chat) => chat.id === chatId);
+        if (index !== -1) {
+          this.chats.splice(index, 1);
+          if (this.activeChat === chatId && this.chats.length > 0) {
+            this.activeChat = this.chats[0].id;
+          }
         }
+      } catch (error) {
+        console.error("Erreur lors de la suppression du chat:", error);
+        alert("Erreur lors de la suppression du chat.");
       }
     },
     handleEditKeydown(event) {
@@ -302,41 +304,27 @@ export default {
         this.cancelEditingChat();
       }
     },
-
     handleAuthenticated() {
-      // Charger la configuration de l'agent après authentification
       this.loadAgentConfig();
-
-      // Rediriger vers la page demandée si elle existe
       if (this.redirectAfterAuth) {
         this.$router.push(this.redirectAfterAuth);
         this.redirectAfterAuth = null;
       }
     },
-
     async handleLogout() {
       await this.logout();
-      // Rediriger vers l'accueil après déconnexion
       this.$router.push("/");
     },
   },
-
-  mounted() {
-    // Vérifier l'authentification au montage
+  async mounted() {
     this.$store.dispatch("auth/checkAuth");
-
-    // Charger la config si déjà authentifié
     if (this.isAuthenticated) {
-      this.loadAgentConfig();
+      await this.loadAgentConfig();
+      await this.loadChatsFromApi();
     }
-
-    // Gérer la redirection après authentification si nécessaire
     const urlParams = new URLSearchParams(window.location.search);
     if (urlParams.get("authRequired") === "true") {
-      // Afficher automatiquement la modale de connexion
       this.showAuthModal = true;
-
-      // Stocker l'URL de redirection
       this.redirectAfterAuth = urlParams.get("redirect") || "/AI";
     }
   },
@@ -347,60 +335,61 @@ export default {
 .app-container {
   display: flex;
   height: 100vh;
-  font-family: "Segoe UI", Tahoma, Geneva, Verdana, sans-serif;
-  background: linear-gradient(135deg, #7a5195 0%, #a552cc 100%);
+  font-family: 'Roboto', sans-serif;
+  background: linear-gradient(120deg, rgba(28, 32, 51, 0), rgba(16, 21, 33, 0));
+  border: none;
+  transition: left 0.5s ease;
   overflow: hidden;
 }
-
 .sidebar {
-  width: 280px;
-  background: linear-gradient(180deg, #4b2e83 0%, #2e1b4d 100%);
-  color: white;
-  padding: 25px;
-  box-shadow: 4px 0 10px rgba(0, 0, 0, 0.2);
-  transition: all 0.3s ease;
+  position: fixed;
+  top: 10vh;
+  left: 5vh;
+  width: 40vh;
+  height: 80vh;
+  background: rgba(255, 255, 255, 0.1);
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
+  border-radius: 24px;
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  padding: 20px;
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.3);
+  color: #fff;
 }
-
 .sidebar-header {
   margin-bottom: 35px;
   text-align: center;
   animation: fadeIn 0.5s ease;
 }
-
 @keyframes fadeIn {
-  from {
-    opacity: 0;
-    transform: translateY(-10px);
-  }
-  to {
-    opacity: 1;
-    transform: translateY(0);
-  }
+  from { opacity: 0; transform: translateY(-10px); }
+  to { opacity: 1; transform: translateY(0); }
 }
-
 .sidebar-title {
-  font-size: 24px;
-  font-weight: bold;
+  font-size: 80px;
+  font-weight: 600px;
   color: #f3e8ff;
   margin: 0;
   letter-spacing: 1px;
-  text-shadow: 0 2px 4px rgba(0, 0, 0, 0.3);
+  text-shadow: 0 2px 4px rgba(0,0,0,0.3);
 }
-
 .chat-navigation {
   display: flex;
   flex-direction: column;
   gap: 12px;
 }
-
 .chat-controls-section {
   margin-bottom: 20px;
+  display: flex;
+  gap: 80px;
 }
-
 .new-chat-button {
-  width: 100%;
-  padding: 12px 18px;
-  background: linear-gradient(135deg, #9d4edd 0%, #764ba2 100%);
+  width: 20%;
+  padding-top: 12px;
+  padding-right: 18px;
+  padding-bottom: 12px;
+  padding-left: 10px;
+  background: linear-gradient(120deg, rgba(28, 32, 51, 0), rgba(16, 21, 33, 0));
   border: none;
   color: white;
   border-radius: 10px;
@@ -408,18 +397,19 @@ export default {
   font-size: 15px;
   font-weight: bold;
   transition: all 0.3s ease;
-  box-shadow: 0 4px 15px rgba(125, 82, 204, 0.3);
   position: relative;
   overflow: hidden;
+  display: flex;
+  align-items: center;
+  justify-content: flex-start;
+  text-align: center;
 }
-
 .new-chat-button:hover {
   transform: translateY(-3px);
   box-shadow: 0 6px 20px rgba(125, 82, 204, 0.4);
 }
-
 .new-chat-button::after {
-  content: "";
+  content: '';
   position: absolute;
   top: 0;
   left: -100%;
@@ -433,12 +423,36 @@ export default {
   );
   transition: left 0.5s ease;
 }
-
 .new-chat-button:hover::after {
   left: 100%;
 }
-
-/* Scrollbar personnalisée pour la liste des chats */
+.login-button {
+  width: 100%;
+  padding: 14px 24px;
+  background: rgba(28, 32, 51, 0.1);
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  color: white;
+  border-radius: 30px;
+  cursor: pointer;
+  font-size: 15px;
+  font-weight: 700;
+  transition: all 0.3s ease;
+  box-shadow: 0 6px 18px rgba(118, 75, 162, 0.3);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+.login-button:hover {
+  background: rgba(28, 32, 51, 0.2);
+  transform: translateY(-2px);
+  box-shadow: 0 8px 24px rgba(118, 75, 162, 0.4);
+}
+.login-icon {
+  font-size: 18px;
+  margin-right: 8px;
+}
 .chat-list-section {
   display: flex;
   flex-direction: column;
@@ -451,87 +465,73 @@ export default {
   scrollbar-width: thin;
   scrollbar-color: rgba(118, 75, 162, 0.6) rgba(46, 27, 77, 0.3);
 }
-
-/* Style pour navigateurs WebKit */
 .chat-list-section::-webkit-scrollbar {
   width: 8px;
   background-color: transparent;
 }
-
 .chat-list-section::-webkit-scrollbar-track {
   background: rgba(46, 27, 77, 0.3);
   border-radius: 10px;
   margin: 5px 0;
   box-shadow: inset 0 0 3px rgba(0, 0, 0, 0.1);
 }
-
 .chat-list-section::-webkit-scrollbar-thumb {
-  background: linear-gradient(180deg, #764ba2 0%, #5a3494 100%);
+  background: linear-gradient(120deg, rgba(28, 32, 51, 0), rgba(16, 21, 33, 0));
+  border: none;
+  transition: left 0.5s ease;
   border-radius: 10px;
   box-shadow: 0 2px 6px rgba(118, 75, 162, 0.3);
   transition: all 0.3s ease;
 }
-
 .chat-list-section::-webkit-scrollbar-thumb:hover {
-  background: linear-gradient(180deg, #9d4edd 0%, #764ba2 100%);
+  background: linear-gradient(120deg, rgba(28, 32, 51, 0), rgba(16, 21, 33, 0));
+  border: none;
+  transition: left 0.5s ease;
   box-shadow: 0 3px 8px rgba(157, 78, 221, 0.4);
   transform: scaleX(1.2);
 }
-
 .chat-list-section::-webkit-scrollbar-thumb:active {
-  background: linear-gradient(180deg, #a552cc 0%, #7a5195 100%);
+  background: linear-gradient(120deg, rgba(28, 32, 51, 0), rgba(16, 21, 33, 0));
+  border: none;
+  transition: left 0.5s ease;
 }
-
-/* Animation de fade pour la scrollbar */
 .chat-list-section::-webkit-scrollbar-thumb {
   opacity: 0.7;
 }
-
 .chat-list-section:hover::-webkit-scrollbar-thumb {
   opacity: 1;
 }
-
-/* Style alternatif pour Firefox */
 @supports (scrollbar-width: thin) {
   .chat-list-section {
     scrollbar-width: thin;
     scrollbar-color: #764ba2 rgba(46, 27, 77, 0.3);
   }
 }
-
-/* Effet de glow subtil au survol de la zone de scroll */
 .chat-list-section:hover {
   box-shadow: inset 2px 0 0 rgba(118, 75, 162, 0.2);
   transition: box-shadow 0.3s ease;
 }
-
-/* Variante encore plus stylée avec dégradé animé (optionnel) */
 .chat-list-section::-webkit-scrollbar-thumb {
   position: relative;
 }
-
 .chat-list-section::-webkit-scrollbar-thumb::before {
-  content: "";
+  content: '';
   position: absolute;
   top: 0;
   left: 0;
   right: 0;
   bottom: 0;
-  background: linear-gradient(
-    45deg,
-    rgba(255, 255, 255, 0.1) 0%,
+  background: linear-gradient(45deg,
+    rgba(255,255,255,0.1) 0%,
     transparent 50%,
-    rgba(255, 255, 255, 0.1) 100%
-  );
+    rgba(255,255,255,0.1) 100%);
   border-radius: 10px;
   opacity: 0;
   transition: opacity 0.3s ease;
 }
-
 .chat-list-section::-webkit-scrollbar-thumb:hover::before {
   opacity: 1;
 }
-
 .chat-item-container {
   display: flex;
   align-items: center;
@@ -539,15 +539,12 @@ export default {
   position: relative;
   transition: transform 0.2s ease;
 }
-
 .chat-item-container:hover {
   transform: translateX(5px);
 }
-
 .chat-edit-form {
   flex: 1;
 }
-
 .chat-name-input {
   width: 100%;
   padding: 14px 18px;
@@ -559,62 +556,55 @@ export default {
   font-family: inherit;
   outline: none;
   transition: all 0.3s ease;
-  box-shadow: inset 0 2px 4px rgba(0, 0, 0, 0.05);
+  box-shadow: inset 0 2px 4px rgba(0,0,0,0.05);
 }
-
 .chat-name-input:focus {
   border-color: #764ba2;
   box-shadow: 0 0 8px rgba(118, 75, 162, 0.3);
 }
-
 .chat-item-button {
   flex: 1;
   padding: 14px 18px;
-  background: linear-gradient(145deg, #5a3494 0%, #3c2366 100%);
+  background: linear-gradient(120deg, rgba(28, 32, 51, 0), rgba(16, 21, 33, 0));
   border: none;
+  transition: left 0.5s ease;
+  border: 1px solid rgba(255, 255, 255, 0.2);
   color: #f3e8ff;
   border-radius: 10px;
   cursor: pointer;
   transition: all 0.3s ease;
-  font-size: 15px;
+  font-size: 30px;
+  font-weight: 500;
   text-align: left;
   position: relative;
   overflow: hidden;
-  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.1);
 }
-
 .chat-item-button:hover {
+  background: rgba(255, 255, 255, 0.2);
+  border-color: rgba(255, 255, 255, 0.3);
   transform: translateX(8px);
-  background: linear-gradient(145deg, #764ba2 0%, #5a3494 100%);
 }
-
 .chat-item-button::after {
-  content: "";
+  content: '';
   position: absolute;
   top: 0;
   left: -50%;
   width: 100%;
   height: 100%;
-  background: linear-gradient(
-    120deg,
-    rgba(255, 255, 255, 0.1) 0%,
-    rgba(255, 255, 255, 0.1) 50%,
-    rgba(255, 255, 255, 0) 80%
-  );
+  background: linear-gradient(120deg, rgba(255,255,255,0.1) 0%, rgba(255,255,255,0.1) 50%, rgba(255,255,255,0) 80%);
   transition: left 0.5s ease;
 }
-
 .chat-item-button:hover::after {
   left: 100%;
 }
-
 .chat-item-button--active {
-  background: linear-gradient(145deg, #764ba2 0%, #5a3494 100%);
+  background: linear-gradient(120deg, rgba(28, 32, 51, 0), rgba(16, 21, 33, 0));
+  border: none;
+  transition: left 0.5s ease;
   font-weight: bold;
   box-shadow: 0 4px 12px rgba(118, 75, 162, 0.3);
   transform: translateX(5px);
 }
-
 .chat-delete-button {
   width: 30px;
   height: 30px;
@@ -629,15 +619,13 @@ export default {
   align-items: center;
   justify-content: center;
   transition: all 0.3s ease;
-  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.2);
+  box-shadow: 0 2px 6px rgba(0,0,0,0.2);
   position: relative;
 }
-
 .chat-delete-button:hover {
   background-color: #c0392b;
   transform: scale(1.1) rotate(90deg);
 }
-
 .context-menu {
   position: fixed;
   background-color: #2e1b4d;
@@ -649,18 +637,10 @@ export default {
   overflow: hidden;
   animation: slideDown 0.3s ease;
 }
-
 @keyframes slideDown {
-  from {
-    transform: translateY(-10px);
-    opacity: 0;
-  }
-  to {
-    transform: translateY(0);
-    opacity: 1;
-  }
+  from { transform: translateY(-10px); opacity: 0; }
+  to { transform: translateY(0); opacity: 1; }
 }
-
 .context-menu-item {
   width: 100%;
   padding: 12px 20px;
@@ -675,31 +655,26 @@ export default {
   transition: background-color 0.2s ease;
   color: #f3e8ff;
 }
-
 .context-menu-item:hover {
   background-color: #5a3494;
 }
-
 .context-menu-item--danger {
   color: #ff7675;
 }
-
 .context-menu-divider {
   margin: 0;
   border: none;
   border-top: 1px solid #5a3494;
 }
-
 .main-content {
   flex: 1;
   padding: 50px;
   display: flex;
   flex-direction: column;
   align-items: center;
-  background: linear-gradient(135deg, #e0d6f6 0%, #f0eaff 100%);
+  background: linear-gradient(135deg, #111421 0%, #111421 100%);
   overflow-y: auto;
 }
-
 .main-header {
   margin-bottom: 50px;
   width: 100%;
@@ -709,29 +684,10 @@ export default {
   position: relative;
   animation: fadeInUp 0.6s ease;
 }
-
 @keyframes fadeInUp {
-  from {
-    opacity: 0;
-    transform: translateY(20px);
-  }
-  to {
-    opacity: 1;
-    transform: translateY(0);
-  }
+  from { opacity: 0; transform: translateY(20px); }
+  to { opacity: 1; transform: translateY(0); }
 }
-
-.welcome-title {
-  font-size: 120px;
-  font-weight: 900;
-  color: #4b2e83;
-  margin: 0;
-  text-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
-  background: linear-gradient(45deg, #7a5195 0%, #a552cc 100%);
-  -webkit-background-clip: text;
-  -webkit-text-fill-color: transparent;
-}
-
 .user-section {
   position: absolute;
   right: 0;
@@ -740,76 +696,85 @@ export default {
   gap: 15px;
   animation: fadeInRight 0.5s ease;
 }
-
 @keyframes fadeInRight {
-  from {
-    opacity: 0;
-    transform: translateX(20px);
-  }
-  to {
-    opacity: 1;
-    transform: translateX(0);
-  }
+  from { opacity: 0; transform: translateX(20px); }
+  to { opacity: 1; transform: translateX(0); }
 }
-
 .user-info {
   display: flex;
   align-items: center;
   gap: 18px;
 }
-
 .user-welcome {
-  color: #2e1b4d;
-  font-weight: 600;
-  font-size: 16px;
-  text-shadow: 0 1px 2px rgba(0, 0, 0, 0.05);
-}
-
-.login-button {
-  display: flex;
-  align-items: center;
-  gap: 10px;
-  padding: 14px 24px;
-  background: linear-gradient(135deg, #764ba2 0%, #5a3494 100%);
-  border: none;
   color: white;
-  border-radius: 30px;
-  cursor: pointer;
-  font-size: 15px;
-  font-weight: 700;
-  transition: all 0.3s ease;
-  box-shadow: 0 6px 18px rgba(118, 75, 162, 0.3);
+  font-weight: bold;
+  font-size: 16px;
+  text-shadow: 0 1px 2px rgba(0,0,0,0.05);
 }
-
-.login-button:hover {
-  transform: translateY(-2px);
-  box-shadow: 0 8px 24px rgba(118, 75, 162, 0.4);
-}
-
 .logout-button {
   display: flex;
   align-items: center;
   gap: 10px;
   padding: 10px 20px;
-  background: linear-gradient(135deg, #e74c3c 0%, #c0392b 100%);
-  border: none;
+  background: rgba(28, 32, 51, 0.1);
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
+  border: 1px solid rgba(255, 255, 255, 0.1);
   color: white;
   border-radius: 25px;
   cursor: pointer;
   font-size: 14px;
   font-weight: 600;
   transition: all 0.3s ease;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
 }
-
 .logout-button:hover {
-  background: linear-gradient(135deg, #c0392b 0%, #e74c3c 100%);
+  background: rgba(28, 32, 51, 0.2);
+  box-shadow: 0 8px 20px rgba(192, 57, 43, 0.4);
   transform: translateY(-1px);
-  box-shadow: 0 4px 12px rgba(192, 57, 43, 0.3);
 }
-
-.login-icon,
 .logout-icon {
   font-size: 18px;
+}
+
+.back-dashboard-btn {
+  /* Hérite des styles de .configure-agent-button */
+  padding: 18px 35px;
+  font-size: 20px;
+  font-weight: bold;
+  background: linear-gradient(120deg, rgba(28, 32, 51, 0), rgba(16, 21, 33, 0));
+  border: none;
+  color: white;
+  border-radius: 12px;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  box-shadow: 0 6px 18px rgba(118, 75, 162, 0.3);
+  position: relative;
+  overflow: hidden;
+  z-index: 1;
+  margin-bottom: 20px; /* Espace sous le bouton */
+}
+
+/* Effet hover (identique aux autres boutons) */
+.back-dashboard-btn::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: -100%;
+  width: 100%;
+  height: 100%;
+  background: linear-gradient(120deg, rgba(255,255,255,0.2) 0%, rgba(255,255,255,0.2) 50%, rgba(255,255,255,0) 80%);
+  transition: left 0.5s ease;
+  z-index: -1;
+}
+
+.back-dashboard-btn:hover::before {
+  left: 100%;
+}
+
+.back-dashboard-btn:hover {
+  transform: translateY(-3px);
+  box-shadow: 0 8px 24px rgba(118, 75, 162, 0.4);
 }
 
 .dashboard-section {
@@ -821,7 +786,6 @@ export default {
   width: 100%;
   animation: fadeInUp 0.6s ease;
 }
-
 .widgets-container {
   display: flex;
   justify-content: center;
@@ -829,12 +793,10 @@ export default {
   margin-top: 150px;
   flex-wrap: wrap;
 }
-
 .crypto-widget,
 .news-widget {
   width: 160px;
   height: 140px;
-  background: linear-gradient(135deg, #764ba2 0%, #5a3494 100%);
   border-radius: 16px;
   display: flex;
   flex-direction: column;
@@ -842,80 +804,66 @@ export default {
   justify-content: center;
   color: white;
   font-weight: bold;
-  box-shadow: 0 6px 20px rgba(118, 75, 162, 0.3);
   transition: all 0.4s ease;
   position: relative;
   overflow: hidden;
   transform: perspective(1000px) rotateY(0deg);
 }
-
 .crypto-widget::before,
 .news-widget::before {
-  content: "";
+  content: '';
   position: absolute;
   top: -50%;
   left: -50%;
   width: 200%;
   height: 200%;
-  background: radial-gradient(
-    circle at center,
-    rgba(255, 255, 255, 0.2) 0%,
-    transparent 70%
-  );
+  background: radial-gradient(circle at center, rgba(255,255,255,0.2) 0%, transparent 70%);
   transform: rotate(45deg);
   pointer-events: none;
 }
-
 .crypto-widget:hover,
 .news-widget:hover {
   transform: perspective(1000px) rotateY(5deg) translateY(-5px);
   box-shadow: 0 10px 30px rgba(118, 75, 162, 0.4);
 }
-
 .crypto-percentage {
   font-size: 28px;
   margin-bottom: 8px;
-  text-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
+  text-shadow: 0 2px 4px rgba(0,0,0,0.2);
 }
-
 .crypto-symbol {
   font-size: 18px;
   opacity: 0.9;
-  text-shadow: 0 1px 2px rgba(0, 0, 0, 0.2);
+  text-shadow: 0 1px 2px rgba(0,0,0,0.2);
 }
-
 .news-widget {
-  background: linear-gradient(135deg, #a552cc 0%, #764ba2 100%);
+  background: linear-gradient(120deg, rgba(28, 32, 51, 0), rgba(16, 21, 33, 0));
+  border: none;
 }
-
 .news-title {
   font-size: 20px;
   text-align: center;
-  text-shadow: 0 1px 3px rgba(0, 0, 0, 0.2);
+  text-shadow: 0 1px 3px rgba(0,0,0,0.2);
 }
-
 .action-section {
   width: 100%;
   display: flex;
   justify-content: center;
 }
-
 .authenticated-actions {
   display: flex;
   flex-direction: column;
   gap: 20px;
   align-items: center;
 }
-
 .agent-navigation-link {
   text-decoration: none;
 }
-
 .configure-agent-button {
   padding: 18px 35px;
   font-size: 20px;
   font-weight: bold;
-  background: linear-gradient(135deg, #764ba2 0%, #5a3494 100%);
+  background: linear-gradient(120deg, rgba(28, 32, 51, 0), rgba(16, 21, 33, 0));
   border: none;
   color: white;
   border-radius: 12px;
@@ -926,38 +874,29 @@ export default {
   overflow: hidden;
   z-index: 1;
 }
-
 .configure-agent-button::before {
-  content: "";
+  content: '';
   position: absolute;
   top: 0;
   left: -100%;
   width: 100%;
   height: 100%;
-  background: linear-gradient(
-    120deg,
-    rgba(255, 255, 255, 0.2) 0%,
-    rgba(255, 255, 255, 0.2) 50%,
-    rgba(255, 255, 255, 0) 80%
-  );
+  background: linear-gradient(120deg, rgba(255,255,255,0.2) 0%, rgba(255,255,255,0.2) 50%, rgba(255,255,255,0) 80%);
   transition: left 0.5s ease;
   z-index: -1;
 }
-
 .configure-agent-button:hover::before {
   left: 100%;
 }
-
 .configure-agent-button:hover {
   transform: translateY(-3px);
   box-shadow: 0 8px 24px rgba(118, 75, 162, 0.4);
 }
-
 .chat-access-button {
   padding: 18px 35px;
   font-size: 20px;
   font-weight: bold;
-  background: linear-gradient(135deg, #a552cc 0%, #764ba2 100%);
+  background: linear-gradient(120deg, rgba(28, 32, 51, 0), rgba(16, 21, 33, 0));
   border: none;
   color: white;
   border-radius: 12px;
@@ -968,145 +907,78 @@ export default {
   overflow: hidden;
   z-index: 1;
 }
-
 .chat-access-button::before {
-  content: "";
+  content: '';
   position: absolute;
   top: 0;
   left: -100%;
   width: 100%;
   height: 100%;
-  background: linear-gradient(
-    120deg,
-    rgba(255, 255, 255, 0.2) 0%,
-    rgba(255, 255, 255, 0.2) 50%,
-    rgba(255, 255, 255, 0) 80%
-  );
+  background: linear-gradient(120deg, rgba(255,255,255,0.2) 0%, rgba(255,255,255,0.2) 50%, rgba(255,255,255,0) 80%);
   transition: left 0.5s ease;
   z-index: -1;
 }
-
 .chat-access-button:hover::before {
   left: 100%;
 }
-
 .chat-access-button:hover {
   transform: translateY(-3px);
   box-shadow: 0 8px 24px rgba(165, 82, 204, 0.4);
 }
-
-.memory-button {
-  padding: 18px 35px;
-  font-size: 20px;
-  font-weight: bold;
-  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-  border: none;
-  color: white;
-  border-radius: 12px;
-  cursor: pointer;
-  transition: all 0.3s ease;
-  box-shadow: 0 6px 18px rgba(102, 126, 234, 0.3);
-  position: relative;
-  overflow: hidden;
-  z-index: 1;
-}
-
-.memory-button::before {
-  content: "";
-  position: absolute;
-  top: 0;
-  left: -100%;
-  width: 100%;
-  height: 100%;
-  background: linear-gradient(
-    120deg,
-    rgba(255, 255, 255, 0.2) 0%,
-    rgba(255, 255, 255, 0.2) 50%,
-    rgba(255, 255, 255, 0) 80%
-  );
-  transition: left 0.5s ease;
-  z-index: -1;
-}
-
-.memory-button:hover::before {
-  left: 100%;
-}
-
-.memory-button:hover {
-  transform: translateY(-3px);
-  box-shadow: 0 8px 24px rgba(102, 126, 234, 0.4);
-}
-
 .auth-required-section {
   display: flex;
   flex-direction: column;
   align-items: center;
   gap: 15px;
 }
-
 .talk-to-agent-button-disabled {
   padding: 18px 35px;
   font-size: 20px;
   font-weight: bold;
-  background: linear-gradient(135deg, #95a5a6 0%, #7f8c8d 100%);
-  border: none;
+  background: rgba(28, 32, 51, 0.1);
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
+  border: 1px solid rgba(255, 255, 255, 0.1);
   color: white;
   border-radius: 12px;
   cursor: pointer;
   transition: all 0.3s ease;
-  box-shadow: 0 6px 18px rgba(149, 165, 166, 0.3);
+  box-shadow: 0 6px 18px rgba(0, 0, 0, 0.1);
   position: relative;
   overflow: hidden;
+  text-align: center;
 }
-
 .talk-to-agent-button-disabled:hover {
-  background: linear-gradient(135deg, #764ba2 0%, #5a3494 100%);
+  background: rgba(28, 32, 51, 0.2);
   transform: translateY(-3px);
   box-shadow: 0 8px 24px rgba(118, 75, 162, 0.4);
 }
-
 .talk-to-agent-button-disabled:hover::after {
-  content: "Cliquer pour se connecter";
   position: absolute;
   top: 0;
   left: 0;
   right: 0;
   bottom: 0;
-  background: rgba(118, 75, 162, 0.9);
+  background: rgba(28, 32, 51, 0.4);
   display: flex;
   align-items: center;
   justify-content: center;
   font-size: 14px;
   font-weight: 500;
+  color: #fff;
+  text-shadow: 0 1px 2px rgba(0, 0, 0, 0.2);
   animation: fadeInUp 0.3s ease;
 }
-
 .auth-message {
   margin: 0;
-  color: #5a3494;
+  color: white;
   font-size: 15px;
   text-align: center;
   max-width: 320px;
   line-height: 1.5;
   font-style: italic;
-  text-shadow: 0 1px 2px rgba(255, 255, 255, 0.3);
+  text-shadow: 0 1px 2px rgba(0, 0, 0, 0.2);
 }
-
-.modal-overlay {
-  position: fixed;
-  top: 0;
-  left: 0;
-  right: 0;
-  bottom: 0;
-  background-color: rgba(75, 25, 140, 0.7);
-  display: flex;
-  justify-content: center;
-  align-items: center;
-  z-index: 2000;
-  backdrop-filter: blur(6px);
-  animation: fadeIn 0.3s ease;
-}
-
 .modal-container {
   background: white;
   border-radius: 20px;
@@ -1117,30 +989,27 @@ export default {
   transform: scale(0.95);
   animation: modalAppear 0.4s ease forwards;
 }
-
 @keyframes modalAppear {
   to {
     transform: scale(1);
   }
 }
-
 .modal-header {
-  background: linear-gradient(135deg, #764ba2 0%, #5a3494 100%);
+  background: linear-gradient(120deg, rgba(28, 32, 51, 0), rgba(16, 21, 33, 0));
+  border: none;
   color: white;
   padding: 25px;
   display: flex;
   justify-content: space-between;
   align-items: center;
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+  box-shadow: 0 4px 12px rgba(0,0,0,0.1);
 }
-
 .modal-title {
   font-size: 22px;
   font-weight: bold;
   margin: 0;
   letter-spacing: 0.5px;
 }
-
 .modal-close {
   background: none;
   border: none;
@@ -1155,19 +1024,15 @@ export default {
   border-radius: 50%;
   transition: background-color 0.2s ease;
 }
-
 .modal-close:hover {
-  background-color: rgba(255, 255, 255, 0.2);
+  background-color: rgba(255,255,255,0.2);
 }
-
 .login-form {
   padding: 35px;
 }
-
 .form-group {
   margin-bottom: 25px;
 }
-
 .form-label {
   display: block;
   margin-bottom: 10px;
@@ -1175,7 +1040,113 @@ export default {
   color: #4b2e83;
   font-size: 15px;
 }
-
+.form-input {
+  width: 100%;
+  padding: 14px 18px;
+  border: 2px solid #dcdcdc;
+  border-radius: 12px;
+  font-size: 15px;
+  transition: all 0.3s ease;
+  background-color: #f8f6ff;
+  box-sizing: border-box;
+  font-family: inherit;
+  box-shadow: inset 0 2px 4px rgba(0,0,0,0.05);
+}
+.form-input:focus {
+  outline: none;
+  border-color: #764ba2;
+  background-color: white;
+  box-shadow: 0 0 0 4px rgba(118, 75, 162, 0.15);
+}
+.form-input::placeholder {
+  color: #aaa;
+}
+.form-actions {
+  display: flex;
+  gap: 15px;
+  justify-content: flex-end;
+  margin-top: 35px;
+}
+.btn-secondary {
+  padding: 12px 24px;
+  border: 2px solid #e1e8ed;
+  background: white;
+  color: #4b2e83;
+  border-radius: 10px;
+  cursor: pointer;
+  font-size: 15px;
+  font-weight: 600;
+  transition: all 0.3s ease;
+  box-shadow: 0 2px 6px rgba(0,0,0,0.05);
+}
+.btn-secondary:hover {
+  background-color: #f3e8ff;
+  border-color: #c5b3f4;
+}
+.btn-primary {
+  padding: 12px 24px;
+  background: linear-gradient(120deg, rgba(28, 32, 51, 0), rgba(16, 21, 33, 0));
+  border: none;
+  color: white;
+  border-radius: 10px;
+  cursor: pointer;
+  font-size: 15px;
+  font-weight: 600;
+  transition: all 0.3s ease;
+  box-shadow: 0 6px 18px rgba(118, 75, 162, 0.3);
+}
+.btn-primary:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 8px 24px rgba(118, 75, 162, 0.4);
+}
+.chat-fullscreen {
+  width: 100vw;
+  height: 100vh;
+  position: fixed;
+  left: 0; top: 0;
+  z-index: 2000;
+  background: #fff;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+}
+.modal-title {
+  font-size: 22px;
+  font-weight: bold;
+  margin: 0;
+  letter-spacing: 0.5px;
+}
+.modal-close {
+  background: none;
+  border: none;
+  color: white;
+  font-size: 26px;
+  cursor: pointer;
+  width: 35px;
+  height: 35px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 50%;
+  transition: background-color 0.2s ease;
+}
+.modal-close:hover {
+  background-color: rgba(255, 255, 255, 0.2);
+}
+.login-form {
+  padding: 35px;
+}
+.form-group {
+  margin-bottom: 25px;
+}
+.form-label {
+  display: block;
+  margin-bottom: 10px;
+  font-weight: 700;
+  color: #4b2e83;
+  font-size: 15px;
+}
 .form-input {
   width: 100%;
   padding: 14px 18px;
@@ -1188,25 +1159,21 @@ export default {
   font-family: inherit;
   box-shadow: inset 0 2px 4px rgba(0, 0, 0, 0.05);
 }
-
 .form-input:focus {
   outline: none;
   border-color: #764ba2;
   background-color: white;
   box-shadow: 0 0 0 4px rgba(118, 75, 162, 0.15);
 }
-
 .form-input::placeholder {
   color: #aaa;
 }
-
 .form-actions {
   display: flex;
   gap: 15px;
   justify-content: flex-end;
   margin-top: 35px;
 }
-
 .btn-secondary {
   padding: 12px 24px;
   border: 2px solid #e1e8ed;
@@ -1219,30 +1186,20 @@ export default {
   transition: all 0.3s ease;
   box-shadow: 0 2px 6px rgba(0, 0, 0, 0.05);
 }
-
 .btn-secondary:hover {
   background-color: #f3e8ff;
   border-color: #c5b3f4;
 }
-
 .btn-primary {
   padding: 12px 24px;
-  background: linear-gradient(135deg, #764ba2 0%, #5a3494 100%);
+  background: linear-gradient(120deg, rgba(28, 32, 51, 0), rgba(16, 21, 33, 0));
+  color: #fff;
   border: none;
-  color: white;
-  border-radius: 10px;
+  border-radius: 8px;
+  padding: 10px 18px;
+  font-size: 16px;
   cursor: pointer;
-  font-size: 15px;
-  font-weight: 600;
-  transition: all 0.3s ease;
-  box-shadow: 0 6px 18px rgba(118, 75, 162, 0.3);
 }
-
-.btn-primary:hover {
-  transform: translateY(-2px);
-  box-shadow: 0 8px 24px rgba(118, 75, 162, 0.4);
-}
-
 @media (max-width: 768px) {
   .app-container {
     flex-direction: column;

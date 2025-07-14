@@ -57,47 +57,14 @@
         <div class="module-selection">
           <h3>Choisissez vos modules</h3>
           <div class="modules-grid">
-            <div class="module-card">
+            <div class="module-card" v-for="(module, key) in modules" :key="key">
               <div class="module-header">
-                <div class="module-icon">💬</div>
-                <h4>Chat Avancé</h4>
+                <div class="module-icon">{{ module.icon }}</div>
+                <h4>{{ module.label }}</h4>
               </div>
-              <p>Conversations naturelles avec mémoire contextuelle</p>
+              <p>{{ module.description }}</p>
               <label class="toggle-switch">
-                <input type="checkbox" v-model="modules.chatAdvanced" />
-                <span class="slider"></span>
-              </label>
-            </div>
-            <div class="module-card">
-              <div class="module-header">
-                <div class="module-icon">📊</div>
-                <h4>Analyse de Données</h4>
-              </div>
-              <p>Traitement et visualisation de données complexes</p>
-              <label class="toggle-switch">
-                <input type="checkbox" v-model="modules.dataAnalysis" />
-                <span class="slider"></span>
-              </label>
-            </div>
-            <div class="module-card">
-              <div class="module-header">
-                <div class="module-icon">🔍</div>
-                <h4>Recherche Web</h4>
-              </div>
-              <p>Accès aux informations en temps réel</p>
-              <label class="toggle-switch">
-                <input type="checkbox" v-model="modules.webSearch" />
-                <span class="slider"></span>
-              </label>
-            </div>
-            <div class="module-card">
-              <div class="module-header">
-                <div class="module-icon">🎨</div>
-                <h4>Génération Creative</h4>
-              </div>
-              <p>Création de contenu artistique et créatif</p>
-              <label class="toggle-switch">
-                <input type="checkbox" v-model="modules.creativeGeneration" />
+                <input type="checkbox" v-model="modules[key].enabled" />
                 <span class="slider"></span>
               </label>
             </div>
@@ -121,7 +88,7 @@
         </button>
       </router-link>
       <router-link to="/Prompte" class="btn-link">
-        <button class="btn btn-primary" @click="saveConfig">
+        <button class="btn btn-primary" @click="saveConfig" :disabled="!isFormValid">
           Suivant
           <svg width="20" height="20" viewBox="0 0 24 24" fill="none">
             <path
@@ -204,67 +171,70 @@ export default {
   margin: 0;
   padding: 20px;
   box-sizing: border-box;
-  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  background: linear-gradient(135deg, #111421 0%, #111421 100%);
   display: flex;
   flex-direction: column;
   position: fixed;
   top: 0;
   left: 0;
   overflow-y: auto;
-  font-family: "Inter", -apple-system, BlinkMacSystemFont, "Segoe UI",
-    sans-serif;
+  font-family: 'Roboto', sans-serif;
+  overflow-x: hidden;
 }
 
 .page-content {
-  background: rgba(255, 255, 255, 0.95);
+  background: rgba(255, 255, 255, 0.1);
   backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
   border-radius: 24px;
+  border: 1px solid rgba(255, 255, 255, 0.2);
   padding: 40px;
   margin: 30px auto;
   max-width: 900px;
   width: 100%;
-  box-shadow: 0 20px 40px rgba(0, 0, 0, 0.1);
-  border: 1px solid rgba(255, 255, 255, 0.2);
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.3);
   animation: slideUp 0.6s ease-out;
   box-sizing: border-box;
   flex: 1;
   display: flex;
   flex-direction: column;
   justify-content: center;
+  position: relative;
 }
 
-@keyframes slideUp {
-  from {
-    opacity: 0;
-    transform: translateY(30px);
-  }
-  to {
-    opacity: 1;
-    transform: translateY(0);
-  }
+.page-content::before {
+  content: '';
+  position: absolute;
+  top: -50%;
+  left: -50%;
+  width: 200%;
+  height: 200%;
+  background: radial-gradient(circle at center, rgba(255,255,255,0.1) 0%, transparent 70%);
+  transform: rotate(45deg);
+  pointer-events: none;
 }
 
 .header-section {
   text-align: center;
-  margin-bottom: 30px;
+  margin-bottom: 40px;
+  animation: fadeIn 0.5s ease;
 }
 
 .page-title {
   font-size: 2.5rem;
   font-weight: 800;
-  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-  -webkit-background-clip: text;
-  -webkit-text-fill-color: transparent;
-  background-clip: text;
+  color: #f3e8ff;
   margin: 0 0 10px 0;
   letter-spacing: -0.02em;
+  text-shadow: 0 2px 4px rgba(0,0,0,0.3);
 }
 
 .page-subtitle {
-  color: #64748b;
+  color: rgba(255, 255, 255, 0.8);
   font-size: 1.1rem;
   margin: 0;
   font-weight: 500;
+  text-shadow: 0 1px 2px rgba(0,0,0,0.2);
 }
 
 .content-section {
@@ -281,11 +251,12 @@ export default {
 }
 
 .feature-card {
-  background: linear-gradient(135deg, #f8fafc 0%, #e2e8f0 100%);
+  background: rgba(255, 255, 255, 0.05);
+  backdrop-filter: blur(10px);
   padding: 25px;
   border-radius: 20px;
   text-align: center;
-  border: 1px solid rgba(255, 255, 255, 0.8);
+  border: 1px solid rgba(255, 255, 255, 0.1);
   transition: all 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
   position: relative;
   overflow: hidden;
@@ -309,7 +280,7 @@ export default {
 
 .feature-card:hover {
   transform: translateY(-5px);
-  box-shadow: 0 15px 30px rgba(0, 0, 0, 0.15);
+  box-shadow: 0 15px 30px rgba(118, 75, 162, 0.2);
 }
 
 .feature-icon {
@@ -329,29 +300,30 @@ export default {
 .feature-card h3 {
   font-size: 1.3rem;
   font-weight: 700;
-  color: #1e293b;
+  color: #f3e8ff;
   margin: 0 0 10px 0;
 }
 
 .feature-card p {
-  color: #64748b;
+  color: rgba(255, 255, 255, 0.7);
   font-size: 0.95rem;
   line-height: 1.5;
   margin: 0;
 }
 
 .module-selection {
-  background: white;
+  background: rgba(255, 255, 255, 0.05);
+  backdrop-filter: blur(10px);
   padding: 30px;
   border-radius: 20px;
-  box-shadow: 0 10px 25px rgba(0, 0, 0, 0.08);
-  border: 1px solid #f1f5f9;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
 }
 
 .module-selection h3 {
   font-size: 1.6rem;
   font-weight: 700;
-  color: #1e293b;
+  color: #f3e8ff;
   margin: 0 0 25px 0;
   text-align: center;
   position: relative;
@@ -376,10 +348,11 @@ export default {
 }
 
 .module-card {
-  background: #fafbfc;
+  background: rgba(255, 255, 255, 0.05);
+  backdrop-filter: blur(10px);
   padding: 25px;
   border-radius: 16px;
-  border: 2px solid #e2e8f0;
+  border: 2px solid rgba(255, 255, 255, 0.1);
   transition: all 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
   position: relative;
   overflow: hidden;
@@ -406,10 +379,10 @@ export default {
 }
 
 .module-card:hover {
-  border-color: #667eea;
+  border-color: rgba(118, 75, 162, 0.5);
   transform: translateY(-3px);
-  box-shadow: 0 10px 25px rgba(102, 126, 234, 0.2);
-  background: white;
+  box-shadow: 0 10px 25px rgba(118, 75, 162, 0.2);
+  background: rgba(255, 255, 255, 0.1);
 }
 
 .module-header {
@@ -439,12 +412,12 @@ export default {
 .module-card h4 {
   font-size: 1.1rem;
   font-weight: 600;
-  color: #1e293b;
+  color: #f3e8ff;
   margin: 0;
 }
 
 .module-card p {
-  color: #64748b;
+  color: rgba(255, 255, 255, 0.7);
   font-size: 0.9rem;
   line-height: 1.5;
   margin: 0 0 20px 0;
@@ -471,7 +444,7 @@ export default {
   left: 0;
   right: 0;
   bottom: 0;
-  background-color: #cbd5e1;
+  background-color: rgba(255, 255, 255, 0.2);
   transition: 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
   border-radius: 26px;
   box-shadow: inset 0 2px 4px rgba(0, 0, 0, 0.1);
@@ -524,7 +497,7 @@ input:checked + .slider:before {
 .btn {
   width: 100%;
   padding: 16px 32px;
-  border: none;
+  border: 1px solid rgba(255, 255, 255, 0.2);
   border-radius: 16px;
   font-size: 16px;
   font-weight: 600;
@@ -541,19 +514,15 @@ input:checked + .slider:before {
 }
 
 .btn::before {
-  content: "";
+  content: '';
   position: absolute;
   top: 0;
   left: -100%;
   width: 100%;
   height: 100%;
-  background: linear-gradient(
-    90deg,
-    transparent,
-    rgba(255, 255, 255, 0.2),
-    transparent
-  );
-  transition: left 0.5s;
+  background: linear-gradient(120deg, rgba(255,255,255,0.2) 0%, rgba(255,255,255,0.2) 50%, rgba(255,255,255,0) 80%);
+  transition: left 0.5s ease;
+  z-index: -1;
 }
 
 .btn:hover::before {
@@ -561,28 +530,57 @@ input:checked + .slider:before {
 }
 
 .btn-primary {
-  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  background: rgba(118, 75, 162, 0.3);
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
   color: white;
-  box-shadow: 0 10px 20px rgba(102, 126, 234, 0.3);
+  box-shadow: 0 6px 18px rgba(118, 75, 162, 0.3);
 }
 
-.btn-primary:hover {
+.btn-primary:hover:not(:disabled) {
   transform: translateY(-3px);
-  box-shadow: 0 15px 30px rgba(102, 126, 234, 0.4);
+  box-shadow: 0 8px 24px rgba(118, 75, 162, 0.4);
+  background: rgba(118, 75, 162, 0.4);
+}
+
+.btn-primary:disabled {
+  background: rgba(148, 163, 184, 0.2);
+  cursor: not-allowed;
+  transform: none;
+  box-shadow: none;
+  color: rgba(255, 255, 255, 0.5);
 }
 
 .btn-secondary {
-  background: white;
-  color: #64748b;
-  border: 2px solid #e2e8f0;
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
+  background: rgba(255, 255, 255, 0.1);
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
+  color: rgba(255, 255, 255, 0.9);
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
 }
 
 .btn-secondary:hover {
   transform: translateY(-2px);
-  box-shadow: 0 8px 20px rgba(0, 0, 0, 0.1);
-  border-color: #cbd5e1;
-  color: #475569;
+  box-shadow: 0 8px 20px rgba(0, 0, 0, 0.2);
+  background: rgba(255, 255, 255, 0.2);
+  border-color: rgba(255, 255, 255, 0.3);
+}
+
+@keyframes slideUp {
+  from {
+    opacity: 0;
+    transform: translateY(30px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes fadeIn {
+  from { opacity: 0; transform: translateY(-10px); }
+  to { opacity: 1; transform: translateY(0); }
 }
 
 @media (max-width: 768px) {
@@ -619,20 +617,6 @@ input:checked + .slider:before {
 
   .module-selection {
     padding: 25px 20px;
-  }
-}
-
-@media (max-width: 480px) {
-  .page-title {
-    font-size: 1.8rem;
-  }
-
-  .page-subtitle {
-    font-size: 1rem;
-  }
-
-  .feature-card {
-    padding: 20px;
   }
 }
 </style>

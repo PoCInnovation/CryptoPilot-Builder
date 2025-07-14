@@ -1,4 +1,3 @@
-<!-- TEMPLATE - Modifications principales -->
 <template>
   <div class="chat-container">
     <!-- Effet de fond animé -->
@@ -30,6 +29,16 @@
               }}
             </span>
           </h3>
+        </div>
+        <!-- Menu déroulant de sélection de modèle -->
+        <div class="model-select-wrapper">
+          <select v-model="selectedModel" class="model-select">
+            <option value="gpt-4o-mini">GPT-4o Mini</option>
+            <option value="gpt-4">GPT-4</option>
+            <option value="gpt-3.5-turbo">GPT-3.5 Turbo</option>
+            <!-- Ajoute d'autres modèles si besoin -->
+          </select>
+          <span class="model-select-label">Modèle IA</span>
         </div>
         <div class="header-glow"></div>
       </div>
@@ -111,7 +120,6 @@
 import { ref, inject, onMounted, watch, computed } from "vue";
 import { useStore } from "vuex";
 import { useRouter } from "vue-router";
-import ChatSidebar from "./chatbot/ChatSidebar.vue";
 import ChatMessages from "./chatbot/ChatMessages.vue";
 import ChatInput from "./chatbot/ChatInput.vue";
 import apiService from "../services/apiService";
@@ -137,6 +145,22 @@ const currentSessionId = ref(null);
 const isProcessingTransaction = ref(false);
 const chatSessions = ref({});
 const walletFunctions = inject("walletFunctions", null);
+const selectedModel = ref("gpt-4o-mini");
+
+// Récupère la config IA du store (comme dans Ai.vue)
+const aiConfig = computed(() => store.getters.aiConfig);
+
+// Restaure le modèle au montage
+onMounted(() => {
+  selectedModel.value = aiConfig.value.selectedModel || "gpt-4o-mini";
+});
+
+// Met à jour le store à chaque changement
+watch(selectedModel, (newVal) => {
+  if (newVal) {
+    store.dispatch("setModel", newVal);
+  }
+});
 
 async function checkAuthentication() {
   if (!isAuthenticated.value) {
@@ -165,7 +189,7 @@ async function checkAuthentication() {
 }
 
 async function redirectToLogin() {
-  router.push("/AI");
+  router.push("/");
 }
 
 onMounted(async () => {
@@ -638,8 +662,9 @@ if (typeof window !== "undefined") {
 
 <style scoped>
 .chat-container {
-  display: flex;
-  height: 90vh;
+  display: fixed;
+  top: 1vh;
+  left: 33.33vw;
   width: 80vw;
   border: 1px solid rgba(255, 255, 255, 0.1);
   border-radius: 24px;
@@ -847,6 +872,10 @@ if (typeof window !== "undefined") {
   line-height: 1.6;
 }
 
+.auth-actions {
+  margin-top: 2rem;
+}
+
 /* Boutons modernes */
 .btn {
   position: relative;
@@ -910,15 +939,15 @@ if (typeof window !== "undefined") {
   transform: translateY(-2px);
 }
 
-/* Modal transaction améliorée */
+/* Modal overlay avec glassmorphisme sombre */
 .modal-overlay {
   position: fixed;
   top: 0;
   left: 0;
   right: 0;
   bottom: 0;
-  background: rgba(0, 0, 0, 0.8);
-  backdrop-filter: blur(8px);
+  background: linear-gradient(135deg, rgba(118, 75, 162, 0.9) 0%, rgba(90, 52, 148, 0.9) 100%);
+  backdrop-filter: blur(12px);
   display: flex;
   align-items: center;
   justify-content: center;
@@ -931,17 +960,39 @@ if (typeof window !== "undefined") {
   to { opacity: 1; }
 }
 
+/* Modal transaction avec glassmorphisme */
 .transaction-modal {
-  background: rgba(255, 255, 255, 0.95);
-  backdrop-filter: blur(30px);
+  background: rgba(255, 255, 255, 0.1);
+  backdrop-filter: blur(20px);
+  border: 1px solid rgba(255, 255, 255, 0.15);
   border-radius: 24px;
   padding: 0;
   max-width: 500px;
   width: 90%;
-  box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.25);
-  border: 1px solid rgba(255, 255, 255, 0.2);
+  box-shadow: 
+    0 25px 50px -12px rgba(0, 0, 0, 0.4),
+    0 0 0 1px rgba(255, 255, 255, 0.1);
   animation: modalSlideIn 0.4s cubic-bezier(0.4, 0, 0.2, 1);
   overflow: hidden;
+  position: relative;
+}
+
+/* Effet de brillance sur la modal */
+.transaction-modal::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: -100%;
+  width: 100%;
+  height: 100%;
+  background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.1), transparent);
+  animation: shimmer 3s infinite;
+  pointer-events: none;
+}
+
+@keyframes shimmer {
+  0% { left: -100%; }
+  100% { left: 100%; }
 }
 
 @keyframes modalSlideIn {
@@ -955,16 +1006,33 @@ if (typeof window !== "undefined") {
   }
 }
 
+/* Header avec dégradé sombre */
 .modal-header {
   padding: 2rem 2rem 1rem 2rem;
   text-align: center;
-  background: linear-gradient(135deg, rgba(102, 126, 234, 0.1), rgba(118, 75, 162, 0.1));
+  background: linear-gradient(135deg, rgba(118, 75, 162, 0.3), rgba(90, 52, 148, 0.3));
+  border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+  position: relative;
+}
+
+.modal-header::after {
+  content: '';
+  position: absolute;
+  bottom: 0;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 100px;
+  height: 2px;
+  background: linear-gradient(90deg, transparent, #764ba2, transparent);
+  opacity: 0.8;
 }
 
 .notification-icon {
   font-size: 3rem;
   margin-bottom: 1rem;
   animation: bounce 2s infinite;
+  filter: drop-shadow(0 4px 8px rgba(118, 75, 162, 0.3));
+  color: rgba(255, 255, 255, 0.9);
 }
 
 @keyframes bounce {
@@ -974,19 +1042,21 @@ if (typeof window !== "undefined") {
 
 .modal-header h3 {
   margin: 0;
-  color: #1e293b;
+  color: rgba(255, 255, 255, 0.95);
   font-size: 1.5rem;
   font-weight: 700;
-  background: linear-gradient(135deg, #667eea, #764ba2);
-  -webkit-background-clip: text;
-  -webkit-text-fill-color: transparent;
+  text-shadow: 0 2px 4px rgba(0, 0, 0, 0.3);
+  letter-spacing: 0.5px;
 }
 
+/* Détails de transaction avec glassmorphisme */
 .transaction-details {
   margin: 0;
   padding: 2rem;
-  background: rgba(248, 250, 252, 0.8);
+  background: rgba(255, 255, 255, 0.05);
   backdrop-filter: blur(10px);
+  border-top: 1px solid rgba(255, 255, 255, 0.08);
+  border-bottom: 1px solid rgba(255, 255, 255, 0.08);
 }
 
 .detail-row {
@@ -994,7 +1064,16 @@ if (typeof window !== "undefined") {
   justify-content: space-between;
   align-items: center;
   padding: 1rem 0;
-  border-bottom: 1px solid rgba(226, 232, 240, 0.5);
+  border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+  transition: all 0.3s ease;
+}
+
+.detail-row:hover {
+  background: rgba(255, 255, 255, 0.05);
+  border-radius: 12px;
+  padding-left: 1rem;
+  padding-right: 1rem;
+  margin: 0 -1rem;
 }
 
 .detail-row:last-child {
@@ -1003,7 +1082,7 @@ if (typeof window !== "undefined") {
 
 .detail-label {
   font-weight: 600;
-  color: #64748b;
+  color: rgba(255, 255, 255, 0.7);
   font-size: 0.9rem;
   text-transform: uppercase;
   letter-spacing: 0.5px;
@@ -1011,16 +1090,20 @@ if (typeof window !== "undefined") {
 
 .detail-value {
   font-weight: 700;
-  color: #1e293b;
+  color: rgba(255, 255, 255, 0.95);
   font-size: 1rem;
+  text-shadow: 0 1px 2px rgba(0, 0, 0, 0.2);
 }
 
 .address-value {
   font-family: 'Monaco', 'Menlo', monospace;
-  background: rgba(102, 126, 234, 0.1);
+  background: rgba(118, 75, 162, 0.2);
+  color: rgba(255, 255, 255, 0.9);
   padding: 0.5rem 1rem;
   border-radius: 8px;
-  border: 1px solid rgba(102, 126, 234, 0.2);
+  border: 1px solid rgba(118, 75, 162, 0.3);
+  backdrop-filter: blur(10px);
+  font-size: 0.85rem;
 }
 
 .amount-value {
@@ -1030,57 +1113,301 @@ if (typeof window !== "undefined") {
 }
 
 .currency {
-  background: linear-gradient(135deg, #10b981, #059669);
+  background: linear-gradient(135deg, #764ba2, #5a3494);
   color: white;
   padding: 0.25rem 0.75rem;
   border-radius: 12px;
   font-size: 0.8rem;
   font-weight: 600;
+  box-shadow: 0 4px 15px rgba(118, 75, 162, 0.3);
+  text-shadow: 0 1px 2px rgba(0, 0, 0, 0.2);
 }
 
+/* Actions avec boutons glassmorphisme */
 .modal-actions {
   display: flex;
   gap: 1rem;
   padding: 2rem;
   justify-content: center;
+  background: rgba(255, 255, 255, 0.03);
 }
 
 .btn-cancel {
-  background: rgba(226, 232, 240, 0.8);
+  background: rgba(255, 255, 255, 0.1);
+  color: rgba(255, 255, 255, 0.8);
+  border: 1px solid rgba(255, 255, 255, 0.15);
   backdrop-filter: blur(10px);
-  color: #64748b;
-  border: 1px solid rgba(226, 232, 240, 0.5);
 }
 
 .btn-cancel:hover {
-  background: rgba(203, 213, 225, 0.9);
-  color: #475569;
+  background: rgba(255, 255, 255, 0.15);
+  color: rgba(255, 255, 255, 0.95);
   transform: translateY(-2px);
+  box-shadow: 0 8px 25px rgba(0, 0, 0, 0.2);
 }
 
 .btn-confirm {
-  background: linear-gradient(135deg, #10b981 0%, #059669 100%);
+  background: linear-gradient(135deg, #764ba2 0%, #5a3494 100%);
   color: white;
-  box-shadow: 0 8px 32px rgba(16, 185, 129, 0.3);
+  box-shadow: 0 8px 25px rgba(118, 75, 162, 0.4);
+  border: 1px solid rgba(118, 75, 162, 0.3);
 }
 
 .btn-confirm:hover {
   transform: translateY(-3px);
-  box-shadow: 0 12px 40px rgba(16, 185, 129, 0.4);
+  box-shadow: 0 12px 35px rgba(118, 75, 162, 0.5);
+  background: linear-gradient(135deg, #8b5fbf 0%, #6a4a9e 100%);
 }
 
+.btn:focus {
+  outline: 2px solid rgba(118, 75, 162, 0.5);
+  outline-offset: 2px;
+}
+
+/* Animation pour les états de validation */
+.form-input.error {
+  border-color: #ff6b6b;
+  background: rgba(255, 107, 107, 0.1);
+  animation: shake 0.5s ease-in-out;
+}
+
+@keyframes shake {
+  0%, 100% { transform: translateX(0); }
+  25% { transform: translateX(-5px); }
+  75% { transform: translateX(5px); }
+}
+
+/* États de chargement avec animations fluides */
+.loading-state {
+  animation: fadeInOut 1.5s ease-in-out infinite;
+}
+
+@keyframes fadeInOut {
+  0%, 100% { opacity: 0.6; }
+  50% { opacity: 1; }
+}
+
+/* Transition douce pour les changements d'état */
+.state-transition {
+  transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+/* Effets de survol pour l'interactivité */
+.interactive-element {
+  cursor: pointer;
+  transition: all 0.3s ease;
+}
+
+.interactive-element:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 8px 25px rgba(0, 0, 0, 0.15);
+}
+
+/* Scrollbar personnalisée */
+.chat-main ::-webkit-scrollbar {
+  width: 8px;
+}
+
+.chat-main ::-webkit-scrollbar-track {
+  background: rgba(255, 255, 255, 0.1);
+  border-radius: 10px;
+}
+
+.chat-main ::-webkit-scrollbar-thumb {
+  background: linear-gradient(135deg, #667eea, #764ba2);
+  border-radius: 10px;
+  box-shadow: inset 0 0 2px rgba(255, 255, 255, 0.2);
+}
+
+.chat-main ::-webkit-scrollbar-thumb:hover {
+  background: linear-gradient(135deg, #5a67d8, #6b46c1);
+}
+
+/* Responsive design */
 @media (max-width: 768px) {
   .chat-container {
     width: 95vw;
     height: 95vh;
+    border-radius: 16px;
+    margin: 10px;
   }
+  
+  .chat-main {
+    border-radius: 0 16px 16px 0;
+  }
+  
+  .chat-header {
+    padding: 1rem 1.5rem;
+  }
+  
+  .session-label {
+    font-size: 0.65rem;
+  }
+  
+  .session-id {
+    font-size: 0.9rem;
+  }
+  
+  .auth-error-content {
+    padding: 2rem;
+    margin: 20px;
+    border-radius: 16px;
+  }
+  
+  .error-icon {
+    font-size: 3rem;
+  }
+  
+  .auth-error h3 {
+    font-size: 1.5rem;
+  }
+  
+  .auth-error p {
+    font-size: 1rem;
+  }
+  
+  .transaction-modal {
+    width: 95%;
+    margin: 20px;
+    border-radius: 16px;
+  }
+  
+  .modal-header {
+    padding: 1.5rem 1.5rem 1rem 1.5rem;
+  }
+  
+  .notification-icon {
+    font-size: 2.5rem;
+  }
+  
+  .modal-header h3 {
+    font-size: 1.3rem;
+  }
+  
+  .transaction-details {
+    padding: 1.5rem;
+  }
+  
   .modal-actions {
     flex-direction: column;
+    padding: 1.5rem;
+    gap: 0.75rem;
   }
+  
+  .btn {
+    width: 100%;
+    padding: 14px 24px;
+    font-size: 14px;
+  }
+  
   .detail-row {
     flex-direction: column;
     align-items: flex-start;
     gap: 0.5rem;
+    padding: 0.75rem 0;
   }
+  
+  .detail-row:hover {
+    margin: 0;
+    padding: 0.75rem 0;
+  }
+  
+  .detail-label {
+    font-size: 0.8rem;
+  }
+  
+  .detail-value {
+    font-size: 0.9rem;
+  }
+  
+  .address-value {
+    font-size: 0.75rem;
+    padding: 0.4rem 0.8rem;
+    word-break: break-all;
+  }
+  
+  .currency {
+    font-size: 0.7rem;
+    padding: 0.2rem 0.6rem;
+  }
+  
+  .floating-orb {
+    display: none;
+  }
+}
+
+@media (max-width: 480px) {
+  .chat-container {
+    width: 100vw;
+    height: 100vh;
+    border-radius: 0;
+    margin: 0;
+    border: none;
+  }
+  
+  .chat-main {
+    border-radius: 0;
+  }
+  
+  .chat-header {
+    padding: 1rem;
+  }
+  
+  .auth-error-content {
+    margin: 10px;
+    padding: 1.5rem;
+  }
+  
+  .transaction-modal {
+    width: 100%;
+    margin: 10px;
+    max-height: 90vh;
+    overflow-y: auto;
+  }
+  
+  .modal-header {
+    padding: 1rem;
+  }
+  
+  .transaction-details {
+    padding: 1rem;
+  }
+  
+  .modal-actions {
+    padding: 1rem;
+  }
+}
+
+.model-select-wrapper {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-left: auto;
+}
+
+.model-select {
+  padding: 8px 24px 8px 12px;
+  border-radius: 12px;
+  border: 1px solid rgba(118, 75, 162, 0.25);
+  background: rgba(255,255,255,0.15);
+  color: #764ba2;
+  font-weight: 600;
+  font-size: 1rem;
+  outline: none;
+  transition: border 0.2s, background 0.2s;
+  box-shadow: 0 2px 8px rgba(118, 75, 162, 0.08);
+  font-family: 'Roboto', 'Inter', 'Poppins', Arial, sans-serif;
+}
+
+.model-select:focus {
+  border-color: #764ba2;
+  background: rgba(255,255,255,0.25);
+}
+
+.model-select-label {
+  font-size: 0.95rem;
+  color: #764ba2;
+  font-weight: 700;
+  margin-left: 4px;
 }
 </style>
