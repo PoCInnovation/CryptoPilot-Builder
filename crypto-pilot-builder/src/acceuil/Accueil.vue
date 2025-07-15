@@ -138,8 +138,8 @@
 <script>
 import { mapState, mapActions, mapGetters } from "vuex";
 import AuthModal from "../components/AuthModal.vue";
-import apiService from "../services/apiService";
 import Chatbot from '../components/chatbot.vue';
+import apiService from "../services/apiService"; // Import du service API
 
 export default {
   name: "Accueil",
@@ -178,24 +178,31 @@ export default {
   methods: {
     ...mapActions("auth", ["logout"]),
     ...mapActions(["loadAgentConfig"]),
-    selectChat(chatId) {
-      this.activeChat = chatId;
-      console.log(`Chat sélectionné: ${chatId}`);
-    },
-    createNewChat() {
+    async createNewChat() {
       const chatName = prompt(
         "Nom du nouveau chat:",
         `Chat ${this.nextChatId}`
       );
+      
       if (chatName && chatName.trim()) {
-        const newChat = {
-          id: this.nextChatId,
-          name: chatName.trim(),
-        };
-        this.chats.push(newChat);
-        this.activeChat = this.nextChatId;
-        this.nextChatId++;
-        console.log(`Nouveau chat créé: ${newChat.name}`);
+        try {
+          // Appel à l'API pour créer une session côté serveur
+          const sessionData = await apiService.createNewSession(chatName.trim());
+          
+          const newChat = {
+            id: sessionData.session_id,
+            name: chatName.trim(),
+          };
+          
+          this.chats.push(newChat);
+          this.activeChat = sessionData.session_id;
+          this.nextChatId = Math.max(...this.chats.map(c => c.id)) + 1;
+          
+          console.log(`Nouveau chat créé: ${newChat.name} (ID: ${newChat.id})`);
+        } catch (error) {
+          console.error("Erreur lors de la création du chat:", error);
+          alert("Impossible de créer le chat. Vérifiez votre connexion ou réessayez.");
+        }
       }
     },
     startEditingChat(chatId) {
