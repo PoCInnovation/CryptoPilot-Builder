@@ -104,6 +104,13 @@ class ApiService {
     });
   }
 
+  async renameSession(sessionId, newName) {
+    return this.request(`/sessions/${sessionId}`, {
+      method: "PUT",
+      body: { session_name: newName },
+    });
+  }
+
   async createNewSession(sessionName = "New Chat") {
     return this.request("/new-session", {
       method: "POST",
@@ -197,5 +204,6 @@ export const {
   healthCheck,
   getUserMemory,
   addUserMemory,
+  renameSession,
   deleteUserMemory,
 } = apiService;
