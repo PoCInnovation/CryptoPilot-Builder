@@ -88,6 +88,15 @@ export default createStore({
           }
         },
 
+        async renameChat({ commit }, { chatId, newName }) {
+          try {
+            await apiService.renameSession(chatId, newName);
+            commit("SET_CHAT_NAME", { chatId, newName });
+          } catch (error) {
+            console.error("Erreur lors du renommage du chat:", error);
+            // Optionnel : afficher une notification à l'utilisateur
+          }
+        },
         async register({ commit }, { username, email, password }) {
           try {
             commit("SET_LOADING", true);
@@ -182,7 +191,12 @@ export default createStore({
       state.aiConfig.modules = modules;
       saveToStorage(state.aiConfig);
     },
-
+    SET_CHAT_NAME(state, { chatId, newName }) {
+      const chat = state.chats.find(c => c.id === chatId);
+      if (chat) {
+        chat.name = newName;
+      }
+    },
     CLEAR_CONFIG(state) {
       state.aiConfig = {
         selectedModel: "",

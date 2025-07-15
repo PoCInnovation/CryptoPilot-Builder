@@ -244,6 +244,19 @@ export default {
         this.hideContextMenu();
       }
     },
+    saveEditingChat() {
+      if (this.tempChatName.trim()) {
+        const chat = this.chats.find((c) => c.id === this.editingChatId);
+        if (chat) {
+          // Appel à l'API pour persister le changement
+          this.$store.dispatch("renameChat", {
+            chatId: this.editingChatId,
+            newName: this.tempChatName.trim()
+          });
+        }
+      }
+      this.cancelEditingChat();
+    },
     duplicateChat() {
       if (this.contextMenuChatId) {
         const originalChat = this.chats.find(
