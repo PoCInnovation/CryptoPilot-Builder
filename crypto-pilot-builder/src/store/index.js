@@ -136,13 +136,17 @@ export default createStore({
         authLoading: (state) => state.loading,
         authError: (state) => state.error,
       },
-    },
+    }
   },
 
   state: {
     aiConfig: loadFromStorage(),
     loading: false,
     error: null,
+    // Ajout de l'état pour les chats
+    chats: [],
+    activeChat: null,
+    nextChatId: 1
   },
 
   mutations: {
@@ -188,6 +192,31 @@ export default createStore({
       };
       localStorage.removeItem("aiConfig");
     },
+
+    // Mutations pour la gestion des chats
+    SET_CHATS(state, chats) {
+      state.chats = chats;
+      // Mettre à jour nextChatId basé sur les IDs existants
+      state.nextChatId = chats.length > 0 
+        ? Math.max(...chats.map(c => c.id)) + 1 
+        : 1;
+    },
+
+    ADD_CHAT(state, chat) {
+      state.chats.push(chat);
+      state.activeChat = chat.id;
+    },
+
+    DELETE_CHAT(state, chatId) {
+      const index = state.chats.findIndex(chat => chat.id === chatId);
+      if (index !== -1) {
+        state.chats.splice(index, 1);
+        // Si le chat actif est supprimé, sélectionner le premier chat
+        if (state.activeChat === chatId && state.chats.length > 0) {
+          state.activeChat = state.chats[0].id;
+        }
+      }
+    }
   },
 
   actions: {
@@ -218,6 +247,74 @@ export default createStore({
         );
         commit("SET_ERROR", error.message);
         // En cas d'erreur, garder les données locales
+      } finally {
+        commit("SET_LOADING", false);
+      }
+    },
+
+    // Nouvelle action pour charger les chats depuis l'API
+    async loadChatsFromApi({ commit }) {
+      try {
+        commit("SET_LOADING", true);
+        const response = await apiService.listSessions();
+        const sessions = response.sessions || [];
+        
+        // Convertir les sessions en format compatible avec l'UI
+        const chats = sessions.map(session => ({
+          id: session.session_id,
+          name: session.session_name || `Chat ${session.session_id}`
+        }));
+        
+        commit("SET_CHATS", chats);
+      } catch (error) {
+        console.error("Erreur lors du chargement des chats:", error);
+        // Fallback avec un chat par défaut
+        commit("SET_CHATS", [{ 
+          id: 1, 
+          name: "Chat par défaut"
+        }]);
+      } finally {
+        commit("SET_LOADING", false);
+      }
+    },
+
+    // Nouvelle action pour créer un chat
+    async createNewChat({ commit, state }, chatName) {
+      try {
+        commit("SET_LOADING", true);
+        const sessionData = await apiService.createNewSession(chatName);
+        
+        const newChat = {
+          id: sessionData.session_id,
+          name: chatName
+        };
+        
+        commit("ADD_CHAT", newChat);
+        return newChat;
+      } catch (error) {
+        console.error("Erreur lors de la création du chat:", error);
+        // Créer un chat local en fallback
+        const fallbackChat = {
+          id: state.nextChatId,
+          name: chatName
+        };
+        commit("ADD_CHAT", fallbackChat);
+        return fallbackChat;
+      } finally {
+        commit("SET_LOADING", false);
+      }
+    },
+
+    // Nouvelle action pour supprimer un chat
+    async deleteChat({ commit }, chatId) {
+      try {
+        commit("SET_LOADING", true);
+        await apiService.deleteSession(chatId);
+        commit("DELETE_CHAT", chatId);
+      } catch (error) {
+        console.error("Erreur lors de la suppression du chat:", error);
+        // Suppression locale en fallback
+        commit("DELETE_CHAT", chatId);
       } finally {
         commit("SET_LOADING", false);
       }
@@ -336,7 +433,7 @@ export default createStore({
 
     clearConfig({ commit }) {
       commit("CLEAR_CONFIG");
-    },
+    }
   },
 
   getters: {
@@ -346,5 +443,8 @@ export default createStore({
     isAuthenticated: (state, getters, rootState) =>
       rootState.auth.isAuthenticated,
     user: (state, getters, rootState) => rootState.auth.user,
-  },
+    chats: (state) => state.chats,
+    activeChat: (state) => state.activeChat,
+    nextChatId: (state) => state.nextChatId
+  }
 });
