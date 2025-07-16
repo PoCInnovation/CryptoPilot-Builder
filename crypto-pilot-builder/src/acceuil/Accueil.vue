@@ -12,6 +12,19 @@
           <button v-if="isAuthenticated" class="new-chat-button" @click="createNewChat">
             + Nouveau Chat
           </button>
+          <router-link v-if="isAuthenticated"
+            to="/memory"
+            class="memory-button"
+            title="Voir la mémoire de l'IA"
+          >
+            <span class="memory-icon">🧠</span>
+            Mémoire IA
+          </router-link>
+            <div v-if="isAuthenticated" class="chat-header">
+            <button class="configure-agent-button back-dashboard-btn" @click="showChat = false">
+              ← Retour au Dashboard
+            </button>
+          </div>
           <button v-else class="login-button" @click="showAuthModal = true">
             <span class="login-icon">👤</span> Se connecter
           </button>
@@ -110,12 +123,6 @@
 
       <!-- Chat -->
       <section v-else class="chat-section">
-        <div class="chat-header">
-          <button class="configure-agent-button back-dashboard-btn" @click="showChat = false">
-            ← Retour au Dashboard
-          </button>
-          <h3 class="chat-title">Chat avec votre Agent IA</h3>
-        </div>
         <div class="chat-container">
           <Chatbot />
         </div>
@@ -755,6 +762,28 @@ export default {
 }
 .logout-icon {
   font-size: 18px;
+}
+
+.memory-button {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 10px 16px;
+  background: linear-gradient(135deg, #764ba2 0%, #667eea 100%);
+  border: none;
+  color: white;
+  border-radius: 25px;
+  cursor: pointer;
+  font-size: 14px;
+  font-weight: 600;
+  transition: all 0.3s ease;
+  box-shadow: 0 4px 15px rgba(118, 75, 162, 0.3);
+  text-decoration: none;
+}
+
+.memory-button:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 6px 20px rgba(118, 75, 162, 0.4);
 }
 
 .back-dashboard-btn {
