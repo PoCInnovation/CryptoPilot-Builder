@@ -5,70 +5,30 @@
       <header class="sidebar-header">
         <h2 class="sidebar-title">CryptoPilot Builder</h2>
       </header>
-      
-      <!-- Contrôles utilisateur -->
+
       <nav class="chat-navigation">
-        <section class="chat-controls-section">
-          <button v-if="isAuthenticated" class="new-chat-button button-hover" @click="createNewChat">
-            + Nouveau Chat
-          </button>
-          <router-link v-if="isAuthenticated"
-            to="/memory"
-            class="memory-button button-hover"
-            title="Voir la mémoire de l'IA">
-            <span class="memory-icon">🧠</span>
-            Mémoire IA
-          </router-link>
-            <div v-if="isAuthenticated" class="chat-header">
-            <button class="configure-agent-button back-dashboard-btn button-hover" @click="showChat = false">
-              🏠️
-            </button>
-          </div>
-          <button v-else class="login-button" @click="showAuthModal = true">
-            <span class="login-icon">👤</span> Se connecter
-          </button>
+        <section class="chat-controls">
+          <button v-if="isAuthenticated" class="btn-icon" @click="createNewChat" title="Nouveau chat">+</button>
+          <router-link v-if="isAuthenticated" to="/memory" class="btn-icon" title="Mémoire IA">🧠</router-link>
+          <button v-if="isAuthenticated" class="btn-icon" @click="showChat = false" title="Retour">🏠️</button>
+          <button v-else class="btn-full" @click="showAuthModal = true">👤 Se connecter</button>
         </section>
 
-        <!-- Liste des chats -->
-        <section class="chat-list-section">
-          <article 
-            v-for="chat in chats" 
-            :key="chat.id" 
-            class="chat-item-container"
-          >
-            <form v-if="editingChatId === chat.id" class="chat-edit-form" @submit.prevent="saveEditingChat">
-              <input
-                v-model="tempChatName"
-                @keydown="handleEditKeydown"
-                @blur="saveEditingChat"
-                ref="chatEditInput"
-                class="chat-name-input"
-                maxlength="50"
-                type="text"
-              />
+        <section class="chat-list">
+          <article v-for="chat in chats" :key="chat.id" class="chat-item">
+            <form v-if="editingChatId === chat.id" @submit.prevent="saveEditingChat">
+              <input v-model="tempChatName" @blur="saveEditingChat" maxlength="50" class="chat-name-input" />
             </form>
-            
-            <button
-              v-else
-              :class="[
-                'chat-item-button',
-                { 'chat-item-button--active': chat.id === activeChat }
-              ]"
+
+            <button v-else :class="['chat-name', { active: chat.id === activeChat }]"
               @click="selectChat(chat.id)"
               @dblclick="startEditingChat(chat.id)"
-              @contextmenu="showChatContextMenu($event, chat.id)"
-              :title="'Double-cliquez pour renommer | Clic droit pour plus d\'options'"
-            >
+              @contextmenu.prevent="showChatContextMenu($event, chat.id)"
+              :title="'Renommer ou options'">
               {{ chat.name }}
             </button>
-            
-            <button
-              class="chat-delete-button"
-              @click="deleteChat(chat.id)"
-              :aria-label="`Supprimer le chat ${chat.name}`"
-            >
-              ×
-            </button>
+
+            <button class="chat-delete" @click="deleteChat(chat.id)" aria-label="Supprimer">×</button>
           </article>
         </section>
       </nav>
@@ -367,6 +327,8 @@ export default {
   transition: left 0.5s ease;
   overflow: hidden;
 }
+
+/* === SIDEBAR === */
 .sidebar {
   position: fixed;
   top: 10vh;
@@ -375,66 +337,57 @@ export default {
   height: 80vh;
   background: rgba(255, 255, 255, 0.1);
   backdrop-filter: blur(20px);
-  -webkit-backdrop-filter: blur(20px);
   border-radius: 24px;
   border: 1px solid rgba(255, 255, 255, 0.2);
   padding: 15px;
-  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.3);
   color: #fff;
-}
-.sidebar-header {
-  margin-bottom: 35px;
-  text-align: center;
-  animation: fadeIn 0.5s ease;
-}
-@keyframes fadeIn {
-  from { opacity: 0; transform: translateY(-10px); }
-  to { opacity: 1; transform: translateY(0); }
-}
-.sidebar-title {
-  font-size: 50px;
-  font-weight: 600px;
-  color: #f3e8ff;
-  margin: 0;
-  letter-spacing: 1px;
-  text-shadow: 0 2px 4px rgba(0,0,0,0.3);
-}
-.chat-navigation {
   display: flex;
   flex-direction: column;
-  gap: 12px;
+  gap: 20px;
 }
-.chat-controls-section {
-  margin-bottom: 20px;
+
+.sidebar-title {
+  font-size: 1.6rem;
+  font-weight: 600;
+  text-align: center;
+  color: #f3e8ff;
+}
+
+/* === CONTRÔLES (3 boutons) === */
+.chat-controls {
   display: flex;
-  gap: 80px;
+  gap: 10px;
 }
-.new-chat-button {
-  width: 20%;
-  padding-top: 12px;
-  padding-right: 18px;
-  padding-bottom: 12px;
-  padding-left: 10px;
+
+.btn-icon,
+.btn-full {
+  flex: 1;
+  padding: 12px 10px;
   background: linear-gradient(120deg, rgba(28, 32, 51, 0), rgba(16, 21, 33, 0));
   border: none;
   color: white;
   border-radius: 10px;
-  cursor: pointer;
   font-size: 13px;
   font-weight: bold;
+  cursor: pointer;
   transition: all 0.3s ease;
+  text-align: center;
+  white-space: nowrap;
   position: relative;
   overflow: hidden;
   display: flex;
   align-items: center;
-  justify-content: flex-start;
-  text-align: center;
+  justify-content: center;
 }
-.new-chat-button:hover {
+
+.btn-icon:hover,
+.btn-full:hover {
   transform: translateY(-3px);
   box-shadow: 0 6px 20px rgba(125, 82, 204, 0.4);
 }
-.new-chat-button::after {
+
+.btn-icon::after,
+.btn-full::after {
   content: '';
   position: absolute;
   top: 0;
@@ -449,36 +402,116 @@ export default {
   );
   transition: left 0.5s ease;
 }
-.new-chat-button:hover::after {
+
+.btn-icon:hover::after,
+.btn-full:hover::after {
   left: 100%;
 }
-.login-button {
-  width: 100%;
-  padding: 14px 24px;
-  background: rgba(28, 32, 51, 0.1);
-  backdrop-filter: blur(10px);
-  -webkit-backdrop-filter: blur(10px);
-  border: 1px solid rgba(255, 255, 255, 0.1);
-  color: white;
-  border-radius: 30px;
-  cursor: pointer;
-  font-size: 13px;
-  font-weight: 700;
-  transition: all 0.3s ease;
-  box-shadow: 0 6px 18px rgba(118, 75, 162, 0.3);
+
+/* === LISTE DES CHATS === */
+.chat-list {
+  flex: 1;
+  overflow-y: auto;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.chat-item {
   display: flex;
   align-items: center;
-  justify-content: center;
+  gap: 8px;
 }
-.login-button:hover {
-  background: rgba(28, 32, 51, 0.2);
-  transform: translateY(-2px);
-  box-shadow: 0 8px 24px rgba(118, 75, 162, 0.4);
+
+.chat-name {
+  flex: 1;
+  padding: 10px;
+  background: linear-gradient(120deg, rgba(28, 32, 51, 0), rgba(16, 21, 33, 0));
+  border: none;
+  border-radius: 8px;
+  color: #f3e8ff;
+  text-align: left;
+  cursor: pointer;
+  font-size: 13px;
+  font-weight: bold;
+  transition: all 0.3s ease;
+  position: relative;
+  overflow: hidden;
 }
-.login-icon {
-  font-size: 18px;
-  margin-right: 8px;
+
+.chat-name.active,
+.chat-name:hover {
+  transform: translateY(-3px);
+  box-shadow: 0 6px 20px rgba(125, 82, 204, 0.4);
 }
+
+.chat-name::after {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: -100%;
+  width: 100%;
+  height: 100%;
+  background: linear-gradient(
+    120deg,
+    rgba(255, 255, 255, 0.2) 0%,
+    rgba(255, 255, 255, 0.2) 50%,
+    rgba(255, 255, 255, 0) 80%
+  );
+  transition: left 0.5s ease;
+}
+
+.chat-name:hover::after {
+  left: 100%;
+}
+
+.chat-name-input {
+  width: 100%;
+  padding: 8px;
+  border: 1px solid #a552cc;
+  border-radius: 6px;
+  background: #f3e8ff;
+  color: #2c1b4d;
+  font-size: 0.9rem;
+}
+
+.chat-delete {
+  width: 24px;
+  height: 24px;
+  background: #e74c3c;
+  color: white;
+  border: none;
+  border-radius: 50%;
+  cursor: pointer;
+  font-size: 16px;
+  line-height: 1;
+}
+
+.chat-delete:hover {
+  background: #c0392b;
+}
+
+.chat-navigation {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+.chat-controls-section {
+  margin-bottom: 20px;
+  display: flex;
+  gap: 10px;
+}
+
+.new-chat-button,
+.memory-button,
+.configure-agent-button {
+  flex: 1;
+  padding: 12px 10px;
+  font-size: 13px;
+  text-align: center;
+  white-space: nowrap;
+}
+
 .chat-list-section {
   display: flex;
   flex-direction: column;
@@ -540,34 +573,7 @@ export default {
 .chat-list-section::-webkit-scrollbar-thumb {
   position: relative;
 }
-.chat-list-section::-webkit-scrollbar-thumb::before {
-  content: '';
-  position: absolute;
-  top: 0;
-  left: 0;
-  right: 0;
-  bottom: 0;
-  background: linear-gradient(45deg,
-    rgba(255,255,255,0.1) 0%,
-    transparent 50%,
-    rgba(255,255,255,0.1) 100%);
-  border-radius: 10px;
-  opacity: 0;
-  transition: opacity 0.3s ease;
-}
-.chat-list-section::-webkit-scrollbar-thumb:hover::before {
-  opacity: 1;
-}
-.chat-item-container {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  position: relative;
-  transition: transform 0.2s ease;
-}
-.chat-item-container:hover {
-  transform: translateX(5px);
-}
+
 .chat-edit-form {
   flex: 1;
 }
@@ -588,49 +594,7 @@ export default {
   border-color: #764ba2;
   box-shadow: 0 0 8px rgba(118, 75, 162, 0.3);
 }
-.chat-item-button {
-  flex: 1;
-  padding: 14px 18px;
-  background: linear-gradient(120deg, rgba(28, 32, 51, 0), rgba(16, 21, 33, 0));
-  border: none;
-  transition: left 0.5s ease;
-  border: 1px solid rgba(255, 255, 255, 0.2);
-  color: #f3e8ff;
-  border-radius: 10px;
-  cursor: pointer;
-  transition: all 0.3s ease;
-  font-size: 18px;
-  font-weight: 500;
-  text-align: left;
-  position: relative;
-  overflow: hidden;
-}
-.chat-item-button:hover {
-  background: rgba(255, 255, 255, 0.2);
-  border-color: rgba(255, 255, 255, 0.3);
-  transform: translateX(8px);
-}
-.chat-item-button::after {
-  content: '';
-  position: absolute;
-  top: 0;
-  left: -50%;
-  width: 100%;
-  height: 100%;
-  background: linear-gradient(120deg, rgba(255,255,255,0.1) 0%, rgba(255,255,255,0.1) 50%, rgba(255,255,255,0) 80%);
-  transition: left 0.5s ease;
-}
-.chat-item-button:hover::after {
-  left: 100%;
-}
-.chat-item-button--active {
-  background: linear-gradient(120deg, rgba(28, 32, 51, 0), rgba(16, 21, 33, 0));
-  border: none;
-  transition: left 0.5s ease;
-  font-weight: bold;
-  box-shadow: 0 4px 12px rgba(118, 75, 162, 0.3);
-  transform: translateX(5px);
-}
+
 .chat-delete-button {
   width: 30px;
   height: 30px;
@@ -761,94 +725,6 @@ export default {
 }
 .logout-icon {
   font-size: 18px;
-}
-
-.memory-button {
-  /* Reprendre les mêmes styles que .new-chat-button */
-  width: 100%;
-  padding: 14px 18px;
-  background: linear-gradient(120deg, rgba(28, 32, 51, 0), rgba(16, 21, 33, 0));
-  border: none;
-  color: white;
-  border-radius: 10px;
-  cursor: pointer;
-  font-size: 15px;
-  font-weight: bold;
-  transition: all 0.3s ease;
-  position: relative;
-  overflow: hidden;
-  display: flex;
-  align-items: center;
-  justify-content: flex-start;
-  text-align: center;
-  /* Ajout de l'effet hover */
-  box-shadow: 0 6px 18px rgba(118, 75, 162, 0.3);
-}
-
-.memory-button::before {
-  content: '';
-  position: absolute;
-  top: 0;
-  left: -100%;
-  width: 100%;
-  height: 100%;
-  background: linear-gradient(
-    120deg,
-    rgba(255,255,255,0.2) 0%,
-    rgba(255,255,255,0.2) 50%,
-    rgba(255,255,255,0) 80%
-  );
-  transition: left 0.5s ease;
-  z-index: -1;
-}
-
-.memory-button:hover {
-  transform: translateY(-3px);
-  box-shadow: 0 8px 24px rgba(118, 75, 162, 0.4);
-}
-
-.memory-button:hover::before {
-  left: 100%;
-}
-
-.back-dashboard-btn {
-  /* Hérite des styles de .configure-agent-button */
-  padding: 18px 35px;
-  font-size: 20px;
-  font-weight: bold;
-  background: linear-gradient(120deg, rgba(28, 32, 51, 0), rgba(16, 21, 33, 0));
-  border: none;
-  color: white;
-  border-radius: 12px;
-  cursor: pointer;
-  transition: all 0.3s ease;
-  box-shadow: 0 6px 18px rgba(118, 75, 162, 0.3);
-  position: relative;
-  overflow: hidden;
-  z-index: 1;
-  margin-bottom: 20px; /* Espace sous le bouton */
-}
-
-/* Effet hover (identique aux autres boutons) */
-.back-dashboard-btn::before {
-  content: '';
-  position: absolute;
-  top: 0;
-  left: -100%;
-  width: 100%;
-  height: 100%;
-  background: linear-gradient(120deg, rgba(255,255,255,0.2) 0%, rgba(255,255,255,0.2) 50%, rgba(255,255,255,0) 80%);
-  transition: left 0.5s ease;
-  z-index: -1;
-}
-
-.back-dashboard-btn:hover::before {
-  left: 100%;
-}
-
-.back-dashboard-btn:hover {
-  transform: translateY(-3px);
-  box-shadow: 0 8px 24px rgba(118, 75, 162, 0.4);
 }
 
 .dashboard-section {
