@@ -328,7 +328,6 @@ export default {
   overflow: hidden;
 }
 
-/* === SIDEBAR === */
 .sidebar {
   position: fixed;
   top: 10vh;
@@ -353,7 +352,6 @@ export default {
   color: #f3e8ff;
 }
 
-/* === CONTRÔLES (3 boutons) === */
 .chat-controls {
   display: flex;
   gap: 10px;
@@ -408,7 +406,6 @@ export default {
   left: 100%;
 }
 
-/* === LISTE DES CHATS === */
 .chat-list {
   flex: 1;
   overflow-y: auto;

@@ -878,10 +878,10 @@ if (typeof window !== "undefined") {
 <style scoped>
 .chat-container {
   display: fixed;
-  top: 30vh;
+  top: 11vh;
   right: 2px;
-  width: 74vw;
-  height : 64vh;
+  width: 81vw;
+  height : 82vh;
   border: 1px solid rgba(255, 255, 255, 0.1);
   border-radius: 24px;
   box-shadow:
