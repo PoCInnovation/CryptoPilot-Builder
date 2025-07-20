@@ -34,7 +34,7 @@ function handleSubmit() {
 
 .input-bubble-container {
   flex: 1;
-  background-color: #f0f0f0;
+  background-color: #111421;
   border-radius: 20px;
   padding: 0.2rem 0.5rem;
   display: flex;
@@ -56,7 +56,7 @@ function handleSubmit() {
 }
 
 .input-bubble:focus {
-  background-color: #e9e9e9;
+  background-color: #111421;
 }
 
 .send-button {
