@@ -11,10 +11,10 @@ app.get('/quote', async (req, res) => {
   const { fromAddress, fromAmount } = req.query;
 
   const params = {
-    fromChain: '11155111', // Sepolia
-    toChain: '11155111',
+    fromChain: '1', // Ethereum mainnet
+    toChain: '1',
     fromToken: '0xEeeeeEeeeEeEeeEeEeEeeEEEeeeeEeeeeeeeEEeE', // Native ETH
-    toToken: '0x94a9D9AC8a22534E3FaCa9F4e7F2E2cf85d5E4C8',   // USDC Sepolia
+    toToken: '0xA0b86a33E6417c7D0F2fd8C8024B92B3b6e08bD4',   // USDC mainnet
     fromAmount,
     fromAddress,
   };
