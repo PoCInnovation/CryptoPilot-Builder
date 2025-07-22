@@ -14,7 +14,7 @@
           <button v-else class="btn-full" @click="showAuthModal = true">👤 Se connecter</button>
         </section>
 
-        <section class="chat-list">
+        <section class="chat-list-section">
           <article v-for="chat in chats" :key="chat.id" class="chat-item">
             <form v-if="editingChatId === chat.id" @submit.prevent="saveEditingChat">
               <input v-model="tempChatName" @blur="saveEditingChat" maxlength="50" class="chat-name-input" />
@@ -343,6 +343,7 @@ export default {
   display: flex;
   flex-direction: column;
   gap: 20px;
+  overflow: hidden;
 }
 
 .sidebar-title {
@@ -355,6 +356,7 @@ export default {
 .chat-controls {
   display: flex;
   gap: 10px;
+  flex-shrink: 0;
 }
 
 .btn-icon,
@@ -412,6 +414,45 @@ export default {
   display: flex;
   flex-direction: column;
   gap: 10px;
+  max-height: calc(80vh - 200px); /* Ajustez selon l'espace occupé par le header et les contrôles */
+  padding-right: 8px;
+  
+  /* Scrollbar WebKit (Chrome, Safari, Edge) */
+  scrollbar-width: thin;
+  scrollbar-color: rgba(118, 75, 162, 0.6) rgba(46, 27, 77, 0.3);
+}
+
+.chat-list::-webkit-scrollbar {
+  width: 8px;
+  background-color: transparent;
+}
+
+.chat-list::-webkit-scrollbar-track {
+  background: rgba(46, 27, 77, 0.3);
+  border-radius: 10px;
+  margin: 5px 0;
+  box-shadow: inset 0 0 3px rgba(0, 0, 0, 0.1);
+}
+
+.chat-list::-webkit-scrollbar-thumb {
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  border-radius: 10px;
+  box-shadow: 0 2px 6px rgba(118, 75, 162, 0.3);
+  transition: all 0.3s ease;
+}
+
+.chat-list::-webkit-scrollbar-thumb:hover {
+  background: linear-gradient(135deg, #5a67d8 0%, #6b46c1 100%);
+  box-shadow: 0 3px 8px rgba(157, 78, 221, 0.4);
+  transform: scaleX(1.2);
+}
+
+.chat-list::-webkit-scrollbar-thumb {
+  opacity: 0.7;
+}
+
+.chat-list:hover::-webkit-scrollbar-thumb {
+  opacity: 1;
 }
 
 .chat-item {
@@ -492,7 +533,10 @@ export default {
   display: flex;
   flex-direction: column;
   gap: 12px;
+  flex: 1;
+  overflow: hidden;
 }
+
 .chat-controls-section {
   margin-bottom: 20px;
   display: flex;
@@ -1152,11 +1196,19 @@ export default {
     flex-direction: column;
   }
   .sidebar {
-    width: 80%;
+    position: relative;
+    width: 100%;
     height: auto;
-    padding: 20px;
+    max-height: 50vh;
+    margin-bottom: 20px;
+  }
+  .chat-list {
+    max-height: 30vh;
   }
   .chat-navigation {
+    flex-direction: column;
+  }
+  .chat-controls {
     flex-direction: row;
     overflow-x: auto;
     padding-bottom: 10px;
@@ -1194,4 +1246,15 @@ export default {
     padding-right: 6px;
   }
 }
+
+@media (max-width: 480px) {
+  .chat-list {
+    max-height: 25vh;
+    padding-right: 4px;
+  }
+  .chat-list::-webkit-scrollbar {
+    width: 6px;
+  }
+}
+
 </style>
