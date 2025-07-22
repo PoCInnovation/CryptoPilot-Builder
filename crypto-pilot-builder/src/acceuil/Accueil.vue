@@ -13,7 +13,7 @@
           <button v-else class="btn-full" @click="showAuthModal = true">👤 Se connecter</button>
         </section>
         <section class="chat-list-section">
-          <article v-for="chat in chats" :key="chat.id" class="chat-item">
+          <article v-for="chat in chatsForTemplate" :key="chat.id" class="chat-item">
             <form v-if="editingChatId === chat.id" @submit.prevent="saveEditingChat" class="chat-edit-form">
               <input 
                 v-model="tempChatName"
@@ -88,7 +88,12 @@
       <!-- Chat -->
       <section v-else class="chat-section">
         <div class="chat-container">
-          <Chatbot />
+          <Chatbot 
+            :key="activeChat"
+            :active-session-id="activeChat" 
+            @session-changed="handleSessionChanged"
+            @new-session-created="handleNewSessionCreated"
+          />
         </div>
       </section>
     </main>
@@ -120,7 +125,13 @@ export default {
   },
   data() {
     return {
-      activeChat: null,
+      // Structure simplifiée - directement compatible avec le template
+      chats: [], // Format: [{id: sessionId, name: chatName}, ...]
+      chatSessions: {}, // Mapping sessionId -> {messages, originalName, etc.}
+      
+      // Variables d'interface
+      activeChat: null, // ID de session active
+      currentSessionId: null, // Pour compatibilité avec Chatbot
       nextChatId: 1,
       editingChatId: null,
       tempChatName: "",
@@ -130,7 +141,6 @@ export default {
       contextMenuChatId: null,
       showAuthModal: false,
       redirectAfterAuth: null,
-      chats: [],
       showChat: false,
     };
   },
@@ -145,43 +155,234 @@ export default {
         this.aiConfig.prompt
       );
     },
+    // Computed pour le template (maintenant c'est juste un alias)
+    chatsForTemplate() {
+      return this.chats;
+    }
   },
   methods: {
     ...mapActions("auth", ["logout"]),
     ...mapActions(["loadAgentConfig"]),
 
+    // CRÉATION D'UN NOUVEAU CHAT - Version simplifiée
     async createNewChat() {
       const chatName = prompt("Nom du nouveau chat:", `Chat ${this.nextChatId}`);
       if (chatName && chatName.trim()) {
         try {
-          // Appel à l'API pour créer une session côté serveur
+          console.log("🆕 Création d'un nouveau chat:", chatName.trim());
+          
+          // Créer une nouvelle session via l'API
           const sessionData = await apiService.createNewSession(chatName.trim());
+          const sessionId = sessionData.session_id;
+          
+          if (!sessionId) {
+            throw new Error("Aucun session_id reçu de l'API");
+          }
+
+          // Créer le chat avec l'ID de session
           const newChat = {
-            id: sessionData.session_id,
-            name: chatName.trim(),
+            id: sessionId,
+            name: chatName.trim()
           };
+
+          // Ajouter à la liste des chats
           this.chats.push(newChat);
-          this.activeChat = sessionData.session_id;
-          this.nextChatId = Math.max(...this.chats.map(c => c.id)) + 1;
-          console.log(`Nouveau chat créé: ${newChat.name} (ID: ${newChat.id})`);
+
+          // Créer les données de session
+          this.chatSessions[sessionId] = {
+            sessionId: sessionId,
+            messages: [
+              {
+                text: "Bonjour ! Posez-moi une question ou demandez-moi d'effectuer une transaction.",
+                isUser: false,
+              },
+            ],
+            originalName: chatName.trim(),
+          };
+
+          // Activer le nouveau chat
+          this.activeChat = sessionId;
+          this.currentSessionId = sessionId;
+          this.showChat = true;
+          this.nextChatId++;
+
+          console.log(`✅ Nouveau chat créé: ${newChat.name} (Session: ${sessionId})`);
+          console.log("📋 Chats actuels:", this.chats);
+          
         } catch (error) {
-          console.error("Erreur lors de la création du chat:", error);
+          console.error("❌ Erreur lors de la création du chat:", error);
           alert("Impossible de créer le chat. Vérifiez votre connexion ou réessayez.");
         }
       }
     },
 
+    // CHARGEMENT DES CHATS DEPUIS L'API - Version simplifiée
+    async loadChatsFromApi() {
+      try {
+        console.log("📂 Chargement des chats depuis l'API...");
+        const response = await apiService.listSessions();
+        const sessions = response.sessions || [];
+        
+        console.log(`📡 ${sessions.length} session(s) reçue(s):`, sessions);
+
+        // Réinitialiser
+        this.chats = [];
+        this.chatSessions = {};
+
+        if (sessions.length > 0) {
+          // Traiter chaque session
+          for (let i = 0; i < sessions.length; i++) {
+            const session = sessions[i];
+            const sessionId = session.session_id;
+            const chatName = session.session_name || `Chat ${i + 1}`;
+
+            // Ajouter le chat
+            this.chats.push({
+              id: sessionId,
+              name: chatName
+            });
+
+            try {
+              // Charger les messages de la session
+              const sessionDetail = await apiService.getSession(sessionId);
+              const messages = sessionDetail.messages || [];
+
+              // Convertir au format frontend
+              const frontendMessages = messages.map((msg) => ({
+                text: msg.content,
+                isUser: msg.role === "user",
+                created_at: msg.created_at,
+              }));
+
+              // Message de bienvenue si vide
+              if (frontendMessages.length === 0) {
+                frontendMessages.push({
+                  text: "Bonjour ! Posez-moi une question ou demandez-moi d'effectuer une transaction.",
+                  isUser: false,
+                });
+              }
+
+              // Stocker les données de session
+              this.chatSessions[sessionId] = {
+                sessionId: sessionId,
+                messages: frontendMessages,
+                originalName: session.session_name,
+              };
+
+              console.log(`✅ Session chargée: ${chatName} (${sessionId})`);
+
+            } catch (sessionError) {
+              console.error(`❌ Erreur session ${sessionId}:`, sessionError);
+              // Session basique en cas d'erreur
+              this.chatSessions[sessionId] = {
+                sessionId: sessionId,
+                messages: [
+                  {
+                    text: "Bonjour ! Posez-moi une question ou demandez-moi d'effectuer une transaction.",
+                    isUser: false,
+                  },
+                ],
+                originalName: session.session_name,
+              };
+            }
+          }
+
+          // Sélectionner le premier chat
+          if (this.chats.length > 0) {
+            this.activeChat = this.chats[0].id;
+            this.currentSessionId = this.chats[0].id;
+          }
+
+          this.nextChatId = this.chats.length + 1;
+          console.log("✅ Tous les chats chargés:", this.chats);
+
+        } else {
+          // Créer une session par défaut
+          console.log("📝 Aucune session, création d'une session par défaut");
+          await this.createDefaultSession();
+        }
+
+      } catch (error) {
+        console.error("❌ Erreur lors du chargement:", error);
+        await this.createDefaultSession();
+      }
+    },
+
+    // Créer une session par défaut
+    async createDefaultSession() {
+      try {
+        const now = new Date();
+        const sessionName = `Chat ${now.toLocaleDateString("fr-FR")} ${now.toLocaleTimeString("fr-FR", {
+          hour: "2-digit",
+          minute: "2-digit",
+        })}`;
+
+        const sessionData = await apiService.createNewSession(sessionName);
+        const sessionId = sessionData.session_id;
+
+        this.chats = [{
+          id: sessionId,
+          name: sessionName
+        }];
+
+        this.chatSessions[sessionId] = {
+          sessionId: sessionId,
+          messages: [
+            {
+              text: "Bonjour ! Posez-moi une question ou demandez-moi d'effectuer une transaction.",
+              isUser: false,
+            },
+          ],
+          originalName: sessionName,
+        };
+
+        this.activeChat = sessionId;
+        this.currentSessionId = sessionId;
+        this.nextChatId = 2;
+
+        console.log(`✅ Session par défaut créée: ${sessionName} (${sessionId})`);
+
+      } catch (error) {
+        console.error("❌ Erreur création session par défaut:", error);
+      }
+    },
+
+    // SÉLECTION DE CHAT - Version simplifiée
+    selectChat(chatId) {
+      console.log("🔄 Sélection du chat:", chatId);
+      
+      // Vérifier que le chat existe
+      const chat = this.chats.find(c => c.id === chatId);
+      if (!chat) {
+        console.error("❌ Chat non trouvé:", chatId);
+        return;
+      }
+
+      // Vérifier que la session existe
+      if (!this.chatSessions[chatId]) {
+        console.error("❌ Session non trouvée:", chatId);
+        return;
+      }
+
+      // Activer le chat
+      this.activeChat = chatId;
+      this.currentSessionId = chatId;
+      this.showChat = true;
+
+      console.log(`✅ Chat sélectionné: ${chat.name} (Session: ${chatId})`);
+    },
+
+    // ÉDITION DE CHAT
     startEditingChat(chatId) {
-      const chat = this.chats.find((c) => c.id === chatId);
+      const chat = this.chats.find(c => c.id === chatId);
       if (chat) {
         this.editingChatId = chatId;
         this.tempChatName = chat.name;
-        // Focus sur l'input après le rendu
         this.$nextTick(() => {
           const inputElement = document.querySelector('.chat-name-input');
           if (inputElement) {
             inputElement.focus();
-            inputElement.select(); // Sélectionne tout le texte
+            inputElement.select();
           }
         });
       }
@@ -189,27 +390,36 @@ export default {
 
     async saveEditingChat() {
       if (this.tempChatName.trim() && this.editingChatId !== null) {
-        try {
-          // Appel à l'API pour persister le changement
-          const response = await apiService.renameSession(
-            this.editingChatId, 
-            this.tempChatName.trim()
-          );
-
-          if (response && response.status === 'renamed') {
-            console.log(`Chat renommé avec succès: ${this.tempChatName.trim()}`);
-
-            // Recharger complètement la liste des chats depuis l'API
-            await this.loadChatsFromApi();
-
-            // Maintenir la sélection du chat actuel
-            this.activeChat = this.editingChatId;
-          } else {
-            alert("Erreur lors du renommage du chat.");
+        const chat = this.chats.find(c => c.id === this.editingChatId);
+        if (chat) {
+          const oldName = chat.name;
+          
+          try {
+            const response = await apiService.renameSession(
+              this.editingChatId, 
+              this.tempChatName.trim()
+            );
+            
+            if (response && response.status === 'renamed') {
+              // Mettre à jour le nom du chat
+              chat.name = this.tempChatName.trim();
+              
+              // Mettre à jour les données de session si elles existent
+              if (this.chatSessions[this.editingChatId]) {
+                this.chatSessions[this.editingChatId].originalName = this.tempChatName.trim();
+              }
+              
+              console.log(`✅ Chat renommé: ${chat.name}`);
+              this.$forceUpdate();
+            } else {
+              chat.name = oldName;
+              alert("Erreur lors du renommage du chat.");
+            }
+          } catch (error) {
+            console.error("❌ Erreur lors du renommage:", error);
+            chat.name = oldName;
+            alert("Impossible de renommer le chat. Vérifiez votre connexion ou réessayez.");
           }
-        } catch (error) {
-          console.error("Erreur lors du renommage du chat:", error);
-          alert("Impossible de renommer le chat. Vérifiez votre connexion ou réessayez.");
         }
       }
       this.cancelEditingChat();
@@ -220,6 +430,80 @@ export default {
       this.tempChatName = "";
     },
 
+    // DUPLICATION DE CHAT
+    async duplicateChat() {
+      if (this.contextMenuChatId) {
+        const originalChat = this.chats.find(c => c.id === this.contextMenuChatId);
+        if (originalChat) {
+          try {
+            console.log("📋 Duplication du chat:", originalChat.name);
+            
+            const sessionData = await apiService.createNewSession(`${originalChat.name} (copie)`);
+            const newSessionId = sessionData.session_id;
+
+            const newChat = {
+              id: newSessionId,
+              name: `${originalChat.name} (copie)`
+            };
+
+            this.chats.push(newChat);
+            
+            this.chatSessions[newSessionId] = {
+              sessionId: newSessionId,
+              messages: [
+                {
+                  text: "Bonjour ! Posez-moi une question ou demandez-moi d'effectuer une transaction.",
+                  isUser: false,
+                },
+              ],
+              originalName: `${originalChat.name} (copie)`,
+            };
+
+            this.hideContextMenu();
+            console.log(`✅ Chat dupliqué: ${newChat.name} (${newSessionId})`);
+            
+          } catch (error) {
+            console.error("❌ Erreur lors de la duplication:", error);
+            alert("Impossible de dupliquer le chat.");
+          }
+        }
+      }
+    },
+
+    // SUPPRESSION DE CHAT
+    async deleteChat(chatId) {
+      if (this.chats.length <= 1) {
+        alert("Vous devez garder au moins un chat");
+        return;
+      }
+      
+      try {
+        console.log("🗑️ Suppression du chat:", chatId);
+        await apiService.deleteSession(chatId);
+        
+        // Supprimer de la liste des chats
+        const chatIndex = this.chats.findIndex(c => c.id === chatId);
+        if (chatIndex !== -1) {
+          this.chats.splice(chatIndex, 1);
+        }
+        
+        // Supprimer les données de session
+        delete this.chatSessions[chatId];
+        
+        // Sélectionner un autre chat si nécessaire
+        if (this.activeChat === chatId && this.chats.length > 0) {
+          this.activeChat = this.chats[0].id;
+          this.currentSessionId = this.chats[0].id;
+          console.log("✅ Nouveau chat actif:", this.activeChat);
+        }
+        
+      } catch (error) {
+        console.error("❌ Erreur lors de la suppression:", error);
+        alert("Erreur lors de la suppression du chat.");
+      }
+    },
+
+    // MENU CONTEXTUEL
     showChatContextMenu(event, chatId) {
       event.preventDefault();
       this.contextMenuChatId = chatId;
@@ -242,32 +526,6 @@ export default {
       }
     },
 
-    async duplicateChat() {
-      if (this.contextMenuChatId) {
-        const originalChat = this.chats.find(
-          (c) => c.id === this.contextMenuChatId
-        );
-        if (originalChat) {
-          try {
-            // Appel à l'API pour créer une nouvelle session
-            const sessionData = await apiService.createNewSession(
-              `${originalChat.name} (copie)`
-            );
-            const newChat = {
-              id: sessionData.session_id,
-              name: `${originalChat.name} (copie)`,
-            };
-            this.chats.push(newChat);
-            this.nextChatId = Math.max(...this.chats.map(c => c.id)) + 1;
-            this.hideContextMenu();
-          } catch (error) {
-            console.error("Erreur lors de la duplication du chat:", error);
-            alert("Impossible de dupliquer le chat. Vérifiez votre connexion ou réessayez.");
-          }
-        }
-      }
-    },
-
     deleteChatFromContextMenu() {
       if (this.contextMenuChatId) {
         this.deleteChat(this.contextMenuChatId);
@@ -275,57 +533,7 @@ export default {
       }
     },
 
-    async loadChatsFromApi() {
-      try {
-        const response = await apiService.listSessions();
-        const sessions = response.sessions || [];
-        
-        // Sauvegarder l'ID du chat actuel
-        const currentActiveChat = this.activeChat;
-        
-        this.chats = sessions.map((session, idx) => ({
-          id: session.session_id,
-          name: session.session_name || `Chat ${idx + 1}`,
-        }));
-        
-        // Restaurer la sélection si le chat existe toujours
-        if (currentActiveChat && this.chats.find(c => c.id === currentActiveChat)) {
-          this.activeChat = currentActiveChat;
-        } else if (this.chats.length > 0) {
-          this.activeChat = this.chats[0].id;
-        }
-        
-        this.nextChatId = this.chats.length + 1;
-        
-        console.log("Chats rechargés:", this.chats);
-      } catch (error) {
-        console.error("Erreur lors du chargement des chats:", error);
-        this.chats = [{ id: 1, name: "Trading Analysis" }];
-        this.activeChat = 1;
-        this.nextChatId = 2;
-      }
-    },
-
-    async deleteChat(chatId) {
-      if (this.chats.length <= 1) {
-        alert("Vous devez garder au moins un chat");
-        return;
-      }
-      try {
-        await apiService.deleteSession(chatId);
-        const index = this.chats.findIndex((chat) => chat.id === chatId);
-        if (index !== -1) {
-          this.chats.splice(index, 1);
-          if (this.activeChat === chatId && this.chats.length > 0) {
-            this.activeChat = this.chats[0].id;
-          }
-        }
-      } catch (error) {
-        console.error("Erreur lors de la suppression du chat:", error);
-        alert("Erreur lors de la suppression du chat.");
-      }
-    },
-
+    // AUTRES MÉTHODES
     handleEditKeydown(event) {
       if (event.key === "Enter") {
         this.saveEditingChat();
@@ -347,9 +555,28 @@ export default {
       this.$router.push("/");
     },
 
-    selectChat(chatId) {
-      this.activeChat = chatId;
+    handleSessionChanged(sessionData) {
+      console.log("📡 Session changée depuis Chatbot:", sessionData);
     },
+
+    handleNewSessionCreated(sessionData) {
+      console.log("📡 Nouvelle session créée depuis le Chatbot:", sessionData);
+      this.loadChatsFromApi();
+    },
+  },
+
+  // WATCHERS POUR DEBUG
+  watch: {
+    activeChat(newVal, oldVal) {
+      console.log("👀 WATCHER activeChat:", { old: oldVal, new: newVal });
+    },
+    
+    chats: {
+      handler(newChats) {
+        console.log("👀 WATCHER chats:", newChats.map(c => ({ id: c.id, name: c.name })));
+      },
+      deep: true
+    }
   },
 
   async mounted() {
