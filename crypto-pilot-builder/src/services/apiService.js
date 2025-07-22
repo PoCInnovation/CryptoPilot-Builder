@@ -105,7 +105,7 @@ class ApiService {
   }
 
   async renameSession(sessionId, newName) {
-    return this.request(`/sessions/${sessionId}`, {
+    return this.request(`/sessions/${sessionId}/rename`, {
       method: "PUT",
       body: { session_name: newName },
     });
