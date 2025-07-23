@@ -125,13 +125,11 @@ export default {
   },
   data() {
     return {
-      // Structure simplifiée - directement compatible avec le template
-      chats: [], // Format: [{id: sessionId, name: chatName}, ...]
-      chatSessions: {}, // Mapping sessionId -> {messages, originalName, etc.}
-      
-      // Variables d'interface
-      activeChat: null, // ID de session active
-      currentSessionId: null, // Pour compatibilité avec Chatbot
+      // Structure inspirée du code d'exemple qui fonctionne
+      chats: [], // Format: ["Chat 1", "Chat 2", ...] - noms des chats
+      chatSessions: {}, // Mapping chatName -> {sessionId, messages, originalName}
+      selectedChat: 0, // Index du chat sélectionné
+      currentSessionId: null, // ID de session active
       nextChatId: 1,
       editingChatId: null,
       tempChatName: "",
@@ -155,41 +153,51 @@ export default {
         this.aiConfig.prompt
       );
     },
-    // Computed pour le template (maintenant c'est juste un alias)
+    // Computed pour le template - convertir en format attendu
     chatsForTemplate() {
-      return this.chats;
+      return this.chats.map((chatName, index) => ({
+        id: this.chatSessions[chatName]?.sessionId || `temp_${index}`,
+        name: chatName
+      }));
+    },
+    // Chat actif basé sur l'index sélectionné
+    activeChat() {
+      const chatName = this.chats[this.selectedChat];
+      return this.chatSessions[chatName]?.sessionId || null;
     }
   },
   methods: {
     ...mapActions("auth", ["logout"]),
     ...mapActions(["loadAgentConfig"]),
 
-    // CRÉATION D'UN NOUVEAU CHAT - Version simplifiée
+    // CRÉATION D'UN NOUVEAU CHAT
     async createNewChat() {
       const chatName = prompt("Nom du nouveau chat:", `Chat ${this.nextChatId}`);
       if (chatName && chatName.trim()) {
         try {
           console.log("🆕 Création d'un nouveau chat:", chatName.trim());
           
+          // Éviter les doublons de noms
+          let uniqueChatName = chatName.trim();
+          let counter = 1;
+          while (this.chats.includes(uniqueChatName)) {
+            uniqueChatName = `${chatName.trim()} (${counter})`;
+            counter++;
+          }
+
           // Créer une nouvelle session via l'API
-          const sessionData = await apiService.createNewSession(chatName.trim());
+          const sessionData = await apiService.createNewSession(uniqueChatName);
           const sessionId = sessionData.session_id;
           
           if (!sessionId) {
             throw new Error("Aucun session_id reçu de l'API");
           }
 
-          // Créer le chat avec l'ID de session
-          const newChat = {
-            id: sessionId,
-            name: chatName.trim()
-          };
-
-          // Ajouter à la liste des chats
-          this.chats.push(newChat);
+          // Ajouter le chat à la liste
+          this.chats.push(uniqueChatName);
 
           // Créer les données de session
-          this.chatSessions[sessionId] = {
+          this.chatSessions[uniqueChatName] = {
             sessionId: sessionId,
             messages: [
               {
@@ -197,18 +205,16 @@ export default {
                 isUser: false,
               },
             ],
-            originalName: chatName.trim(),
+            originalName: uniqueChatName,
           };
 
-          // Activer le nouveau chat
-          this.activeChat = sessionId;
+          // Sélectionner le nouveau chat
+          this.selectedChat = this.chats.length - 1;
           this.currentSessionId = sessionId;
           this.showChat = true;
           this.nextChatId++;
 
-          console.log(`✅ Nouveau chat créé: ${newChat.name} (Session: ${sessionId})`);
-          console.log("📋 Chats actuels:", this.chats);
-          
+          console.log(`✅ Nouveau chat créé: ${uniqueChatName} (Session: ${sessionId})`);
         } catch (error) {
           console.error("❌ Erreur lors de la création du chat:", error);
           alert("Impossible de créer le chat. Vérifiez votre connexion ou réessayez.");
@@ -216,13 +222,12 @@ export default {
       }
     },
 
-    // CHARGEMENT DES CHATS DEPUIS L'API - Version simplifiée
+    // CHARGEMENT DES CHATS DEPUIS L'API
     async loadChatsFromApi() {
       try {
         console.log("📂 Chargement des chats depuis l'API...");
         const response = await apiService.listSessions();
         const sessions = response.sessions || [];
-        
         console.log(`📡 ${sessions.length} session(s) reçue(s):`, sessions);
 
         // Réinitialiser
@@ -236,11 +241,16 @@ export default {
             const sessionId = session.session_id;
             const chatName = session.session_name || `Chat ${i + 1}`;
 
+            // Éviter les doublons de noms
+            let uniqueChatName = chatName;
+            let counter = 1;
+            while (this.chats.includes(uniqueChatName)) {
+              uniqueChatName = `${chatName} (${counter})`;
+              counter++;
+            }
+
             // Ajouter le chat
-            this.chats.push({
-              id: sessionId,
-              name: chatName
-            });
+            this.chats.push(uniqueChatName);
 
             try {
               // Charger les messages de la session
@@ -263,18 +273,17 @@ export default {
               }
 
               // Stocker les données de session
-              this.chatSessions[sessionId] = {
+              this.chatSessions[uniqueChatName] = {
                 sessionId: sessionId,
                 messages: frontendMessages,
                 originalName: session.session_name,
               };
 
-              console.log(`✅ Session chargée: ${chatName} (${sessionId})`);
-
+              console.log(`✅ Session chargée: ${uniqueChatName} (${sessionId})`);
             } catch (sessionError) {
               console.error(`❌ Erreur session ${sessionId}:`, sessionError);
               // Session basique en cas d'erreur
-              this.chatSessions[sessionId] = {
+              this.chatSessions[uniqueChatName] = {
                 sessionId: sessionId,
                 messages: [
                   {
@@ -289,19 +298,18 @@ export default {
 
           // Sélectionner le premier chat
           if (this.chats.length > 0) {
-            this.activeChat = this.chats[0].id;
-            this.currentSessionId = this.chats[0].id;
+            this.selectedChat = 0;
+            const firstChatName = this.chats[0];
+            this.currentSessionId = this.chatSessions[firstChatName].sessionId;
           }
 
           this.nextChatId = this.chats.length + 1;
           console.log("✅ Tous les chats chargés:", this.chats);
-
         } else {
           // Créer une session par défaut
           console.log("📝 Aucune session, création d'une session par défaut");
           await this.createDefaultSession();
         }
-
       } catch (error) {
         console.error("❌ Erreur lors du chargement:", error);
         await this.createDefaultSession();
@@ -320,12 +328,8 @@ export default {
         const sessionData = await apiService.createNewSession(sessionName);
         const sessionId = sessionData.session_id;
 
-        this.chats = [{
-          id: sessionId,
-          name: sessionName
-        }];
-
-        this.chatSessions[sessionId] = {
+        this.chats = [sessionName];
+        this.chatSessions[sessionName] = {
           sessionId: sessionId,
           messages: [
             {
@@ -336,48 +340,48 @@ export default {
           originalName: sessionName,
         };
 
-        this.activeChat = sessionId;
+        this.selectedChat = 0;
         this.currentSessionId = sessionId;
         this.nextChatId = 2;
 
         console.log(`✅ Session par défaut créée: ${sessionName} (${sessionId})`);
-
       } catch (error) {
         console.error("❌ Erreur création session par défaut:", error);
       }
     },
 
-    // SÉLECTION DE CHAT - Version simplifiée
-    selectChat(chatId) {
-      console.log("🔄 Sélection du chat:", chatId);
+    // SÉLECTION DE CHAT - Utilise l'ID de session
+    selectChat(sessionId) {
+      console.log("🔄 Sélection du chat par sessionId:", sessionId);
       
-      // Vérifier que le chat existe
-      const chat = this.chats.find(c => c.id === chatId);
-      if (!chat) {
-        console.error("❌ Chat non trouvé:", chatId);
-        return;
+      // Trouver le chat correspondant à cette session
+      const chatName = Object.keys(this.chatSessions).find(
+        name => this.chatSessions[name].sessionId === sessionId
+      );
+      
+      if (chatName) {
+        const chatIndex = this.chats.indexOf(chatName);
+        if (chatIndex !== -1) {
+          this.selectedChat = chatIndex;
+          this.currentSessionId = sessionId;
+          this.showChat = true;
+          console.log(`✅ Chat sélectionné: ${chatName} (Session: ${sessionId})`);
+        }
+      } else {
+        console.error("❌ Session non trouvée:", sessionId);
       }
-
-      // Vérifier que la session existe
-      if (!this.chatSessions[chatId]) {
-        console.error("❌ Session non trouvée:", chatId);
-        return;
-      }
-
-      // Activer le chat
-      this.activeChat = chatId;
-      this.currentSessionId = chatId;
-      this.showChat = true;
-
-      console.log(`✅ Chat sélectionné: ${chat.name} (Session: ${chatId})`);
     },
 
-    // ÉDITION DE CHAT
-    startEditingChat(chatId) {
-      const chat = this.chats.find(c => c.id === chatId);
-      if (chat) {
-        this.editingChatId = chatId;
-        this.tempChatName = chat.name;
+    // ÉDITION DE CHAT - Utilise l'ID de session
+    startEditingChat(sessionId) {
+      // Trouver le chat correspondant à cette session
+      const chatName = Object.keys(this.chatSessions).find(
+        name => this.chatSessions[name].sessionId === sessionId
+      );
+      
+      if (chatName) {
+        this.editingChatId = sessionId;
+        this.tempChatName = chatName;
         this.$nextTick(() => {
           const inputElement = document.querySelector('.chat-name-input');
           if (inputElement) {
@@ -388,12 +392,15 @@ export default {
       }
     },
 
+    // SAUVEGARDE DE L'ÉDITION - CORRECTION PRINCIPALE
     async saveEditingChat() {
       if (this.tempChatName.trim() && this.editingChatId !== null) {
-        const chat = this.chats.find(c => c.id === this.editingChatId);
-        if (chat) {
-          const oldName = chat.name;
-          
+        // Trouver l'ancien nom du chat
+        const oldChatName = Object.keys(this.chatSessions).find(
+          name => this.chatSessions[name].sessionId === this.editingChatId
+        );
+        
+        if (oldChatName) {
           try {
             const response = await apiService.renameSession(
               this.editingChatId, 
@@ -401,23 +408,45 @@ export default {
             );
             
             if (response && response.status === 'renamed') {
-              // Mettre à jour le nom du chat
-              chat.name = this.tempChatName.trim();
-              
-              // Mettre à jour les données de session si elles existent
-              if (this.chatSessions[this.editingChatId]) {
-                this.chatSessions[this.editingChatId].originalName = this.tempChatName.trim();
+              // Éviter les doublons de noms
+              let newChatName = this.tempChatName.trim();
+              let counter = 1;
+              while (this.chats.includes(newChatName) && newChatName !== oldChatName) {
+                newChatName = `${this.tempChatName.trim()} (${counter})`;
+                counter++;
               }
-              
-              console.log(`✅ Chat renommé: ${chat.name}`);
-              this.$forceUpdate();
+
+              // CORRECTION : Mise à jour réactive complète
+              // 1. Mettre à jour le tableau des chats
+              const chatIndex = this.chats.indexOf(oldChatName);
+              if (chatIndex !== -1) {
+                // Créer un nouveau tableau pour assurer la réactivité
+                const newChats = [...this.chats];
+                newChats[chatIndex] = newChatName;
+                this.chats = newChats;
+              }
+
+              // 2. Mettre à jour l'objet chatSessions
+              if (newChatName !== oldChatName) {
+                // Créer un nouvel objet pour assurer la réactivité
+                const newChatSessions = { ...this.chatSessions };
+                newChatSessions[newChatName] = {
+                  ...newChatSessions[oldChatName],
+                  originalName: newChatName
+                };
+                delete newChatSessions[oldChatName];
+                this.chatSessions = newChatSessions;
+              } else {
+                // Juste mettre à jour le nom original
+                this.chatSessions[oldChatName].originalName = newChatName;
+              }
+
+              console.log(`✅ Chat renommé: ${oldChatName} -> ${newChatName}`);
             } else {
-              chat.name = oldName;
               alert("Erreur lors du renommage du chat.");
             }
           } catch (error) {
             console.error("❌ Erreur lors du renommage:", error);
-            chat.name = oldName;
             alert("Impossible de renommer le chat. Vérifiez votre connexion ou réessayez.");
           }
         }
@@ -433,22 +462,27 @@ export default {
     // DUPLICATION DE CHAT
     async duplicateChat() {
       if (this.contextMenuChatId) {
-        const originalChat = this.chats.find(c => c.id === this.contextMenuChatId);
-        if (originalChat) {
+        // Trouver le chat original
+        const originalChatName = Object.keys(this.chatSessions).find(
+          name => this.chatSessions[name].sessionId === this.contextMenuChatId
+        );
+        
+        if (originalChatName) {
           try {
-            console.log("📋 Duplication du chat:", originalChat.name);
+            console.log("📋 Duplication du chat:", originalChatName);
             
-            const sessionData = await apiService.createNewSession(`${originalChat.name} (copie)`);
+            let duplicateName = `${originalChatName} (copie)`;
+            let counter = 1;
+            while (this.chats.includes(duplicateName)) {
+              duplicateName = `${originalChatName} (copie ${counter})`;
+              counter++;
+            }
+
+            const sessionData = await apiService.createNewSession(duplicateName);
             const newSessionId = sessionData.session_id;
 
-            const newChat = {
-              id: newSessionId,
-              name: `${originalChat.name} (copie)`
-            };
-
-            this.chats.push(newChat);
-            
-            this.chatSessions[newSessionId] = {
+            this.chats.push(duplicateName);
+            this.chatSessions[duplicateName] = {
               sessionId: newSessionId,
               messages: [
                 {
@@ -456,12 +490,11 @@ export default {
                   isUser: false,
                 },
               ],
-              originalName: `${originalChat.name} (copie)`,
+              originalName: duplicateName,
             };
 
             this.hideContextMenu();
-            console.log(`✅ Chat dupliqué: ${newChat.name} (${newSessionId})`);
-            
+            console.log(`✅ Chat dupliqué: ${duplicateName} (${newSessionId})`);
           } catch (error) {
             console.error("❌ Erreur lors de la duplication:", error);
             alert("Impossible de dupliquer le chat.");
@@ -471,32 +504,39 @@ export default {
     },
 
     // SUPPRESSION DE CHAT
-    async deleteChat(chatId) {
+    async deleteChat(sessionId) {
       if (this.chats.length <= 1) {
         alert("Vous devez garder au moins un chat");
         return;
       }
-      
+
       try {
-        console.log("🗑️ Suppression du chat:", chatId);
-        await apiService.deleteSession(chatId);
-        
-        // Supprimer de la liste des chats
-        const chatIndex = this.chats.findIndex(c => c.id === chatId);
-        if (chatIndex !== -1) {
-          this.chats.splice(chatIndex, 1);
+        console.log("🗑️ Suppression du chat:", sessionId);
+        await apiService.deleteSession(sessionId);
+
+        // Trouver le nom du chat à supprimer
+        const chatToDelete = Object.keys(this.chatSessions).find(
+          name => this.chatSessions[name].sessionId === sessionId
+        );
+
+        if (chatToDelete) {
+          // CORRECTION : Mise à jour réactive
+          // 1. Supprimer du tableau des chats
+          this.chats = this.chats.filter(name => name !== chatToDelete);
+          
+          // 2. Supprimer des sessions
+          const newChatSessions = { ...this.chatSessions };
+          delete newChatSessions[chatToDelete];
+          this.chatSessions = newChatSessions;
+
+          // 3. Ajuster la sélection si nécessaire
+          if (this.currentSessionId === sessionId && this.chats.length > 0) {
+            this.selectedChat = 0;
+            const firstChatName = this.chats[0];
+            this.currentSessionId = this.chatSessions[firstChatName].sessionId;
+            console.log("✅ Nouveau chat actif:", firstChatName);
+          }
         }
-        
-        // Supprimer les données de session
-        delete this.chatSessions[chatId];
-        
-        // Sélectionner un autre chat si nécessaire
-        if (this.activeChat === chatId && this.chats.length > 0) {
-          this.activeChat = this.chats[0].id;
-          this.currentSessionId = this.chats[0].id;
-          console.log("✅ Nouveau chat actif:", this.activeChat);
-        }
-        
       } catch (error) {
         console.error("❌ Erreur lors de la suppression:", error);
         alert("Erreur lors de la suppression du chat.");
@@ -504,9 +544,9 @@ export default {
     },
 
     // MENU CONTEXTUEL
-    showChatContextMenu(event, chatId) {
+    showChatContextMenu(event, sessionId) {
       event.preventDefault();
-      this.contextMenuChatId = chatId;
+      this.contextMenuChatId = sessionId;
       this.contextMenuX = event.clientX;
       this.contextMenuY = event.clientY;
       this.showContextMenu = true;
@@ -567,13 +607,16 @@ export default {
 
   // WATCHERS POUR DEBUG
   watch: {
-    activeChat(newVal, oldVal) {
-      console.log("👀 WATCHER activeChat:", { old: oldVal, new: newVal });
+    selectedChat(newVal, oldVal) {
+      console.log("👀 WATCHER selectedChat:", { old: oldVal, new: newVal });
+      if (this.chats[newVal]) {
+        const chatName = this.chats[newVal];
+        this.currentSessionId = this.chatSessions[chatName]?.sessionId;
+      }
     },
-    
     chats: {
       handler(newChats) {
-        console.log("👀 WATCHER chats:", newChats.map(c => ({ id: c.id, name: c.name })));
+        console.log("👀 WATCHER chats:", newChats);
       },
       deep: true
     }
@@ -585,6 +628,7 @@ export default {
       await this.loadAgentConfig();
       await this.loadChatsFromApi();
     }
+
     const urlParams = new URLSearchParams(window.location.search);
     if (urlParams.get("authRequired") === "true") {
       this.showAuthModal = true;
