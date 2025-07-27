@@ -219,14 +219,9 @@ const isSessionManagerReady = computed(() => {
 const isAuthenticated = computed(() => store.getters.isAuthenticated);
 const authError = ref(null);
 
-const chats = ref([]);
-const selectedChat = ref(0);
 const isLoading = ref(false);
 const pendingTransaction = ref(null);
 const isProcessingTransaction = ref(false);
-const pendingSwap = ref(null);
-const isProcessingSwap = ref(false);
-const chatSessions = ref({});
 
 // Reactive currentSessionId based on props
 const currentSessionId = computed(() => {
@@ -306,6 +301,9 @@ const messages = computed(() => {
     ];
   }
 });
+
+const chats = ref([]);
+const selectedChat = ref(0);
 
 const walletRef = ref(null);
 const selectedModel = ref("gpt-4o-mini");
