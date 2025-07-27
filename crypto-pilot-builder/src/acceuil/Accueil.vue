@@ -47,9 +47,12 @@
         <div class="user-section">
           <div v-if="isAuthenticated" class="user-info">
             <span class="user-welcome">Bonjour, {{ user?.username || user?.email }}</span>
-            <button class="logout-button" @click="handleLogout">
-              <span class="logout-icon">🚪</span> Déconnexion
-            </button>
+            <div class="header-buttons">
+              <Wallet />
+              <button class="logout-button" @click="handleLogout">
+                <span class="logout-icon">🚪</span> Déconnexion
+              </button>
+            </div>
           </div>
         </div>
       </header>
@@ -113,8 +116,11 @@
 
 <script>
 import { mapState, mapActions, mapGetters } from "vuex";
+import { onMounted, watch } from 'vue';
 import AuthModal from "../components/AuthModal.vue";
 import Chatbot from '../components/chatbot.vue';
+import Wallet from '../components/wallet.vue';
+import { useSessionManager } from '../composables/useSessionManager.js';
 import apiService from "../services/apiService";
 
 export default {
@@ -122,14 +128,16 @@ export default {
   components: {
     AuthModal,
     Chatbot,
+    Wallet,
+  },
+  setup() {
+    const sessionManager = useSessionManager();
+    return {
+      sessionManager
+    };
   },
   data() {
     return {
-      // Structure inspirée du code d'exemple qui fonctionne
-      chats: [], // Format: ["Chat 1", "Chat 2", ...] - noms des chats
-      chatSessions: {}, // Mapping chatName -> {sessionId, messages, originalName}
-      selectedChat: 0, // Index du chat sélectionné
-      currentSessionId: null, // ID de session active
       nextChatId: 1,
       editingChatId: null,
       tempChatName: "",
@@ -155,15 +163,22 @@ export default {
     },
     // Computed pour le template - convertir en format attendu
     chatsForTemplate() {
-      return this.chats.map((chatName, index) => ({
-        id: this.chatSessions[chatName]?.sessionId || `temp_${index}`,
-        name: chatName
+      if (!this.sessionManager || !this.sessionManager.activeSessions) {
+        return [];
+      }
+      // Access the computed property value
+      const sessions = this.sessionManager.activeSessions.value || this.sessionManager.activeSessions;
+      if (!Array.isArray(sessions)) {
+        return [];
+      }
+      return sessions.map(session => ({
+        id: session.id,
+        name: session.name
       }));
     },
-    // Chat actif basé sur l'index sélectionné
+    // Chat actif basé sur l'ID de session sélectionné
     activeChat() {
-      const chatName = this.chats[this.selectedChat];
-      return this.chatSessions[chatName]?.sessionId || null;
+      return this.sessionManager?.activeSessionId || null;
     }
   },
   methods: {
@@ -180,41 +195,32 @@ export default {
           // Éviter les doublons de noms
           let uniqueChatName = chatName.trim();
           let counter = 1;
-          while (this.chats.includes(uniqueChatName)) {
+          const sessions = this.sessionManager?.activeSessions?.value || this.sessionManager?.activeSessions || [];
+          const existingNames = Array.isArray(sessions) ? sessions.map(s => s.name) : [];
+          while (existingNames.includes(uniqueChatName)) {
             uniqueChatName = `${chatName.trim()} (${counter})`;
             counter++;
           }
 
-          // Créer une nouvelle session via l'API
-          const sessionData = await apiService.createNewSession(uniqueChatName);
-          const sessionId = sessionData.session_id;
+          // Créer une nouvelle session via le sessionManager
+          const session = await this.sessionManager.createSession(uniqueChatName);
           
-          if (!sessionId) {
-            throw new Error("Aucun session_id reçu de l'API");
+          if (!session || !session.id) {
+            throw new Error("Erreur lors de la création de la session");
           }
 
-          // Ajouter le chat à la liste
-          this.chats.push(uniqueChatName);
+          // Ajouter un message de bienvenue
+          this.sessionManager.addMessage(session.id, {
+            text: "Bonjour ! Posez-moi une question ou demandez-moi d'effectuer une transaction.",
+            isUser: false,
+            created_at: new Date().toISOString()
+          });
 
-          // Créer les données de session
-          this.chatSessions[uniqueChatName] = {
-            sessionId: sessionId,
-            messages: [
-              {
-                text: "Bonjour ! Posez-moi une question ou demandez-moi d'effectuer une transaction.",
-                isUser: false,
-              },
-            ],
-            originalName: uniqueChatName,
-          };
-
-          // Sélectionner le nouveau chat
-          this.selectedChat = this.chats.length - 1;
-          this.currentSessionId = sessionId;
+          // Sélectionner le nouveau chat et l'afficher
           this.showChat = true;
           this.nextChatId++;
 
-          console.log(`✅ Nouveau chat créé: ${uniqueChatName} (Session: ${sessionId})`);
+          console.log(`✅ Nouveau chat créé: ${uniqueChatName} (Session: ${session.id})`);
         } catch (error) {
           console.error("❌ Erreur lors de la création du chat:", error);
           alert("Impossible de créer le chat. Vérifiez votre connexion ou réessayez.");
@@ -225,93 +231,24 @@ export default {
     // CHARGEMENT DES CHATS DEPUIS L'API
     async loadChatsFromApi() {
       try {
-        console.log("📂 Chargement des chats depuis l'API...");
-        const response = await apiService.listSessions();
-        const sessions = response.sessions || [];
-        console.log(`📡 ${sessions.length} session(s) reçue(s):`, sessions);
-
-        // Réinitialiser
-        this.chats = [];
-        this.chatSessions = {};
-
-        if (sessions.length > 0) {
-          // Traiter chaque session
-          for (let i = 0; i < sessions.length; i++) {
-            const session = sessions[i];
-            const sessionId = session.session_id;
-            const chatName = session.session_name || `Chat ${i + 1}`;
-
-            // Éviter les doublons de noms
-            let uniqueChatName = chatName;
-            let counter = 1;
-            while (this.chats.includes(uniqueChatName)) {
-              uniqueChatName = `${chatName} (${counter})`;
-              counter++;
-            }
-
-            // Ajouter le chat
-            this.chats.push(uniqueChatName);
-
-            try {
-              // Charger les messages de la session
-              const sessionDetail = await apiService.getSession(sessionId);
-              const messages = sessionDetail.messages || [];
-
-              // Convertir au format frontend
-              const frontendMessages = messages.map((msg) => ({
-                text: msg.content,
-                isUser: msg.role === "user",
-                created_at: msg.created_at,
-              }));
-
-              // Message de bienvenue si vide
-              if (frontendMessages.length === 0) {
-                frontendMessages.push({
-                  text: "Bonjour ! Posez-moi une question ou demandez-moi d'effectuer une transaction.",
-                  isUser: false,
-                });
-              }
-
-              // Stocker les données de session
-              this.chatSessions[uniqueChatName] = {
-                sessionId: sessionId,
-                messages: frontendMessages,
-                originalName: session.session_name,
-              };
-
-              console.log(`✅ Session chargée: ${uniqueChatName} (${sessionId})`);
-            } catch (sessionError) {
-              console.error(`❌ Erreur session ${sessionId}:`, sessionError);
-              // Session basique en cas d'erreur
-              this.chatSessions[uniqueChatName] = {
-                sessionId: sessionId,
-                messages: [
-                  {
-                    text: "Bonjour ! Posez-moi une question ou demandez-moi d'effectuer une transaction.",
-                    isUser: false,
-                  },
-                ],
-                originalName: session.session_name,
-              };
-            }
-          }
-
-          // Sélectionner le premier chat
-          if (this.chats.length > 0) {
-            this.selectedChat = 0;
-            const firstChatName = this.chats[0];
-            this.currentSessionId = this.chatSessions[firstChatName].sessionId;
-          }
-
-          this.nextChatId = this.chats.length + 1;
-          console.log("✅ Tous les chats chargés:", this.chats);
-        } else {
-          // Créer une session par défaut
-          console.log("📝 Aucune session, création d'une session par défaut");
+        console.log("🔄 Chargement des sessions depuis l'API...");
+        
+        // Utiliser le sessionManager pour charger toutes les sessions
+        await this.sessionManager.loadAllSessions();
+        
+        const sessions = this.sessionManager?.activeSessions?.value || this.sessionManager?.activeSessions || [];
+        console.log(`✅ ${Array.isArray(sessions) ? sessions.length : 0} sessions chargées avec succès`);
+        
+        // Si aucune session n'existe, créer une session par défaut
+        if (!Array.isArray(sessions) || sessions.length === 0) {
+          console.log("💭 Aucune session existante, création d'une session par défaut...");
           await this.createDefaultSession();
         }
       } catch (error) {
-        console.error("❌ Erreur lors du chargement:", error);
+        console.error("❌ Erreur lors du chargement des sessions:", error);
+        
+        // En cas d'erreur, créer une session par défaut
+        console.log("🔄 Création d'une session par défaut suite à l'erreur...");
         await this.createDefaultSession();
       }
     },
@@ -325,68 +262,60 @@ export default {
           minute: "2-digit",
         })}`;
 
-        const sessionData = await apiService.createNewSession(sessionName);
-        const sessionId = sessionData.session_id;
+        // Créer une nouvelle session via le sessionManager
+        const session = await this.sessionManager.createSession(sessionName);
+        
+        if (!session || !session.id) {
+          throw new Error("Erreur lors de la création de la session par défaut");
+        }
 
-        this.chats = [sessionName];
-        this.chatSessions[sessionName] = {
-          sessionId: sessionId,
-          messages: [
-            {
-              text: "Bonjour ! Posez-moi une question ou demandez-moi d'effectuer une transaction.",
-              isUser: false,
-            },
-          ],
-          originalName: sessionName,
-        };
+        // Ajouter un message de bienvenue
+        this.sessionManager.addMessage(session.id, {
+          text: "Bonjour ! Posez-moi une question ou demandez-moi d'effectuer une transaction.",
+          isUser: false,
+          created_at: new Date().toISOString()
+        });
 
-        this.selectedChat = 0;
-        this.currentSessionId = sessionId;
         this.nextChatId = 2;
 
-        console.log(`✅ Session par défaut créée: ${sessionName} (${sessionId})`);
+        console.log(`✅ Session par défaut créée: ${sessionName} (${session.id})`);
       } catch (error) {
-        console.error("❌ Erreur création session par défaut:", error);
+        console.error("❌ Erreur lors de la création de la session par défaut:", error);
       }
     },
 
     // SÉLECTION DE CHAT - Utilise l'ID de session
-    selectChat(sessionId) {
-      console.log("🔄 Sélection du chat par sessionId:", sessionId);
+    async selectChat(sessionId) {
+      console.log("🎯 Sélection du chat avec session ID:", sessionId);
       
-      // Trouver le chat correspondant à cette session
-      const chatName = Object.keys(this.chatSessions).find(
-        name => this.chatSessions[name].sessionId === sessionId
-      );
-      
-      if (chatName) {
-        const chatIndex = this.chats.indexOf(chatName);
-        if (chatIndex !== -1) {
-          this.selectedChat = chatIndex;
-          this.currentSessionId = sessionId;
-          this.showChat = true;
-          console.log(`✅ Chat sélectionné: ${chatName} (Session: ${sessionId})`);
-        }
-      } else {
-        console.error("❌ Session non trouvée:", sessionId);
+      try {
+        // Sélectionner la session via le sessionManager
+        await this.sessionManager.selectSession(sessionId);
+        this.showChat = true;
+        
+        console.log(`✅ Chat sélectionné (Session: ${sessionId})`);
+      } catch (error) {
+        console.error("❌ Erreur lors de la sélection du chat:", error);
       }
     },
 
     // ÉDITION DE CHAT - Utilise l'ID de session
     startEditingChat(sessionId) {
-      // Trouver le chat correspondant à cette session
-      const chatName = Object.keys(this.chatSessions).find(
-        name => this.chatSessions[name].sessionId === sessionId
-      );
+      console.log("✏️ Début d'édition pour session:", sessionId);
       
-      if (chatName) {
+      // Trouver la session correspondante
+      const session = this.sessionManager.getSessionById(sessionId);
+      
+      if (session) {
         this.editingChatId = sessionId;
-        this.tempChatName = chatName;
+        this.tempChatName = session.name;
+        
+        // Focus sur l'input au prochain tick
         this.$nextTick(() => {
-          const inputElement = document.querySelector('.chat-name-input');
-          if (inputElement) {
-            inputElement.focus();
-            inputElement.select();
+          const input = this.$refs.chatNameInput?.[0];
+          if (input) {
+            input.focus();
+            input.select();
           }
         });
       }
@@ -394,61 +323,35 @@ export default {
 
     // SAUVEGARDE DE L'ÉDITION - CORRECTION PRINCIPALE
     async saveEditingChat() {
-      if (this.tempChatName.trim() && this.editingChatId !== null) {
-        // Trouver l'ancien nom du chat
-        const oldChatName = Object.keys(this.chatSessions).find(
-          name => this.chatSessions[name].sessionId === this.editingChatId
-        );
+      if (this.editingChatId && this.tempChatName.trim()) {
+        const newName = this.tempChatName.trim();
+        const sessionId = this.editingChatId;
         
-        if (oldChatName) {
-          try {
-            const response = await apiService.renameSession(
-              this.editingChatId, 
-              this.tempChatName.trim()
-            );
-            
-            if (response && response.status === 'renamed') {
-              // Éviter les doublons de noms
-              let newChatName = this.tempChatName.trim();
-              let counter = 1;
-              while (this.chats.includes(newChatName) && newChatName !== oldChatName) {
-                newChatName = `${this.tempChatName.trim()} (${counter})`;
-                counter++;
-              }
-
-              // CORRECTION : Mise à jour réactive complète
-              // 1. Mettre à jour le tableau des chats
-              const chatIndex = this.chats.indexOf(oldChatName);
-              if (chatIndex !== -1) {
-                // Créer un nouveau tableau pour assurer la réactivité
-                const newChats = [...this.chats];
-                newChats[chatIndex] = newChatName;
-                this.chats = newChats;
-              }
-
-              // 2. Mettre à jour l'objet chatSessions
-              if (newChatName !== oldChatName) {
-                // Créer un nouvel objet pour assurer la réactivité
-                const newChatSessions = { ...this.chatSessions };
-                newChatSessions[newChatName] = {
-                  ...newChatSessions[oldChatName],
-                  originalName: newChatName
-                };
-                delete newChatSessions[oldChatName];
-                this.chatSessions = newChatSessions;
-              } else {
-                // Juste mettre à jour le nom original
-                this.chatSessions[oldChatName].originalName = newChatName;
-              }
-
-              console.log(`✅ Chat renommé: ${oldChatName} -> ${newChatName}`);
-            } else {
-              alert("Erreur lors du renommage du chat.");
-            }
-          } catch (error) {
-            console.error("❌ Erreur lors du renommage:", error);
-            alert("Impossible de renommer le chat. Vérifiez votre connexion ou réessayez.");
+        // Vérifier les doublons
+        const sessions = this.sessionManager?.activeSessions?.value || this.sessionManager?.activeSessions || [];
+        const existingNames = Array.isArray(sessions) 
+          ? sessions.filter(session => session.id !== sessionId).map(session => session.name)
+          : [];
+        
+        if (existingNames.includes(newName)) {
+          alert("Ce nom existe déjà. Veuillez choisir un autre nom.");
+          return;
+        }
+        
+        try {
+          console.log(`✏️ Renommage de la session ${sessionId} vers "${newName}"`);
+          
+          // Renommer via le sessionManager
+          const success = await this.sessionManager.renameSession(sessionId, newName);
+          
+          if (success) {
+            console.log(`✅ Chat renommé vers "${newName}"`);
+          } else {
+            throw new Error("Échec du renommage de la session");
           }
+        } catch (error) {
+          console.error("❌ Erreur lors du renommage:", error);
+          alert("Impossible de renommer le chat. Vérifiez votre connexion ou réessayez.");
         }
       }
       this.cancelEditingChat();
@@ -462,84 +365,70 @@ export default {
     // DUPLICATION DE CHAT
     async duplicateChat() {
       if (this.contextMenuChatId) {
-        // Trouver le chat original
-        const originalChatName = Object.keys(this.chatSessions).find(
-          name => this.chatSessions[name].sessionId === this.contextMenuChatId
-        );
+        // Trouver la session originale
+        const originalSession = this.sessionManager.getSessionById(this.contextMenuChatId);
         
-        if (originalChatName) {
+        if (originalSession) {
           try {
-            console.log("📋 Duplication du chat:", originalChatName);
+            console.log("📋 Duplication du chat:", originalSession.name);
             
-            let duplicateName = `${originalChatName} (copie)`;
+            let duplicateName = `${originalSession.name} (copie)`;
             let counter = 1;
-            while (this.chats.includes(duplicateName)) {
-              duplicateName = `${originalChatName} (copie ${counter})`;
+            const sessions = this.sessionManager?.activeSessions?.value || this.sessionManager?.activeSessions || [];
+            const existingNames = Array.isArray(sessions) ? sessions.map(s => s.name) : [];
+            while (existingNames.includes(duplicateName)) {
+              duplicateName = `${originalSession.name} (copie ${counter})`;
               counter++;
             }
 
-            const sessionData = await apiService.createNewSession(duplicateName);
-            const newSessionId = sessionData.session_id;
+            // Créer une nouvelle session via le sessionManager
+            const newSession = await this.sessionManager.createSession(duplicateName);
+            
+            if (newSession && newSession.id) {
+              // Ajouter un message de bienvenue
+              this.sessionManager.addMessage(newSession.id, {
+                text: "Bonjour ! Posez-moi une question ou demandez-moi d'effectuer une transaction.",
+                isUser: false,
+                created_at: new Date().toISOString()
+              });
 
-            this.chats.push(duplicateName);
-            this.chatSessions[duplicateName] = {
-              sessionId: newSessionId,
-              messages: [
-                {
-                  text: "Bonjour ! Posez-moi une question ou demandez-moi d'effectuer une transaction.",
-                  isUser: false,
-                },
-              ],
-              originalName: duplicateName,
-            };
-
-            this.hideContextMenu();
-            console.log(`✅ Chat dupliqué: ${duplicateName} (${newSessionId})`);
+              this.hideContextMenu();
+              console.log(`✅ Chat dupliqué: ${duplicateName} (${newSession.id})`);
+            } else {
+              throw new Error("Erreur lors de la création de la session dupliquée");
+            }
           } catch (error) {
             console.error("❌ Erreur lors de la duplication:", error);
-            alert("Impossible de dupliquer le chat.");
+            alert("Impossible de dupliquer le chat. Vérifiez votre connexion ou réessayez.");
           }
         }
       }
     },
 
-    // SUPPRESSION DE CHAT
+    // SUPPRESSION DE CHAT - Utilise l'ID de session
     async deleteChat(sessionId) {
-      if (this.chats.length <= 1) {
-        alert("Vous devez garder au moins un chat");
-        return;
-      }
-
-      try {
-        console.log("🗑️ Suppression du chat:", sessionId);
-        await apiService.deleteSession(sessionId);
-
-        // Trouver le nom du chat à supprimer
-        const chatToDelete = Object.keys(this.chatSessions).find(
-          name => this.chatSessions[name].sessionId === sessionId
-        );
-
-        if (chatToDelete) {
-          // CORRECTION : Mise à jour réactive
-          // 1. Supprimer du tableau des chats
-          this.chats = this.chats.filter(name => name !== chatToDelete);
+      if (confirm("Êtes-vous sûr de vouloir supprimer ce chat ?")) {
+        try {
+          console.log("🗑️ Suppression du chat avec session ID:", sessionId);
           
-          // 2. Supprimer des sessions
-          const newChatSessions = { ...this.chatSessions };
-          delete newChatSessions[chatToDelete];
-          this.chatSessions = newChatSessions;
-
-          // 3. Ajuster la sélection si nécessaire
-          if (this.currentSessionId === sessionId && this.chats.length > 0) {
-            this.selectedChat = 0;
-            const firstChatName = this.chats[0];
-            this.currentSessionId = this.chatSessions[firstChatName].sessionId;
-            console.log("✅ Nouveau chat actif:", firstChatName);
+          // Supprimer via le sessionManager
+          const success = await this.sessionManager.deleteSession(sessionId);
+          
+          if (success) {
+            // Si plus de sessions, retourner au dashboard
+            const sessions = this.sessionManager?.activeSessions?.value || this.sessionManager?.activeSessions || [];
+            if (!Array.isArray(sessions) || sessions.length === 0) {
+              this.showChat = false;
+            }
+            
+            console.log(`✅ Chat supprimé (Session: ${sessionId})`);
+          } else {
+            throw new Error("Échec de la suppression de la session");
           }
+        } catch (error) {
+          console.error("❌ Erreur lors de la suppression:", error);
+          alert("Impossible de supprimer le chat. Vérifiez votre connexion ou réessayez.");
         }
-      } catch (error) {
-        console.error("❌ Erreur lors de la suppression:", error);
-        alert("Erreur lors de la suppression du chat.");
       }
     },
 
@@ -964,14 +853,20 @@ export default {
 .user-info {
   display: flex;
   align-items: center;
-  gap: 18px;
+  gap: 15px;
 }
 
 .user-welcome {
   color: white;
-  font-weight: bold;
   font-size: 16px;
-  text-shadow: 0 1px 2px rgba(0,0,0,0.05);
+  font-weight: 500;
+  text-shadow: 0 1px 2px rgba(0, 0, 0, 0.2);
+}
+
+.header-buttons {
+  display: flex;
+  align-items: center;
+  gap: 10px;
 }
 
 .logout-button {

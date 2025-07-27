@@ -333,7 +333,7 @@
           Précédent
         </button>
       </router-link>
-      <router-link to="/chat" class="btn-link">
+      <router-link to="/" class="btn-link">
         <button
           class="btn btn-primary"
           :disabled="!isFormValid"
