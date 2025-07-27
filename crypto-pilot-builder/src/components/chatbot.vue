@@ -7,12 +7,7 @@
       <div class="floating-orb orb-3"></div>
     </div>
 
-    <ChatSidebar
-      :chats="chats"
-      :selected-chat="selectedChat"
-      @select-chat="selectChat"
-      @add-chat="addNewChat"
-    />
+
 
     <main class="chat-main">
       <!-- Header amélioré avec glassmorphism -->
@@ -113,6 +108,9 @@
 
       <ChatInput @send-message="handleSendMessage" />
     </main>
+    
+    <!-- Hidden wallet component for functionality -->
+    <Wallet ref="walletRef" style="display: none;" />
   </div>
 </template>
 
@@ -122,6 +120,7 @@ import { useStore } from "vuex";
 import { useRouter } from "vue-router";
 import ChatMessages from "./chatbot/ChatMessages.vue";
 import ChatInput from "./chatbot/ChatInput.vue";
+import Wallet from "./wallet.vue";
 import apiService from "../services/apiService";
 
 const store = useStore();
@@ -144,8 +143,18 @@ const pendingTransaction = ref(null);
 const currentSessionId = ref(null);
 const isProcessingTransaction = ref(false);
 const chatSessions = ref({});
-const walletFunctions = inject("walletFunctions", null);
+const walletRef = ref(null);
 const selectedModel = ref("gpt-4o-mini");
+
+// Get wallet functions from wallet component
+const walletFunctions = computed(() => {
+  return walletRef.value ? {
+    sendTransactionFromChat: walletRef.value.sendTransactionFromChat,
+    address: walletRef.value.address,
+    connectWallet: walletRef.value.connectWallet,
+    isConnected: walletRef.value.isConnected
+  } : null;
+});
 
 // Récupère la config IA du store (comme dans Ai.vue)
 const aiConfig = computed(() => store.getters.aiConfig);
@@ -488,15 +497,15 @@ if (typeof window !== "undefined") {
 async function confirmTransaction() {
   console.log("🔥 confirmTransaction() appelée");
   console.log("📋 pendingTransaction.value:", pendingTransaction.value);
-  console.log("💼 walletFunctions disponible:", !!walletFunctions);
+  console.log("💼 walletFunctions disponible:", !!walletFunctions.value);
   if (!pendingTransaction.value) {
     console.error("❌ Pas de transaction en attente");
     return;
   }
   isProcessingTransaction.value = true;
   console.log("🔍 Vérification du wallet...");
-  console.log("💼 walletFunctions disponible:", !!walletFunctions);
-  if (!walletFunctions) {
+  console.log("💼 walletFunctions disponible:", !!walletFunctions.value);
+  if (!walletFunctions.value) {
     console.error("❌ walletFunctions non disponible");
     const errorMessage = {
       text: "❌ Erreur : Wallet non disponible. Veuillez connecter votre wallet.",
@@ -511,29 +520,34 @@ async function confirmTransaction() {
     isProcessingTransaction.value = false;
     return;
   }
-  console.log("🔗 Vérification connexion wallet...");
-  const isConnected = walletFunctions.isConnected();
-  console.log("🔗 Wallet connecté:", isConnected);
+  console.log(" Vérification connexion wallet...");
+  const isConnected = walletFunctions.value.isConnected();
+  console.log(" Wallet connecté:", isConnected);
   if (!isConnected) {
-    console.error("❌ Wallet non connecté");
-    const errorMessage = {
-      text: "❌ Erreur : Wallet non connecté. Veuillez d'abord connecter votre wallet MetaMask.",
-      isUser: false,
-    };
-    messages.value.push(errorMessage);
-    const currentChatName = chats.value[selectedChat.value];
-    if (chatSessions.value[currentChatName]) {
-      chatSessions.value[currentChatName].messages.push(errorMessage);
+    console.log(" Tentative de connexion...");
+    try {
+      await walletFunctions.value.connectWallet();
+      console.log(" Wallet connecté avec succès");
+    } catch (connectError) {
+      console.error(" Erreur de connexion wallet:", connectError);
+      const errorMessage = {
+        text: " Erreur : Impossible de connecter le wallet. Veuillez réessayer.",
+        isUser: false,
+      };
+      messages.value.push(errorMessage);
+      const currentChatName = chats.value[selectedChat.value];
+      if (chatSessions.value[currentChatName]) {
+        chatSessions.value[currentChatName].messages.push(errorMessage);
+      }
+      pendingTransaction.value = null;
+      isProcessingTransaction.value = false;
+      return;
     }
-    pendingTransaction.value = null;
-    isProcessingTransaction.value = false;
-    return;
   }
-
   try {
-    console.log("🚀 Début de la transaction...");
+    console.log(" Exécution de la transaction...");
     const processingMessage = {
-      text: `🔄 Traitement de la transaction : ${
+      text: ` Traitement de la transaction : ${
         pendingTransaction.value.amount
       } ${pendingTransaction.value.currency?.toUpperCase()} vers ${pendingTransaction.value.recipient.slice(
         0,
@@ -551,7 +565,7 @@ async function confirmTransaction() {
     console.log("  - Montant:", pendingTransaction.value.amount);
     console.log("  - Devise:", pendingTransaction.value.currency);
     console.log("⚡ Appel de sendTransaction...");
-    const result = await walletFunctions.sendTransaction(
+    const result = await walletFunctions.value.sendTransactionFromChat(
       pendingTransaction.value.recipient,
       pendingTransaction.value.amount
     );
