@@ -38,7 +38,14 @@
         <div class="header-glow"></div>
       </div>
 
-      <ChatMessages :messages="messages" :is-loading="isLoading" />
+      <!-- Show loading state if sessionManager is not ready -->
+      <div v-if="!isSessionManagerReady" class="loading-state">
+        <div class="loading-spinner"></div>
+        <p>Initialisation du chat...</p>
+      </div>
+      
+      <!-- Show chat messages when ready -->
+      <ChatMessages v-else :messages="messages" :is-loading="isLoading" />
 
       <!-- Message d'erreur d'authentification amélioré -->
       <div v-if="authError" class="auth-error">
@@ -122,27 +129,118 @@ import ChatMessages from "./chatbot/ChatMessages.vue";
 import ChatInput from "./chatbot/ChatInput.vue";
 import Wallet from "./wallet.vue";
 import apiService from "../services/apiService";
+import { useSessionManager } from "../composables/useSessionManager.js";
+
+// Props
+const props = defineProps({
+  activeSessionId: {
+    type: String,
+    default: null
+  }
+});
+
+// Create reactive reference to activeSessionId for use in functions
+const activeSessionId = computed(() => props.activeSessionId);
 
 const store = useStore();
 const router = useRouter();
 
+// Initialize session manager with error handling
+const sessionManager = useSessionManager();
+console.log('🔧 [CHATBOT] SessionManager initialized:', sessionManager);
+
+// Check if sessionManager is properly initialized
+const isSessionManagerReady = computed(() => {
+  const ready = sessionManager && typeof sessionManager.getSessionById === 'function';
+  console.log('🔍 [CHATBOT] SessionManager ready:', ready);
+  return ready;
+});
+
 const isAuthenticated = computed(() => store.getters.isAuthenticated);
 const authError = ref(null);
 
-const messages = ref([
-  {
-    text: "Bonjour ! Posez-moi une question ou demandez-moi d'effectuer une transaction.",
-    isUser: false,
-  },
-]);
-
-const chats = ref([]);
-const selectedChat = ref(0);
 const isLoading = ref(false);
 const pendingTransaction = ref(null);
-const currentSessionId = ref(null);
 const isProcessingTransaction = ref(false);
-const chatSessions = ref({});
+
+// Reactive currentSessionId based on props
+const currentSessionId = computed(() => {
+  const sessionId = activeSessionId.value;
+  console.log('🔄 [CHATBOT] currentSessionId computed - activeSessionId prop:', sessionId);
+  return sessionId;
+});
+
+// Messages from active session with error handling
+const messages = computed(() => {
+  try {
+    const sessionId = activeSessionId.value;
+    
+    // Check if sessionManager is ready first
+    if (!isSessionManagerReady.value) {
+      console.log('📨 [CHATBOT] SessionManager not ready, returning default messages');
+      return [
+        {
+          text: "Bonjour ! Posez-moi une question ou demandez-moi d'effectuer une transaction.",
+          isUser: false,
+          created_at: new Date().toISOString()
+        },
+      ];
+    }
+    
+    if (!sessionId) {
+      console.log('📨 [CHATBOT] No active session ID, returning default messages');
+      return [
+        {
+          text: "Bonjour ! Posez-moi une question ou demandez-moi d'effectuer une transaction.",
+          isUser: false,
+          created_at: new Date().toISOString()
+        },
+      ];
+    }
+    
+    const activeSession = sessionManager.getSessionById(sessionId);
+    console.log('📨 [CHATBOT] Messages computed - activeSession:', activeSession);
+    
+    if (!activeSession) {
+      console.log('📨 [CHATBOT] No active session found, returning default messages');
+      return [
+        {
+          text: "Bonjour ! Posez-moi une question ou demandez-moi d'effectuer une transaction.",
+          isUser: false,
+          created_at: new Date().toISOString()
+        },
+      ];
+    }
+    
+    const sessionMessages = activeSession.messages || [];
+    console.log('📨 [CHATBOT] Session messages count:', sessionMessages.length);
+    
+    // Ensure all messages have required properties
+    const validMessages = sessionMessages.map(msg => ({
+      text: msg.text || '',
+      isUser: Boolean(msg.isUser),
+      created_at: msg.created_at || new Date().toISOString(),
+      ...msg
+    }));
+    
+    return validMessages.length > 0 ? validMessages : [
+      {
+        text: "Bonjour ! Posez-moi une question ou demandez-moi d'effectuer une transaction.",
+        isUser: false,
+        created_at: new Date().toISOString()
+      },
+    ];
+  } catch (error) {
+    console.error('❌ [CHATBOT] Error in messages computed:', error);
+    return [
+      {
+        text: "Bonjour ! Posez-moi une question ou demandez-moi d'effectuer une transaction.",
+        isUser: false,
+        created_at: new Date().toISOString()
+      },
+    ];
+  }
+});
 const walletRef = ref(null);
 const selectedModel = ref("gpt-4o-mini");
 
@@ -204,167 +302,9 @@ async function redirectToLogin() {
 onMounted(async () => {
   const authOk = await checkAuthentication();
   if (authOk) {
-    await loadExistingSessions();
+    console.log("[CHATBOT] Component mounted with session management handled by parent");
   }
 });
-
-async function loadExistingSessions() {
-  try {
-    console.log("Chargement des sessions existantes...");
-    const response = await apiService.listSessions();
-    const existingSessions = response.sessions || [];
-
-    console.log(`${existingSessions.length} session(s) trouvée(s)`);
-
-    if (existingSessions.length > 0) {
-      // Charger les sessions existantes
-      chats.value = [];
-      chatSessions.value = {};
-
-      for (let i = 0; i < existingSessions.length; i++) {
-        const session = existingSessions[i];
-        // Utiliser le vrai nom de session ou générer un nom unique
-        const chatName = session.session_name || `Chat ${i + 1}`;
-
-        // Éviter les doublons de noms
-        let uniqueChatName = chatName;
-        let counter = 1;
-        while (chats.value.includes(uniqueChatName)) {
-          uniqueChatName = `${chatName} (${counter})`;
-          counter++;
-        }
-
-        chats.value.push(uniqueChatName);
-
-        try {
-          // Charger les messages de la session
-          const sessionDetail = await apiService.getSession(session.session_id);
-          const messages = sessionDetail.messages || [];
-
-          // Convertir les messages au format frontend
-          const frontendMessages = messages.map((msg) => ({
-            text: msg.content,
-            isUser: msg.role === "user",
-            created_at: msg.created_at,
-          }));
-
-          // Ajouter le message de bienvenue si pas de messages
-          if (frontendMessages.length === 0) {
-            frontendMessages.push({
-              text: "Bonjour ! Posez-moi une question ou demandez-moi d'effectuer une transaction.",
-              isUser: false,
-            });
-          }
-
-          chatSessions.value[uniqueChatName] = {
-            sessionId: session.session_id,
-            messages: frontendMessages,
-            originalName: session.session_name,
-          };
-        } catch (sessionError) {
-          console.error(
-            `Erreur lors du chargement de la session ${session.session_id}:`,
-            sessionError
-          );
-          // En cas d'erreur, créer une entrée basique
-          chatSessions.value[uniqueChatName] = {
-            sessionId: session.session_id,
-            messages: [
-              {
-                text: "Bonjour ! Posez-moi une question ou demandez-moi d'effectuer une transaction.",
-                isUser: false,
-              },
-            ],
-            originalName: session.session_name,
-          };
-        }
-      }
-
-      // Sélectionner la première session
-      if (chats.value.length > 0) {
-        selectedChat.value = 0;
-        const firstChatName = chats.value[0];
-        currentSessionId.value = chatSessions.value[firstChatName].sessionId;
-        messages.value = [...chatSessions.value[firstChatName].messages];
-      }
-
-      console.log("Sessions existantes chargées avec succès");
-    } else {
-      // Aucune session existante, créer une nouvelle
-      console.log("Aucune session existante, création d'une nouvelle session");
-      await createNewSession();
-    }
-  } catch (error) {
-    console.error("Erreur lors du chargement des sessions:", error);
-    // En cas d'erreur, créer une nouvelle session
-    await createNewSession();
-  }
-}
-
-async function createNewSession() {
-  try {
-    if (!isAuthenticated.value) {
-      authError.value = "Vous devez être connecté pour utiliser le chat.";
-      return;
-    }
-
-    // Générer un nom de session intelligent
-    const now = new Date();
-    const sessionName = `Chat ${now.toLocaleDateString(
-      "fr-FR"
-    )} ${now.toLocaleTimeString("fr-FR", {
-      hour: "2-digit",
-      minute: "2-digit",
-    })}`;
-
-    const sessionData = await apiService.createNewSession(sessionName);
-    const sessionId = sessionData.session_id;
-
-    // Éviter les doublons de noms
-    let uniqueChatName = sessionName;
-    let counter = 1;
-    while (chats.value.includes(uniqueChatName)) {
-      uniqueChatName = `${sessionName} (${counter})`;
-      counter++;
-    }
-
-    chats.value.push(uniqueChatName);
-    chatSessions.value[uniqueChatName] = {
-      sessionId: sessionId,
-      messages: [
-        {
-          text: "Bonjour ! Posez-moi une question ou demandez-moi d'effectuer une transaction.",
-          isUser: false,
-        },
-      ],
-      originalName: sessionName,
-    };
-    selectedChat.value = chats.value.length - 1;
-    currentSessionId.value = sessionId;
-    messages.value = [...chatSessions.value[uniqueChatName].messages];
-
-    console.log(`Nouvelle session créée: ${uniqueChatName}`);
-  } catch (error) {
-    console.error("Erreur lors de la création de session:", error);
-    authError.value =
-      "Erreur lors de la création de session. Veuillez réessayer.";
-  }
-}
-
-function selectChat(index) {
-  selectedChat.value = index;
-  const chatName = chats.value[index];
-  if (chatSessions.value[chatName]) {
-    currentSessionId.value = chatSessions.value[chatName].sessionId;
-    messages.value = [...chatSessions.value[chatName].messages];
-  } else {
-    createNewSession();
-  }
-}
-
-async function addNewChat() {
-  await createNewSession();
-}
 
 // Gère l'envoi d'un message utilisateur et la détection d'une transaction
 async function handleSendMessage(text) {
@@ -373,11 +313,22 @@ async function handleSendMessage(text) {
     authError.value = "Vous devez être connecté pour envoyer des messages.";
     return;
   }
-  const newMessage = { text, isUser: true };
-  messages.value.push(newMessage);
-  const currentChatName = chats.value[selectedChat.value];
-  if (chatSessions.value[currentChatName]) {
-    chatSessions.value[currentChatName].messages.push(newMessage);
+  
+  console.log('📤 [CHATBOT] Sending message to session:', activeSessionId.value);
+  
+  // Add user message to active session via sessionManager
+  const newMessage = { 
+    text, 
+    isUser: true,
+    created_at: new Date().toISOString()
+  };
+  
+  if (activeSessionId.value) {
+    sessionManager.addMessage(activeSessionId.value, newMessage);
+    console.log('✅ [CHATBOT] Message added to session:', activeSessionId.value);
+  } else {
+    console.error('❌ [CHATBOT] No active session ID available');
+    return;
   }
   isLoading.value = true;
   try {
@@ -447,10 +398,17 @@ async function handleSendMessage(text) {
 
     // Afficher le message du bot s'il y en a un
     if (botResponse.trim()) {
-      const botMessage = { text: botResponse.trim(), isUser: false };
-      messages.value.push(botMessage);
-      if (chatSessions.value[currentChatName]) {
-        chatSessions.value[currentChatName].messages.push(botMessage);
+      const botMessage = { 
+        text: botResponse.trim(), 
+        isUser: false,
+        created_at: new Date().toISOString()
+      };
+      
+      if (activeSessionId.value) {
+        sessionManager.addMessage(activeSessionId.value, botMessage);
+        console.log('✅ [CHATBOT] Bot message added to session:', activeSessionId.value);
+      } else {
+        console.error('❌ [CHATBOT] No active session ID for bot message');
       }
     }
 
@@ -466,10 +424,17 @@ async function handleSendMessage(text) {
       authError.value = "Votre session a expiré. Veuillez vous reconnecter.";
       return;
     }
-    const errorMessage = { text: `Erreur de communication: ${err.message}`, isUser: false };
-    messages.value.push(errorMessage);
-    if (chatSessions.value[currentChatName]) {
-      chatSessions.value[currentChatName].messages.push(errorMessage);
+    const errorMessage = { 
+      text: `Erreur de communication: ${err.message}`, 
+      isUser: false,
+      created_at: new Date().toISOString()
+    };
+    
+    if (activeSessionId.value) {
+      sessionManager.addMessage(activeSessionId.value, errorMessage);
+      console.log('❌ [CHATBOT] Error message added to session:', activeSessionId.value);
+    } else {
+      console.error('❌ [CHATBOT] No active session ID for error message');
     }
   } finally {
     isLoading.value = false;
@@ -510,11 +475,12 @@ async function confirmTransaction() {
     const errorMessage = {
       text: "❌ Erreur : Wallet non disponible. Veuillez connecter votre wallet.",
       isUser: false,
+      created_at: new Date().toISOString()
     };
-    messages.value.push(errorMessage);
-    const currentChatName = chats.value[selectedChat.value];
-    if (chatSessions.value[currentChatName]) {
-      chatSessions.value[currentChatName].messages.push(errorMessage);
+    
+    if (activeSessionId.value) {
+      sessionManager.addMessage(activeSessionId.value, errorMessage);
+      console.log('❌ [CHATBOT] Wallet error message added to session:', activeSessionId.value);
     }
     pendingTransaction.value = null;
     isProcessingTransaction.value = false;
@@ -533,11 +499,12 @@ async function confirmTransaction() {
       const errorMessage = {
         text: " Erreur : Impossible de connecter le wallet. Veuillez réessayer.",
         isUser: false,
+        created_at: new Date().toISOString()
       };
-      messages.value.push(errorMessage);
-      const currentChatName = chats.value[selectedChat.value];
-      if (chatSessions.value[currentChatName]) {
-        chatSessions.value[currentChatName].messages.push(errorMessage);
+      
+      if (activeSessionId.value) {
+        sessionManager.addMessage(activeSessionId.value, errorMessage);
+        console.log('❌ [CHATBOT] Wallet connection error added to session:', activeSessionId.value);
       }
       pendingTransaction.value = null;
       isProcessingTransaction.value = false;
@@ -554,11 +521,12 @@ async function confirmTransaction() {
         6
       )}...${pendingTransaction.value.recipient.slice(-4)}`,
       isUser: false,
+      created_at: new Date().toISOString()
     };
-    messages.value.push(processingMessage);
-    const currentChatName = chats.value[selectedChat.value];
-    if (chatSessions.value[currentChatName]) {
-      chatSessions.value[currentChatName].messages.push(processingMessage);
+    
+    if (activeSessionId.value) {
+      sessionManager.addMessage(activeSessionId.value, processingMessage);
+      console.log('🔄 [CHATBOT] Processing message added to session:', activeSessionId.value);
     }
     console.log("💸 Paramètres de transaction:");
     console.log("  - Destinataire:", pendingTransaction.value.recipient);
@@ -573,10 +541,12 @@ async function confirmTransaction() {
     const successMessage = {
       text: `✅ Transaction réussie ! Hash: ${result.hash?.slice(0, 10)}...`,
       isUser: false,
+      created_at: new Date().toISOString()
     };
-    messages.value.push(successMessage);
-    if (chatSessions.value[currentChatName]) {
-      chatSessions.value[currentChatName].messages.push(successMessage);
+    
+    if (activeSessionId.value) {
+      sessionManager.addMessage(activeSessionId.value, successMessage);
+      console.log('✅ [CHATBOT] Success message added to session:', activeSessionId.value);
     }
     console.log("📡 Notification au serveur...");
     const confirmResponse = await fetch(
@@ -609,11 +579,15 @@ async function confirmTransaction() {
     } else if (error.message.includes("Failed to fetch")) {
       errorText = "✅ Transaction réussie mais le serveur n'a pas répondu.";
     }
-    const errorMessage = { text: errorText, isUser: false };
-    messages.value.push(errorMessage);
-    const currentChatName = chats.value[selectedChat.value];
-    if (chatSessions.value[currentChatName]) {
-      chatSessions.value[currentChatName].messages.push(errorMessage);
+    const errorMessage = { 
+      text: errorText, 
+      isUser: false,
+      created_at: new Date().toISOString()
+    };
+    
+    if (activeSessionId.value) {
+      sessionManager.addMessage(activeSessionId.value, errorMessage);
+      console.log('❌ [CHATBOT] Transaction error message added to session:', activeSessionId.value);
     }
   } finally {
     pendingTransaction.value = null;
@@ -626,11 +600,12 @@ function rejectTransaction() {
   const rejectionMessage = {
     text: "❌ Transaction annulée par l'utilisateur.",
     isUser: false,
+    created_at: new Date().toISOString()
   };
-  messages.value.push(rejectionMessage);
-  const currentChatName = chats.value[selectedChat.value];
-  if (chatSessions.value[currentChatName]) {
-    chatSessions.value[currentChatName].messages.push(rejectionMessage);
+  
+  if (activeSessionId.value) {
+    sessionManager.addMessage(activeSessionId.value, rejectionMessage);
+    console.log('❌ [CHATBOT] Rejection message added to session:', activeSessionId.value);
   }
   pendingTransaction.value = null;
 }
@@ -1237,6 +1212,38 @@ if (typeof window !== "undefined") {
 
 .chat-main ::-webkit-scrollbar-thumb:hover {
   background: linear-gradient(135deg, #5a67d8, #6b46c1);
+}
+
+/* LOADING STATE */
+.loading-state {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 40px;
+  color: rgba(255, 255, 255, 0.8);
+  text-align: center;
+}
+
+.loading-spinner {
+  width: 40px;
+  height: 40px;
+  border: 3px solid rgba(255, 255, 255, 0.1);
+  border-top: 3px solid #4f46e5;
+  border-radius: 50%;
+  animation: spin 1s linear infinite;
+  margin-bottom: 16px;
+}
+
+@keyframes spin {
+  0% { transform: rotate(0deg); }
+  100% { transform: rotate(360deg); }
+}
+
+.loading-state p {
+  margin: 0;
+  font-size: 14px;
+  opacity: 0.7;
 }
 
 /* Responsive design */

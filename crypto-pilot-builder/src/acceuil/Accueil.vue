@@ -92,7 +92,6 @@
       <section v-else class="chat-section">
         <div class="chat-container">
           <Chatbot 
-            :key="activeChat"
             :active-session-id="activeChat" 
             @session-changed="handleSessionChanged"
             @new-session-created="handleNewSessionCreated"
@@ -178,7 +177,9 @@ export default {
     },
     // Chat actif basé sur l'ID de session sélectionné
     activeChat() {
-      return this.sessionManager?.activeSessionId || null;
+      // Access the actual string value from the ref
+      const sessionId = this.sessionManager?.activeSessionId;
+      return sessionId ? (sessionId.value || sessionId) : null;
     }
   },
   methods: {
