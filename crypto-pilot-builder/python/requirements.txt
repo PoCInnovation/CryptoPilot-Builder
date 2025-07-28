@@ -1,12 +1,10 @@
-flask==3.0.1
-flask-cors==6.0.0
-python-dotenv==1.1.0
 mcp>=1.9.2
 openai>=1.50.0
 python-dotenv>=1.0.0
-agno
 requests
+flask==3.0.1
+flask-cors==6.0.0
 flask-sqlalchemy==3.1.1
 flask-bcrypt==1.0.1
 flask-jwt-extended==4.6.0
-psycopg2-binary==2.9.9
+psycopg2-binary
