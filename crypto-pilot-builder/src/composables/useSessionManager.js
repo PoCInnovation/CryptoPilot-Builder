@@ -174,6 +174,9 @@ export function useSessionManager() {
     if (!sessionId) return false
 
     try {
+      // Delete on server first
+      await apiService.deleteSession(sessionId)
+
       // Remove from local state
       sessions.value.delete(sessionId)
 
@@ -182,9 +185,6 @@ export function useSessionManager() {
         const remainingSessions = activeSessions.value
         activeSessionId.value = remainingSessions.length > 0 ? remainingSessions[0].id : null
       }
-
-      // Delete on server (if API supports it)
-      // await apiService.deleteSession(sessionId)
 
       console.log('Session deleted:', sessionId)
       return true
