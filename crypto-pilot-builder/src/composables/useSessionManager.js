@@ -158,7 +158,7 @@ export function useSessionManager() {
       }
 
       // Update on server (if API supports it)
-      // await apiService.updateSession(sessionId, { name: newName.trim() })
+      await apiService.renameSession(sessionId, newName.trim())
 
       console.log('Session renamed:', sessionId, 'to', newName)
       return true
