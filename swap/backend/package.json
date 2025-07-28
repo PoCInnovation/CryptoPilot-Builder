@@ -1,8 +1,9 @@
 {
   "name": "swap-backend-simple",
+  "type": "module",
   "scripts": {
-    "start": "ts-node index.ts",
-    "dev": "ts-node index.ts"
+    "start": "ts-node --esm index.ts",
+    "dev": "ts-node --esm index.ts"
   },
   "dependencies": {
     "express": "^4.18.2",

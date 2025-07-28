@@ -14,7 +14,7 @@ app.get('/quote', async (req, res) => {
     fromChain: '1', // Ethereum mainnet
     toChain: '1',
     fromToken: '0xEeeeeEeeeEeEeeEeEeEeeEEEeeeeEeeeeeeeEEeE', // Native ETH
-    toToken: '0xA0b86a33E6417c7D0F2fd8C8024B92B3b6e08bD4',   // USDC mainnet
+    toToken: '0xA0b86991c6218b36c1d19D4a2e9Eb0cE3606eB48',   // USDC mainnet
     fromAmount,
     fromAddress,
   };
