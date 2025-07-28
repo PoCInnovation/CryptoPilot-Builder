@@ -49,6 +49,7 @@ function handleSubmit() {
   padding: 0.5rem 0.75rem;
   font-size: 1rem;
   border-radius: 16px;
+  color: white;
 }
 
 .input-bubble::placeholder {

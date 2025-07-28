@@ -95,6 +95,7 @@ watch(() => props.messages, () => {
 .message.user {
   background-color: #dcf8c6;
   align-self: flex-end;
+  color: black;
 }
 
 .message.bot {
