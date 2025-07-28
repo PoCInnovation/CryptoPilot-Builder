@@ -93,12 +93,13 @@ class ApiService {
 
   // ===== CHAT =====
 
-  async sendChatMessage(message, sessionId = null) {
+  async sendChatMessage(message, sessionId = null, walletAddress = null) {
     return this.request("/chat", {
       method: "POST",
       body: {
         message,
         session_id: sessionId,
+        wallet_address: walletAddress,
       },
     });
   }

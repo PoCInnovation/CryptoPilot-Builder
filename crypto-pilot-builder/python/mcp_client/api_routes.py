@@ -549,6 +549,7 @@ def create_api_routes(app):
 
         user_input = data['message']
         session_id = data.get('session_id')
+        wallet_address = data.get('wallet_address')
         user_id = get_jwt_identity()
 
         # Récupérer la configuration de l'utilisateur
@@ -595,6 +596,7 @@ def create_api_routes(app):
             context = {
                 'conversation_history': conversation_history,
                 'user_memory': user_memory_summary,  # Nouvelle clé pour la mémoire utilisateur
+                'wallet_address': wallet_address,
                 'agent_config': {
                     'model': config.selected_model,
                     'prompt': config.prompt,

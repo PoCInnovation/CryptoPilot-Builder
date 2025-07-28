@@ -57,6 +57,12 @@ provide("walletFunctions", {
     }
     throw new Error("Wallet non disponible");
   },
+  executeSwap: (transactionData) => {
+    if (walletComponent.value) {
+      return walletComponent.value.executeSwap(transactionData);
+    }
+    throw new Error("Wallet non disponible pour le swap");
+  },
   getAddress: () => {
     return walletComponent.value?.address || null;
   },

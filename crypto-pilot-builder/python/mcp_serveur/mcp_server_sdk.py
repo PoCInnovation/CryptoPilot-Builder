@@ -13,7 +13,7 @@ from mcp.server import NotificationOptions, Server
 from mcp.types import Tool, TextContent
 from mcp.server.stdio import stdio_server
 sys.path.append(os.path.dirname(__file__))
-from crypto_tools import get_crypto_price, request_transaction
+from crypto_tools import get_crypto_price, request_transaction, get_lifi_tokens, get_swap_quote, execute_swap
 load_dotenv()
 
 class OpenAIAgent:
@@ -38,7 +38,22 @@ class OpenAIAgent:
             client = self._get_default_client()
             if client is None:
                 return "❌ Aucune clé API OpenAI configurée. Veuillez utiliser agent_chat_configured avec votre clé API."
-            system_prompt = """You are a crypto assistant..."""
+            system_prompt = """You are a crypto assistant with advanced capabilities including:
+
+1. **Price Information**: Get real-time cryptocurrency prices using get_crypto_price
+2. **Transactions**: Prepare blockchain transactions using request_transaction
+3. **Token Swapping**: Complete token swap capabilities using Li.Fi:
+   - get_lifi_tokens: Discover available tokens for swapping
+   - get_swap_quote: Get quotes for token swaps
+   - execute_swap: Execute token swaps with transaction data
+
+When users ask about swapping, trading, or exchanging cryptocurrencies:
+- Use get_lifi_tokens to show available tokens if needed
+- Use get_swap_quote to provide swap estimates
+- Use execute_swap to generate the actual swap transaction
+
+Always ask for the user's wallet address when performing swaps or transactions.
+Provide clear, helpful responses about crypto prices, transactions, and swaps."""
             if context:
                 system_prompt += f"\nConversation context: {context}"
             result = await self._chat_with_openai(message, system_prompt, self.model, client)
@@ -114,6 +129,101 @@ class OpenAIAgent:
                     {
                         "type": "function",
                         "function": {
+                            "name": "get_lifi_tokens",
+                            "description": "Get available tokens from Li.Fi for swapping",
+                            "parameters": {
+                                "type": "object",
+                                "properties": {
+                                    "chains": {
+                                        "type": "string",
+                                        "description": "Comma-separated chain IDs to filter tokens (optional)"
+                                    }
+                                },
+                                "required": []
+                            }
+                        }
+                    },
+                    {
+                        "type": "function",
+                        "function": {
+                            "name": "get_swap_quote",
+                            "description": "Get a swap quote from Li.Fi API for token swapping",
+                            "parameters": {
+                                "type": "object",
+                                "properties": {
+                                    "from_token": {
+                                        "type": "string",
+                                        "description": "Source token symbol or address (e.g., ETH, USDC)"
+                                    },
+                                    "to_token": {
+                                        "type": "string",
+                                        "description": "Destination token symbol or address (e.g., USDC, DAI)"
+                                    },
+                                    "amount": {
+                                        "type": "string",
+                                        "description": "Amount to swap"
+                                    },
+                                    "from_address": {
+                                        "type": "string",
+                                        "description": "User's wallet address"
+                                    },
+                                    "from_chain": {
+                                        "type": "string",
+                                        "description": "Source blockchain ID (default: 1 for Ethereum)",
+                                        "default": "1"
+                                    },
+                                    "to_chain": {
+                                        "type": "string",
+                                        "description": "Destination blockchain ID (default: 1 for Ethereum)",
+                                        "default": "1"
+                                    }
+                                },
+                                "required": ["from_token", "to_token", "amount", "from_address"]
+                            }
+                        }
+                    },
+                    {
+                        "type": "function",
+                        "function": {
+                            "name": "execute_swap",
+                            "description": "Execute a crypto swap using Li.Fi - generates transaction data for user to sign",
+                            "parameters": {
+                                "type": "object",
+                                "properties": {
+                                    "from_token": {
+                                        "type": "string",
+                                        "description": "Source token symbol or address (e.g., ETH, USDC)"
+                                    },
+                                    "to_token": {
+                                        "type": "string",
+                                        "description": "Destination token symbol or address (e.g., USDC, DAI)"
+                                    },
+                                    "amount": {
+                                        "type": "string",
+                                        "description": "Amount to swap"
+                                    },
+                                    "from_address": {
+                                        "type": "string",
+                                        "description": "User's wallet address"
+                                    },
+                                    "from_chain": {
+                                        "type": "string",
+                                        "description": "Source blockchain ID (default: 1 for Ethereum)",
+                                        "default": "1"
+                                    },
+                                    "to_chain": {
+                                        "type": "string",
+                                        "description": "Destination blockchain ID (default: 1 for Ethereum)",
+                                        "default": "1"
+                                    }
+                                },
+                                "required": ["from_token", "to_token", "amount", "from_address"]
+                            }
+                        }
+                    },
+                    {
+                        "type": "function",
+                        "function": {
                             "name": "request_transaction",
                             "description": "Request a blockchain transaction. Use this when user wants to send/transfer cryptocurrency.",
                             "parameters": {
@@ -167,9 +277,46 @@ class OpenAIAgent:
                             "content": result,
                             "tool_call_id": tool_call.id
                         })
+                    elif tool_name == "get_lifi_tokens":
+                        result = get_lifi_tokens(
+                            args.get("chains", None)
+                        )
+                        tool_responses.append({
+                            "name": tool_name,
+                            "content": result,
+                            "tool_call_id": tool_call.id
+                        })
+                    elif tool_name == "get_swap_quote":
+                        result = get_swap_quote(
+                            args.get("from_token", ""),
+                            args.get("to_token", ""),
+                            args.get("amount", ""),
+                            args.get("from_address", ""),
+                            args.get("from_chain", "1"),
+                            args.get("to_chain", "1")
+                        )
+                        tool_responses.append({
+                            "name": tool_name,
+                            "content": result,
+                            "tool_call_id": tool_call.id
+                        })
+                    elif tool_name == "execute_swap":
+                        result = execute_swap(
+                            args.get("from_token", ""),
+                            args.get("to_token", ""),
+                            args.get("amount", ""),
+                            args.get("from_address", ""),
+                            args.get("from_chain", "1"),
+                            args.get("to_chain", "1")
+                        )
+                        tool_responses.append({
+                            "name": tool_name,
+                            "content": result,
+                            "tool_call_id": tool_call.id
+                        })
                 if tool_responses:
                     for res in tool_responses:
-                        if res["name"] == "request_transaction":
+                        if res["name"] in ["request_transaction", "execute_swap"]:
                             return res["content"]
                     second_messages = [
                         {"role": "system", "content": system_prompt},
@@ -249,6 +396,92 @@ async def handle_list_tools() -> list[Tool]:
             }
         ),
         Tool(
+            name="get_lifi_tokens",
+            description="Get available tokens from Li.Fi for swapping",
+            inputSchema={
+                "type": "object",
+                "properties": {
+                    "chains": {
+                        "type": "string",
+                        "description": "Comma-separated chain IDs to filter tokens (optional)"
+                    }
+                },
+                "required": []
+            }
+        ),
+        Tool(
+            name="get_swap_quote",
+            description="Get a swap quote from Li.Fi API",
+            inputSchema={
+                "type": "object",
+                "properties": {
+                    "from_token": {
+                        "type": "string",
+                        "description": "Source token symbol or address (e.g., ETH, USDC)"
+                    },
+                    "to_token": {
+                        "type": "string",
+                        "description": "Destination token symbol or address (e.g., USDC, DAI)"
+                    },
+                    "amount": {
+                        "type": "string",
+                        "description": "Amount to swap"
+                    },
+                    "from_address": {
+                        "type": "string",
+                        "description": "User's wallet address"
+                    },
+                    "from_chain": {
+                        "type": "string",
+                        "description": "Source blockchain ID (default: 1 for Ethereum)",
+                        "default": "1"
+                    },
+                    "to_chain": {
+                        "type": "string",
+                        "description": "Destination blockchain ID (default: 1 for Ethereum)",
+                        "default": "1"
+                    }
+                },
+                "required": ["from_token", "to_token", "amount", "from_address"]
+            }
+        ),
+        Tool(
+            name="execute_swap",
+            description="Execute a crypto swap using Li.Fi",
+            inputSchema={
+                "type": "object",
+                "properties": {
+                    "from_token": {
+                        "type": "string",
+                        "description": "Source token symbol or address (e.g., ETH, USDC)"
+                    },
+                    "to_token": {
+                        "type": "string",
+                        "description": "Destination token symbol or address (e.g., USDC, DAI)"
+                    },
+                    "amount": {
+                        "type": "string",
+                        "description": "Amount to swap"
+                    },
+                    "from_address": {
+                        "type": "string",
+                        "description": "User's wallet address"
+                    },
+                    "from_chain": {
+                        "type": "string",
+                        "description": "Source blockchain ID (default: 1 for Ethereum)",
+                        "default": "1"
+                    },
+                    "to_chain": {
+                        "type": "string",
+                        "description": "Destination blockchain ID (default: 1 for Ethereum)",
+                        "default": "1"
+                    }
+                },
+                "required": ["from_token", "to_token", "amount", "from_address"]
+            }
+        ),
+        Tool(
             name="agent_chat_configured",
             description="Chat with AI agent using custom configuration",
             inputSchema={
@@ -305,6 +538,39 @@ async def handle_call_tool(name: str, arguments: dict | None) -> list[TextConten
             result = request_transaction(recipient_address, amount, currency)
             return [TextContent(type="text", text=result)]
         return [TextContent(type="text", text="❌ recipient_address and amount required")]
+    if name == "get_lifi_tokens":
+        chains = arguments.get("chains", None)
+        result = get_lifi_tokens(chains)
+        return [TextContent(type="text", text=result)]
+    
+    if name == "get_swap_quote":
+        from_token = arguments.get("from_token", "")
+        to_token = arguments.get("to_token", "")
+        amount = arguments.get("amount", "")
+        from_address = arguments.get("from_address", "")
+        from_chain = arguments.get("from_chain", "1")
+        to_chain = arguments.get("to_chain", "1")
+        
+        if not all([from_token, to_token, amount, from_address]):
+            return [TextContent(type="text", text="❌ Missing required parameters: from_token, to_token, amount, from_address")]
+        
+        result = get_swap_quote(from_token, to_token, amount, from_address, from_chain, to_chain)
+        return [TextContent(type="text", text=result)]
+    
+    if name == "execute_swap":
+        from_token = arguments.get("from_token", "")
+        to_token = arguments.get("to_token", "")
+        amount = arguments.get("amount", "")
+        from_address = arguments.get("from_address", "")
+        from_chain = arguments.get("from_chain", "1")
+        to_chain = arguments.get("to_chain", "1")
+        
+        if not all([from_token, to_token, amount, from_address]):
+            return [TextContent(type="text", text="❌ Missing required parameters: from_token, to_token, amount, from_address")]
+        
+        result = execute_swap(from_token, to_token, amount, from_address, from_chain, to_chain)
+        return [TextContent(type="text", text=result)]
+    
     if name == "agent_chat_configured":
         message = arguments.get("message", "")
         context = arguments.get("context", "")
