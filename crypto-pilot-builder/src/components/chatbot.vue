@@ -219,18 +219,8 @@ const isSessionManagerReady = computed(() => {
 const isAuthenticated = computed(() => store.getters.isAuthenticated);
 const authError = ref(null);
 
-const messages = ref([
-  {
-    text: "Bonjour ! Posez-moi une question ou demandez-moi d'effectuer une transaction.",
-    isUser: false,
-  },
-]);
-
-const chats = ref([]);
-const selectedChat = ref(0);
 const isLoading = ref(false);
 const pendingTransaction = ref(null);
-const currentSessionId = ref(null);
 const isProcessingTransaction = ref(false);
 const pendingSwap = ref(null);
 const isProcessingSwap = ref(false);
@@ -336,12 +326,13 @@ const aiConfig = computed(() => store.getters.aiConfig);
 
 // Restaure le modèle au montage
 onMounted(() => {
-  selectedModel.value = aiConfig.value.selectedModel || "gpt-4o-mini";
+  store.dispatch("setModel", aiConfig.value.selectedModel || "gpt-4o-mini");
 });
 
 // Met à jour le store à chaque changement
-watch(selectedModel, (newVal) => {
-  if (newVal) {
+watch(aiConfig, (newVal) => {
+  if (newVal.selectedModel) {
+    store.dispatch("setModel", newVal.selectedModel);
     store.dispatch("setModel", newVal);
   }
 });
@@ -607,11 +598,10 @@ async function confirmTransaction() {
       const errorMessage = {
         text: " Erreur : Impossible de connecter le wallet. Veuillez réessayer.",
         isUser: false,
+        created_at: new Date().toISOString()
       };
-      messages.value.push(errorMessage);
-      const currentChatName = chats.value[selectedChat.value];
-      if (chatSessions.value[currentChatName]) {
-        chatSessions.value[currentChatName].messages.push(errorMessage);
+      if (activeSessionId.value) {
+        sessionManager.addMessage(activeSessionId.value, errorMessage);
       }
       pendingTransaction.value = null;
       isProcessingTransaction.value = false;
@@ -707,13 +697,12 @@ function rejectTransaction() {
   const rejectionMessage = {
     text: "❌ Transaction annulée par l'utilisateur.",
     isUser: false,
+    created_at: new Date().toISOString()
   };
-  messages.value.push(rejectionMessage);
-  const currentChatName = chats.value[selectedChat.value];
-  if (chatSessions.value[currentChatName]) {
-    chatSessions.value[currentChatName].messages.push(rejectionMessage);
+  if (activeSessionId.value) {
+    sessionManager.addMessage(activeSessionId.value, rejectionMessage);
   }
-  pendingSwap.value = null;
+  pendingTransaction.value = null;
 }
 
 // Fonctions pour gérer les swaps
@@ -829,11 +818,9 @@ async function confirmSwap() {
       errorText = "✅ Swap réussi mais le serveur n'a pas répondu.";
     }
     
-    const errorMessage = { text: errorText, isUser: false };
-    messages.value.push(errorMessage);
-    const currentChatName = chats.value[selectedChat.value];
-    if (chatSessions.value[currentChatName]) {
-      chatSessions.value[currentChatName].messages.push(errorMessage);
+    const errorMessage = { text: errorText, isUser: false, created_at: new Date().toISOString() };
+    if (activeSessionId.value) {
+      sessionManager.addMessage(activeSessionId.value, errorMessage);
     }
   } finally {
     pendingSwap.value = null;
@@ -846,11 +833,10 @@ function rejectSwap() {
   const rejectionMessage = {
     text: "❌ Swap annulé par l'utilisateur.",
     isUser: false,
+    created_at: new Date().toISOString()
   };
-  messages.value.push(rejectionMessage);
-  const currentChatName = chats.value[selectedChat.value];
-  if (chatSessions.value[currentChatName]) {
-    chatSessions.value[currentChatName].messages.push(rejectionMessage);
+  if (activeSessionId.value) {
+    sessionManager.addMessage(activeSessionId.value, rejectionMessage);
   }
   pendingSwap.value = null;
 }
