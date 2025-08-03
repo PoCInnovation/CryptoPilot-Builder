@@ -467,22 +467,17 @@ async function handleSendMessage(text) {
       botResponse = responseText;
     }
 
-    console.log("📝 Message final à afficher:", botResponse);
-    console.log("💰 Transaction détectée:", !!transactionRequest);
-
-    // Afficher le message du bot s'il y en a un
+    // Ajouter la réponse du bot à la session
     if (botResponse.trim()) {
-      const botMessage = { 
-        text: botResponse.trim(), 
+      const botMessage = {
+        text: botResponse.trim(),
         isUser: false,
         created_at: new Date().toISOString()
       };
       
       if (activeSessionId.value) {
         sessionManager.addMessage(activeSessionId.value, botMessage);
-        console.log('✅ [CHATBOT] Bot message added to session:', activeSessionId.value);
-      } else {
-        console.error('❌ [CHATBOT] No active session ID for bot message');
+        console.log('✅ [CHATBOT] Bot response added to session:', activeSessionId.value);
       }
     }
 
@@ -589,26 +584,6 @@ async function confirmTransaction() {
       return;
     }
   }
-    console.log(" Tentative de connexion...");
-    try {
-      await walletFunctions.value.connectWallet();
-      console.log(" Wallet connecté avec succès");
-    } catch (connectError) {
-      console.error(" Erreur de connexion wallet:", connectError);
-      const errorMessage = {
-        text: " Erreur : Impossible de connecter le wallet. Veuillez réessayer.",
-        isUser: false,
-      };
-      messages.value.push(errorMessage);
-      const currentChatName = chats.value[selectedChat.value];
-      if (chatSessions.value[currentChatName]) {
-        chatSessions.value[currentChatName].messages.push(errorMessage);
-      }
-      pendingTransaction.value = null;
-      isProcessingTransaction.value = false;
-      return;
-    }
-  }
   try {
     console.log(" Exécution de la transaction...");
     const processingMessage = {
@@ -698,20 +673,21 @@ function rejectTransaction() {
   const rejectionMessage = {
     text: "❌ Transaction annulée par l'utilisateur.",
     isUser: false,
+    created_at: new Date().toISOString()
   };
-  messages.value.push(rejectionMessage);
-  const currentChatName = chats.value[selectedChat.value];
-  if (chatSessions.value[currentChatName]) {
-    chatSessions.value[currentChatName].messages.push(rejectionMessage);
+  
+  if (activeSessionId.value) {
+    sessionManager.addMessage(activeSessionId.value, rejectionMessage);
+    console.log('❌ [CHATBOT] Rejection message added to session:', activeSessionId.value);
   }
-  pendingSwap.value = null;
+  pendingTransaction.value = null;
 }
 
 // Fonctions pour gérer les swaps
 async function confirmSwap() {
   console.log("🔥 confirmSwap() appelée");
   console.log("📋 pendingSwap.value:", pendingSwap.value);
-  console.log("💼 walletFunctions disponible:", !!walletFunctions);
+  console.log("💼 walletFunctions disponible:", !!walletFunctions.value);
   
   if (!pendingSwap.value) {
     console.error("❌ Pas de swap en attente");
@@ -721,16 +697,16 @@ async function confirmSwap() {
   isProcessingSwap.value = true;
   console.log("🔍 Vérification du wallet...");
   
-  if (!walletFunctions) {
+  if (!walletFunctions.value) {
     console.error("❌ walletFunctions non disponible");
     const errorMessage = {
       text: "❌ Erreur : Wallet non disponible. Veuillez connecter votre wallet.",
       isUser: false,
+      created_at: new Date().toISOString()
     };
-    messages.value.push(errorMessage);
-    const currentChatName = chats.value[selectedChat.value];
-    if (chatSessions.value[currentChatName]) {
-      chatSessions.value[currentChatName].messages.push(errorMessage);
+    
+    if (activeSessionId.value) {
+      sessionManager.addMessage(activeSessionId.value, errorMessage);
     }
     pendingSwap.value = null;
     isProcessingSwap.value = false;
@@ -738,7 +714,7 @@ async function confirmSwap() {
   }
   
   console.log("🔗 Vérification connexion wallet...");
-  const isConnected = walletFunctions.isConnected();
+  const isConnected = walletFunctions.value.isConnected();
   console.log("🔗 Wallet connecté:", isConnected);
   
   if (!isConnected) {
@@ -746,11 +722,11 @@ async function confirmSwap() {
     const errorMessage = {
       text: "❌ Erreur : Wallet non connecté. Veuillez d'abord connecter votre wallet MetaMask.",
       isUser: false,
+      created_at: new Date().toISOString()
     };
-    messages.value.push(errorMessage);
-    const currentChatName = chats.value[selectedChat.value];
-    if (chatSessions.value[currentChatName]) {
-      chatSessions.value[currentChatName].messages.push(errorMessage);
+    
+    if (activeSessionId.value) {
+      sessionManager.addMessage(activeSessionId.value, errorMessage);
     }
     pendingSwap.value = null;
     isProcessingSwap.value = false;
@@ -762,11 +738,11 @@ async function confirmSwap() {
     const processingMessage = {
       text: `🔄 Traitement du swap : ${pendingSwap.value.amount} ${pendingSwap.value.fromToken} → ${pendingSwap.value.toToken}`,
       isUser: false,
+      created_at: new Date().toISOString()
     };
-    messages.value.push(processingMessage);
-    const currentChatName = chats.value[selectedChat.value];
-    if (chatSessions.value[currentChatName]) {
-      chatSessions.value[currentChatName].messages.push(processingMessage);
+    
+    if (activeSessionId.value) {
+      sessionManager.addMessage(activeSessionId.value, processingMessage);
     }
     
     console.log("💱 Paramètres de swap:");
@@ -776,16 +752,17 @@ async function confirmSwap() {
     console.log("  - Données de transaction:", pendingSwap.value.transactionData);
     
     console.log("⚡ Appel de executeSwap...");
-    const result = await walletFunctions.executeSwap(pendingSwap.value.transactionData);
+    const result = await walletFunctions.value.executeSwap(pendingSwap.value.transactionData);
     console.log("✅ Résultat du swap:", result);
     
     const successMessage = {
       text: `✅ Swap réussi ! Hash: ${result.hash?.slice(0, 10)}... - ${pendingSwap.value.amount} ${pendingSwap.value.fromToken} échangé contre ~${pendingSwap.value.estimate?.toAmount?.toFixed(6)} ${pendingSwap.value.toToken}`,
       isUser: false,
+      created_at: new Date().toISOString()
     };
-    messages.value.push(successMessage);
-    if (chatSessions.value[currentChatName]) {
-      chatSessions.value[currentChatName].messages.push(successMessage);
+    
+    if (activeSessionId.value) {
+      sessionManager.addMessage(activeSessionId.value, successMessage);
     }
     
     console.log("📡 Notification au serveur...");
@@ -820,11 +797,14 @@ async function confirmSwap() {
       errorText = "✅ Swap réussi mais le serveur n'a pas répondu.";
     }
     
-    const errorMessage = { text: errorText, isUser: false };
-    messages.value.push(errorMessage);
-    const currentChatName = chats.value[selectedChat.value];
-    if (chatSessions.value[currentChatName]) {
-      chatSessions.value[currentChatName].messages.push(errorMessage);
+    const errorMessage = { 
+      text: errorText, 
+      isUser: false,
+      created_at: new Date().toISOString()
+    };
+    
+    if (activeSessionId.value) {
+      sessionManager.addMessage(activeSessionId.value, errorMessage);
     }
   } finally {
     pendingSwap.value = null;
@@ -837,11 +817,12 @@ function rejectSwap() {
   const rejectionMessage = {
     text: "❌ Swap annulé par l'utilisateur.",
     isUser: false,
+    created_at: new Date().toISOString()
   };
-  messages.value.push(rejectionMessage);
-  const currentChatName = chats.value[selectedChat.value];
-  if (chatSessions.value[currentChatName]) {
-    chatSessions.value[currentChatName].messages.push(rejectionMessage);
+  
+  if (activeSessionId.value) {
+    sessionManager.addMessage(activeSessionId.value, rejectionMessage);
+    console.log('❌ [CHATBOT] Rejection message added to session:', activeSessionId.value);
   }
   pendingSwap.value = null;
 }

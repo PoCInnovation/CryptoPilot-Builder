@@ -1,7 +1,7 @@
 <script setup>
 import { ref } from 'vue'
 import { createWalletClient, custom, parseEther } from 'viem'
-import { sepolia, mainnet } from 'viem/chains'
+import { sepolia } from 'viem/chains'
 
 const address = ref(null)
 const recipient = ref('')
@@ -101,53 +101,6 @@ async function executeTransaction(recipientAddress, amountEth) {
   }
 }
 
-async function executeSwap(transactionData) {
-  if (!window.ethereum || !address.value) {
-    throw new Error('Wallet non connecté')
-  }
-
-  if (!transactionData) {
-    throw new Error('Données de transaction manquantes')
-  }
-
-  isProcessing.value = true
-  status.value = "Signature du swap..."
-
-  try {
-    const transport = custom(window.ethereum)
-    const chainId = transactionData.chainId || 1
-    const selectedChain = chainId === 1 ? mainnet : (chainId === 11155111 ? sepolia : mainnet)
-    const walletClient = createWalletClient({ chain: selectedChain, transport })
-
-    const hash = await walletClient.sendTransaction({
-      account: address.value,
-      to: transactionData.to,
-      value: BigInt(transactionData.value || "0"),
-      data: transactionData.data,
-      gas: transactionData.gasLimit ? BigInt(transactionData.gasLimit) : undefined,
-      gasPrice: transactionData.gasPrice ? BigInt(transactionData.gasPrice) : undefined
-    })
-
-    status.value = `✅ Swap envoyé : ${hash.slice(0, 10)}...`
-    return { success: true, hash, message: status.value }
-  } catch (err) {
-    let errorMessage
-    if (err.message.includes('User rejected')) {
-      errorMessage = '❌ Swap rejeté'
-    } else if (err.message.includes('insufficient funds')) {
-      errorMessage = '💸 Fonds insuffisants pour le swap'
-    } else if (err.message.includes('execution reverted')) {
-      errorMessage = '⚠️ Échec du swap (slippage ou liquidité)'
-    } else {
-      errorMessage = '⚠️ Erreur swap'
-    }
-    status.value = errorMessage
-    throw new Error(errorMessage)
-  } finally {
-    isProcessing.value = false
-  }
-}
-
 function shortenAddress(addr) {
   if (!addr) return ''
   return addr.slice(0, 4) + '...' + addr.slice(-4)
@@ -156,7 +109,6 @@ function shortenAddress(addr) {
 // Exposer les méthodes pour que le parent puisse les utiliser
 defineExpose({
   sendTransactionFromChat,
-  executeSwap,
   address,
   connectWallet,
   isConnected: () => !!address.value
