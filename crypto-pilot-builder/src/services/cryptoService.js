@@ -213,7 +213,7 @@ class CryptoService {
     try {
       // Utilisation de l'API CryptoCompare pour récupérer de vraies actualités crypto
       const response = await fetch(
-        "https://min-api.cryptocompare.com/data/v2/news/?lang=EN&limit=8"
+        "https://min-api.cryptocompare.com/data/v2/news/?lang=EN&limit=20"
       );
       const data = await response.json();
 
@@ -227,6 +227,7 @@ class CryptoService {
           url: article.url,
           categories: article.categories || "General",
           lang: article.lang || "EN",
+          body: article.body || "",
         }));
       }
 
@@ -243,21 +244,209 @@ class CryptoService {
           source: "CoinTelegraph",
           time: "2h",
           url: "https://cointelegraph.com/news/bitcoin-reaches-new-all-time-high",
+          categories: "Bitcoin",
+          body: "Bitcoin continue sa progression avec de nouveaux records...",
         },
         {
           title: "Ethereum 2.0 : La mise à jour révolutionnaire",
-          source: "CryptoNews",
+          source: "CoinDesk",
           time: "4h",
-          url: "https://cryptonews.com/news/ethereum-2-0-revolutionary-update",
+          url: "https://coindesk.com/news/ethereum-2-0-revolutionary-update",
+          categories: "Ethereum",
+          body: "Ethereum lance sa mise à jour majeure...",
         },
         {
           title: "Nouvelle réglementation DeFi en Europe",
           source: "DeFi Pulse",
           time: "6h",
           url: "https://defipulse.com/blog/new-defi-regulation-europe",
+          categories: "DeFi",
+          body: "L'Europe annonce de nouvelles règles pour la DeFi...",
         },
       ];
     }
+  }
+
+  async getPersonalizedNews(cryptoName) {
+    try {
+      console.log("🔍 Recherche de nouvelles personnalisées pour:", cryptoName);
+
+      // Récupérer toutes les nouvelles
+      const allNews = await this.getCryptoNews();
+
+      if (!allNews || allNews.length === 0) {
+        console.log("⚠️ Aucune nouvelle disponible, utilisation du fallback");
+        return this.getPersonalizedNewsFallback(cryptoName);
+      }
+
+      // Créer des mots-clés de recherche pour la crypto
+      const searchKeywords = this.generateSearchKeywords(cryptoName);
+      console.log("🔑 Mots-clés de recherche:", searchKeywords);
+
+      // Filtrer les nouvelles par mots-clés
+      const personalizedNews = allNews.filter((article) => {
+        const searchText =
+          `${article.title} ${article.body} ${article.categories}`.toLowerCase();
+        return searchKeywords.some((keyword) =>
+          searchText.includes(keyword.toLowerCase())
+        );
+      });
+
+      console.log(
+        `📰 Trouvé ${personalizedNews.length} nouvelles personnalisées sur ${allNews.length} totales`
+      );
+
+      // Si pas assez de nouvelles personnalisées, ajouter des nouvelles générales
+      if (personalizedNews.length < 4) {
+        const remainingSlots = 4 - personalizedNews.length;
+        const generalNews = allNews
+          .filter((article) => !personalizedNews.includes(article))
+          .slice(0, remainingSlots);
+
+        personalizedNews.push(...generalNews);
+        console.log(`➕ Ajouté ${generalNews.length} nouvelles générales`);
+      }
+
+      // Limiter à 4 nouvelles maximum
+      return personalizedNews.slice(0, 4);
+    } catch (error) {
+      console.error(
+        "❌ Erreur lors de la récupération des nouvelles personnalisées:",
+        error
+      );
+      return this.getPersonalizedNewsFallback(cryptoName);
+    }
+  }
+
+  generateSearchKeywords(cryptoName) {
+    // Mapping des noms de crypto vers des mots-clés de recherche
+    const keywordMapping = {
+      bitcoin: [
+        "bitcoin",
+        "btc",
+        "bitcoin price",
+        "bitcoin news",
+        "crypto king",
+      ],
+      ethereum: [
+        "ethereum",
+        "eth",
+        "ethereum price",
+        "ethereum news",
+        "defi",
+        "smart contracts",
+      ],
+      solana: [
+        "solana",
+        "sol",
+        "solana price",
+        "solana news",
+        "fast blockchain",
+      ],
+      cardano: [
+        "cardano",
+        "ada",
+        "cardano price",
+        "cardano news",
+        "proof of stake",
+      ],
+      polkadot: [
+        "polkadot",
+        "dot",
+        "polkadot price",
+        "polkadot news",
+        "parachain",
+      ],
+      avalanche: [
+        "avalanche",
+        "avax",
+        "avalanche price",
+        "avalanche news",
+        "subnet",
+      ],
+      chainlink: [
+        "chainlink",
+        "link",
+        "chainlink price",
+        "chainlink news",
+        "oracle",
+      ],
+      ripple: ["ripple", "xrp", "ripple price", "ripple news", "xrp ledger"],
+      binance: [
+        "binance",
+        "bnb",
+        "binance coin",
+        "binance price",
+        "binance news",
+      ],
+      dogecoin: [
+        "dogecoin",
+        "doge",
+        "dogecoin price",
+        "dogecoin news",
+        "meme coin",
+      ],
+    };
+
+    const normalizedName = cryptoName.toLowerCase();
+
+    // Chercher dans le mapping
+    for (const [key, keywords] of Object.entries(keywordMapping)) {
+      if (normalizedName.includes(key) || key.includes(normalizedName)) {
+        return keywords;
+      }
+    }
+
+    // Fallback : utiliser le nom de la crypto et des mots-clés génériques
+    return [
+      cryptoName.toLowerCase(),
+      cryptoName,
+      cryptoName.toUpperCase(),
+      "crypto",
+      "blockchain",
+      "digital currency",
+    ];
+  }
+
+  getPersonalizedNewsFallback(cryptoName) {
+    // Fallback avec des nouvelles simulées si l'API échoue
+    const cryptoDisplayName =
+      cryptoName.charAt(0).toUpperCase() + cryptoName.slice(1);
+
+    return [
+      {
+        title: `${cryptoDisplayName} : Nouvelles avancées technologiques et adoption croissante`,
+        source: "CryptoDaily",
+        time: "1h",
+        url: "#",
+        categories: cryptoDisplayName,
+        body: `Les dernières nouvelles sur ${cryptoDisplayName} montrent une adoption croissante...`,
+      },
+      {
+        title: `Développements majeurs pour ${cryptoDisplayName} : Mise à jour du protocole`,
+        source: "CoinDesk",
+        time: "3h",
+        url: "#",
+        categories: cryptoDisplayName,
+        body: `${cryptoDisplayName} annonce de nouveaux développements majeurs...`,
+      },
+      {
+        title: `Analyse technique : ${cryptoDisplayName} en 2024 - Perspectives et tendances`,
+        source: "The Block",
+        time: "5h",
+        url: "#",
+        categories: cryptoDisplayName,
+        body: `Analyse approfondie des perspectives pour ${cryptoDisplayName}...`,
+      },
+      {
+        title: `Écosystème ${cryptoDisplayName} : Nouveaux partenariats et intégrations`,
+        source: "CryptoNews",
+        time: "8h",
+        url: "#",
+        categories: cryptoDisplayName,
+        body: `L'écosystème ${cryptoDisplayName} continue de s'étendre...`,
+      },
+    ];
   }
 
   formatTimeAgo(timestamp) {

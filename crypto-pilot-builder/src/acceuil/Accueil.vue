@@ -106,41 +106,44 @@
               <div class="crypto-compact-header">
                 <div class="crypto-title-section">
                   <img
-                    v-if="bitcoinData"
-                    :src="bitcoinData.image"
-                    alt="Bitcoin"
+                    v-if="mainCryptoData"
+                    :src="mainCryptoIcon"
+                    :alt="mainCryptoName"
                     class="crypto-compact-icon"
                   />
                   <div class="crypto-compact-info">
                     <h3 class="crypto-compact-name">
-                      {{ bitcoinData?.name || "Bitcoin" }}
+                      {{ mainCryptoName }}
+                      <span v-if="isPersonalized" class="personalization-badge"
+                        >✨</span
+                      >
                     </h3>
                     <span class="crypto-compact-symbol">{{
-                      bitcoinData?.symbol?.toUpperCase() || "BTC"
+                      mainCryptoSymbol
                     }}</span>
                   </div>
                 </div>
                 <div class="crypto-metrics">
                   <div class="crypto-compact-price">
-                    {{ formatPrice(bitcoinData?.current_price || 0) }}
+                    {{ formatPrice(mainCryptoData?.current_price || 0) }}
                   </div>
                   <div
                     :class="[
                       'crypto-compact-change',
-                      bitcoinData?.price_change_percentage_24h >= 0
+                      mainCryptoData?.price_change_percentage_24h >= 0
                         ? 'positive'
                         : 'negative',
                     ]"
                   >
                     {{
                       formatPercentage(
-                        bitcoinData?.price_change_percentage_24h || 0
+                        mainCryptoData?.price_change_percentage_24h || 0
                       )
                     }}
                   </div>
                 </div>
               </div>
-              <div class="chart-section" v-if="bitcoinData?.sparkline_in_7d">
+              <div class="chart-section" v-if="mainCryptoData?.sparkline_in_7d">
                 <div class="chart-period-label">7 jours</div>
                 <canvas
                   ref="bitcoinChart"
@@ -223,10 +226,10 @@
           </article>
 
           <!-- News Widget 1 -->
-          <article class="bento-item bento-medium" v-if="cryptoNews[0]">
+          <article class="bento-item bento-medium" v-if="displayNews[0]">
             <div
               class="news-single-widget"
-              @click="openNewsLink(cryptoNews[0].url)"
+              @click="openNewsLink(displayNews[0].url)"
               :style="{ backgroundImage: `url(${getNewsBackgroundImage(0)})` }"
             >
               <div class="news-single-overlay"></div>
@@ -234,20 +237,23 @@
                 <div class="news-single-header">
                   <span class="news-single-icon">📰</span>
                   <span class="news-single-source">{{
-                    cryptoNews[0].source
+                    displayNews[0].source
                   }}</span>
+                  <span v-if="isPersonalized" class="personalization-badge"
+                    >✨</span
+                  >
                 </div>
-                <h4 class="news-single-title">{{ cryptoNews[0].title }}</h4>
-                <div class="news-single-time">{{ cryptoNews[0].time }}</div>
+                <h4 class="news-single-title">{{ displayNews[0].title }}</h4>
+                <div class="news-single-time">{{ displayNews[0].time }}</div>
               </div>
             </div>
           </article>
 
           <!-- News Widget 2 -->
-          <article class="bento-item bento-medium" v-if="cryptoNews[1]">
+          <article class="bento-item bento-medium" v-if="displayNews[1]">
             <div
               class="news-single-widget"
-              @click="openNewsLink(cryptoNews[1].url)"
+              @click="openNewsLink(displayNews[1].url)"
               :style="{ backgroundImage: `url(${getNewsBackgroundImage(1)})` }"
             >
               <div class="news-single-overlay"></div>
@@ -255,11 +261,62 @@
                 <div class="news-single-header">
                   <span class="news-single-icon">📰</span>
                   <span class="news-single-source">{{
-                    cryptoNews[1].source
+                    displayNews[1].source
                   }}</span>
+                  <span v-if="isPersonalized" class="personalization-badge"
+                    >✨</span
+                  >
                 </div>
-                <h4 class="news-single-title">{{ cryptoNews[1].title }}</h4>
-                <div class="news-single-time">{{ cryptoNews[1].time }}</div>
+                <h4 class="news-single-title">{{ displayNews[1].title }}</h4>
+                <div class="news-single-time">{{ displayNews[1].time }}</div>
+              </div>
+            </div>
+          </article>
+
+          <!-- News Widget 3 -->
+          <article class="bento-item bento-medium" v-if="displayNews[2]">
+            <div
+              class="news-single-widget"
+              @click="openNewsLink(displayNews[2].url)"
+              :style="{ backgroundImage: `url(${getNewsBackgroundImage(2)})` }"
+            >
+              <div class="news-single-overlay"></div>
+              <div class="news-single-content">
+                <div class="news-single-header">
+                  <span class="news-single-icon">📰</span>
+                  <span class="news-single-source">{{
+                    displayNews[2].source
+                  }}</span>
+                  <span v-if="isPersonalized" class="personalization-badge"
+                    >✨</span
+                  >
+                </div>
+                <h4 class="news-single-title">{{ displayNews[2].title }}</h4>
+                <div class="news-single-time">{{ displayNews[2].time }}</div>
+              </div>
+            </div>
+          </article>
+
+          <!-- News Widget 4 -->
+          <article class="bento-item bento-medium" v-if="displayNews[3]">
+            <div
+              class="news-single-widget"
+              @click="openNewsLink(displayNews[3].url)"
+              :style="{ backgroundImage: `url(${getNewsBackgroundImage(3)})` }"
+            >
+              <div class="news-single-overlay"></div>
+              <div class="news-single-content">
+                <div class="news-single-header">
+                  <span class="news-single-icon">📰</span>
+                  <span class="news-single-source">{{
+                    displayNews[3].source
+                  }}</span>
+                  <span v-if="isPersonalized" class="personalization-badge"
+                    >✨</span
+                  >
+                </div>
+                <h4 class="news-single-title">{{ displayNews[3].title }}</h4>
+                <div class="news-single-time">{{ displayNews[3].time }}</div>
               </div>
             </div>
           </article>
@@ -313,27 +370,6 @@
             </div>
           </article>
 
-          <!-- News Widget 3 -->
-          <article class="bento-item bento-medium" v-if="cryptoNews[2]">
-            <div
-              class="news-single-widget"
-              @click="openNewsLink(cryptoNews[2].url)"
-              :style="{ backgroundImage: `url(${getNewsBackgroundImage(2)})` }"
-            >
-              <div class="news-single-overlay"></div>
-              <div class="news-single-content">
-                <div class="news-single-header">
-                  <span class="news-single-icon">📰</span>
-                  <span class="news-single-source">{{
-                    cryptoNews[2].source
-                  }}</span>
-                </div>
-                <h4 class="news-single-title">{{ cryptoNews[2].title }}</h4>
-                <div class="news-single-time">{{ cryptoNews[2].time }}</div>
-              </div>
-            </div>
-          </article>
-
           <!-- Volume Widget -->
           <article class="bento-item bento-square">
             <div class="volume-widget">
@@ -343,27 +379,6 @@
               </div>
               <div class="volume-value">
                 {{ formatMarketCap(globalStats?.total_volume?.usd || 0) }}
-              </div>
-            </div>
-          </article>
-
-          <!-- News Widget 4 -->
-          <article class="bento-item bento-medium" v-if="cryptoNews[3]">
-            <div
-              class="news-single-widget"
-              @click="openNewsLink(cryptoNews[3].url)"
-              :style="{ backgroundImage: `url(${getNewsBackgroundImage(3)})` }"
-            >
-              <div class="news-single-overlay"></div>
-              <div class="news-single-content">
-                <div class="news-single-header">
-                  <span class="news-single-icon">📰</span>
-                  <span class="news-single-source">{{
-                    cryptoNews[3].source
-                  }}</span>
-                </div>
-                <h4 class="news-single-title">{{ cryptoNews[3].title }}</h4>
-                <div class="news-single-time">{{ cryptoNews[3].time }}</div>
               </div>
             </div>
           </article>
@@ -492,6 +507,11 @@ export default {
       trendingCurrentIndex: 0,
       trendingScrollInterval: null,
       trendingScrollOffset: 0,
+      // Préférences utilisateur personnalisées
+      userPreferences: null,
+      preferredCrypto: null,
+      preferredCryptoData: null,
+      personalizedNews: [],
     };
   },
   computed: {
@@ -546,12 +566,226 @@ export default {
     extendedTrendingCoins() {
       return [...this.trendingCoins, ...this.trendingCoins];
     },
+    // Propriétés personnalisées basées sur les préférences utilisateur
+    mainCryptoData() {
+      // Utiliser la crypto préférée si disponible, sinon Bitcoin par défaut
+      return this.preferredCryptoData || this.bitcoinData;
+    },
+    mainCryptoName() {
+      return this.mainCryptoData?.name || "Bitcoin";
+    },
+    mainCryptoSymbol() {
+      return this.mainCryptoData?.symbol?.toUpperCase() || "BTC";
+    },
+    mainCryptoIcon() {
+      return (
+        this.mainCryptoData?.image ||
+        "https://assets.coingecko.com/coins/images/1/large/bitcoin.png"
+      );
+    },
+    displayNews() {
+      // Utiliser les nouvelles personnalisées si disponibles, sinon les nouvelles générales
+      return this.personalizedNews.length > 0
+        ? this.personalizedNews
+        : this.cryptoNews;
+    },
+    isPersonalized() {
+      return this.userPreferences && this.preferredCrypto;
+    },
   },
   methods: {
     ...mapActions("auth", ["logout"]),
     ...mapActions(["loadAgentConfig"]),
 
-    // Méthodes crypto
+    // Méthodes pour la personnalisation basée sur la mémoire IA
+    async loadUserPreferences() {
+      if (!this.isAuthenticated) return;
+
+      try {
+        console.log("🧠 Chargement des préférences utilisateur...");
+        const response = await apiService.getUserMemory();
+
+        if (response && response.memories) {
+          this.userPreferences = response.memories;
+          this.processUserPreferences();
+          console.log(
+            "✅ Préférences utilisateur chargées:",
+            this.userPreferences
+          );
+        }
+      } catch (error) {
+        console.error("❌ Erreur lors du chargement des préférences:", error);
+      }
+    },
+
+    processUserPreferences() {
+      if (!this.userPreferences) return;
+
+      console.log(
+        "🧠 Traitement des préférences utilisateur:",
+        this.userPreferences
+      );
+
+      // Chercher la blockchain/crypto préférée avec plus de critères
+      const cryptoPreferences = this.userPreferences.filter((memory) => {
+        const memoryType = memory.memory_type?.toLowerCase() || "";
+        const keyInfo = memory.key_info?.toLowerCase() || "";
+        const valueInfo = memory.value_info?.toLowerCase() || "";
+
+        return (
+          memoryType === "preferences_crypto" ||
+          memoryType === "preferences" ||
+          keyInfo.includes("blockchain") ||
+          keyInfo.includes("crypto") ||
+          keyInfo.includes("preferee") ||
+          keyInfo.includes("favori") ||
+          keyInfo.includes("coin") ||
+          keyInfo.includes("token") ||
+          // Vérifier aussi dans la valeur
+          valueInfo.includes("bitcoin") ||
+          valueInfo.includes("ethereum") ||
+          valueInfo.includes("solana") ||
+          valueInfo.includes("cardano") ||
+          valueInfo.includes("polkadot") ||
+          valueInfo.includes("avalanche") ||
+          valueInfo.includes("chainlink") ||
+          valueInfo.includes("ripple") ||
+          valueInfo.includes("binance") ||
+          valueInfo.includes("dogecoin")
+        );
+      });
+
+      console.log("🎯 Préférences crypto trouvées:", cryptoPreferences);
+
+      if (cryptoPreferences.length > 0) {
+        // Prendre la préférence avec le score de confiance le plus élevé
+        const bestPreference = cryptoPreferences.reduce((prev, current) =>
+          current.confidence_score > prev.confidence_score ? current : prev
+        );
+
+        this.preferredCrypto = bestPreference.value_info.toLowerCase();
+        console.log(
+          "🎯 Crypto préférée détectée:",
+          this.preferredCrypto,
+          "avec un score de confiance:",
+          bestPreference.confidence_score
+        );
+
+        // Mettre à jour les données de la crypto préférée
+        this.updatePreferredCryptoData();
+      } else {
+        console.log(
+          "⚠️ Aucune préférence crypto trouvée dans la mémoire utilisateur"
+        );
+      }
+    },
+
+    updatePreferredCryptoData() {
+      if (!this.preferredCrypto || !this.topCryptos.length) return;
+
+      console.log(
+        "🔍 Recherche de la crypto préférée dans les données:",
+        this.preferredCrypto
+      );
+
+      // Mapping des noms de crypto vers les IDs CoinGecko
+      const cryptoMapping = {
+        bitcoin: "bitcoin",
+        btc: "bitcoin",
+        ethereum: "ethereum",
+        eth: "ethereum",
+        solana: "solana",
+        sol: "solana",
+        cardano: "cardano",
+        ada: "cardano",
+        polkadot: "polkadot",
+        dot: "polkadot",
+        avalanche: "avalanche-2",
+        avax: "avalanche-2",
+        chainlink: "chainlink",
+        link: "chainlink",
+        ripple: "ripple",
+        xrp: "ripple",
+        binance: "binancecoin",
+        bnb: "binancecoin",
+        dogecoin: "dogecoin",
+        doge: "dogecoin",
+      };
+
+      // Chercher d'abord par mapping exact
+      const mappedId = cryptoMapping[this.preferredCrypto.toLowerCase()];
+      let preferredData = null;
+
+      if (mappedId) {
+        preferredData = this.topCryptos.find(
+          (crypto) => crypto.id === mappedId
+        );
+        console.log(
+          "🎯 Trouvé par mapping:",
+          mappedId,
+          preferredData ? preferredData.name : "non trouvé"
+        );
+      }
+
+      // Si pas trouvé par mapping, chercher par nom/symbole
+      if (!preferredData) {
+        preferredData = this.topCryptos.find(
+          (crypto) =>
+            crypto.name.toLowerCase().includes(this.preferredCrypto) ||
+            crypto.symbol.toLowerCase().includes(this.preferredCrypto) ||
+            crypto.id.toLowerCase().includes(this.preferredCrypto)
+        );
+        console.log(
+          "🔍 Recherche par nom/symbole:",
+          preferredData ? preferredData.name : "non trouvé"
+        );
+      }
+
+      if (preferredData) {
+        this.preferredCryptoData = preferredData;
+        console.log(
+          "✅ Données de la crypto préférée mises à jour:",
+          preferredData.name,
+          "(${preferredData.symbol.toUpperCase()})"
+        );
+      } else {
+        console.log(
+          "⚠️ Crypto préférée non trouvée dans les données disponibles. Cryptos disponibles:",
+          this.topCryptos.map((c) => c.name)
+        );
+        this.preferredCryptoData = null;
+      }
+    },
+
+    async loadPersonalizedNews() {
+      if (!this.preferredCrypto) return;
+
+      try {
+        console.log(
+          "📰 Chargement des nouvelles personnalisées pour:",
+          this.preferredCrypto
+        );
+
+        // Utiliser le service cryptoService pour récupérer les nouvelles personnalisées
+        this.personalizedNews = await cryptoService.getPersonalizedNews(
+          this.preferredCrypto
+        );
+
+        console.log(
+          "✅ Nouvelles personnalisées chargées:",
+          this.personalizedNews.length
+        );
+      } catch (error) {
+        console.error(
+          "❌ Erreur lors du chargement des nouvelles personnalisées:",
+          error
+        );
+        // Fallback avec des nouvelles génériques
+        this.personalizedNews = [];
+      }
+    },
+
+    // Méthodes crypto existantes
     async loadCryptoData() {
       try {
         console.log("🔄 Chargement des données crypto...");
@@ -621,12 +855,22 @@ export default {
           newsCount: this.cryptoNews.length,
         });
 
-        // Dessiner le sparkline pour Bitcoin
+        // Mettre à jour les données de la crypto préférée si elle existe
+        this.updatePreferredCryptoData();
+
+        // Charger les nouvelles personnalisées si l'utilisateur a des préférences
+        if (this.preferredCrypto) {
+          await this.loadPersonalizedNews();
+        }
+
+        // Dessiner le sparkline pour la crypto principale (préférée ou Bitcoin)
         this.$nextTick(() => {
-          if (this.bitcoinData?.sparkline_in_7d?.price) {
+          if (this.mainCryptoData?.sparkline_in_7d?.price) {
             this.drawSparkline();
           } else {
-            console.warn("⚠️ Pas de données sparkline pour Bitcoin");
+            console.warn(
+              "⚠️ Pas de données sparkline pour la crypto principale"
+            );
           }
         });
       } catch (error) {
@@ -797,12 +1041,15 @@ export default {
     },
 
     drawSparkline() {
-      if (!this.bitcoinData?.sparkline_in_7d?.price || !this.$refs.bitcoinChart)
+      if (
+        !this.mainCryptoData?.sparkline_in_7d?.price ||
+        !this.$refs.bitcoinChart
+      )
         return;
 
       const canvas = this.$refs.bitcoinChart;
       const ctx = canvas.getContext("2d");
-      const prices = this.bitcoinData.sparkline_in_7d.price;
+      const prices = this.mainCryptoData.sparkline_in_7d.price;
 
       // Définir les dimensions du canvas pour qu'il prenne toute la largeur disponible
       const dpr = window.devicePixelRatio || 1;
@@ -831,7 +1078,7 @@ export default {
       const chartHeight = containerHeight - margin * 2;
 
       // Couleur selon la tendance
-      const isPositive = this.bitcoinData.price_change_percentage_24h >= 0;
+      const isPositive = this.mainCryptoData.price_change_percentage_24h >= 0;
       const lineColor = isPositive ? "#22C55E" : "#EF4444";
       const gradientColorStart = isPositive
         ? "rgba(34, 197, 94, 0.4)"
@@ -1096,7 +1343,7 @@ export default {
       this.redrawChart();
 
       // Dessiner le point en surbrillance
-      const isPositive = this.bitcoinData.price_change_percentage_24h >= 0;
+      const isPositive = this.mainCryptoData.price_change_percentage_24h >= 0;
       const lineColor = isPositive ? "#22C55E" : "#EF4444";
 
       ctx.shadowColor = lineColor;
@@ -1134,7 +1381,8 @@ export default {
         if (animationFrame < 20) {
           this.redrawChart();
 
-          const isPositive = this.bitcoinData.price_change_percentage_24h >= 0;
+          const isPositive =
+            this.mainCryptoData.price_change_percentage_24h >= 0;
           const lineColor = isPositive ? "#22C55E" : "#EF4444";
 
           // Effet de pulsation
@@ -1547,6 +1795,7 @@ export default {
 
     handleAuthenticated() {
       this.loadAgentConfig();
+      this.loadUserPreferences(); // Charger les préférences après authentification
       if (this.redirectAfterAuth) {
         this.$router.push(this.redirectAfterAuth);
         this.redirectAfterAuth = null;
@@ -1630,6 +1879,8 @@ export default {
     if (this.isAuthenticated) {
       await this.loadAgentConfig();
       await this.loadChatsFromApi();
+      // Charger les préférences utilisateur pour la personnalisation
+      await this.loadUserPreferences();
     }
 
     // Charger les données crypto
@@ -3683,5 +3934,37 @@ export default {
     font-size: 16px;
     width: 100%;
   }
+}
+
+/* Badge de personnalisation */
+.personalization-badge {
+  font-size: 12px;
+  color: #fbbf24;
+  animation: sparkle 2s ease-in-out infinite;
+  margin-left: 4px;
+}
+
+@keyframes sparkle {
+  0%,
+  100% {
+    opacity: 1;
+    transform: scale(1);
+  }
+  50% {
+    opacity: 0.7;
+    transform: scale(1.1);
+  }
+}
+
+/* Indicateur de personnalisation pour le widget principal */
+.crypto-compact-name .personalization-badge {
+  font-size: 14px;
+  margin-left: 6px;
+}
+
+/* Indicateur de personnalisation pour les nouvelles */
+.news-single-header .personalization-badge {
+  font-size: 10px;
+  margin-left: 4px;
 }
 </style>
