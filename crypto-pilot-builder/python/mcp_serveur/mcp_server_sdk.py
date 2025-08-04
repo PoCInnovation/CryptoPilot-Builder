@@ -13,7 +13,7 @@ from mcp.server import NotificationOptions, Server
 from mcp.types import Tool, TextContent
 from mcp.server.stdio import stdio_server
 sys.path.append(os.path.dirname(__file__))
-from crypto_tools import get_crypto_price, request_transaction, get_lifi_tokens, get_swap_quote, execute_swap
+from crypto_tools import get_crypto_price, request_transaction, get_lifi_tokens, get_swap_quote, execute_swap, debug_token_resolution
 load_dotenv()
 
 class OpenAIAgent:
@@ -46,11 +46,13 @@ class OpenAIAgent:
    - get_lifi_tokens: Discover available tokens for swapping
    - get_swap_quote: Get quotes for token swaps
    - execute_swap: Execute token swaps with transaction data
+   - debug_token_resolution: Debug token resolution issues (for troubleshooting)
 
 When users ask about swapping, trading, or exchanging cryptocurrencies:
 - Use get_lifi_tokens to show available tokens if needed
 - Use get_swap_quote to provide swap estimates
 - Use execute_swap to generate the actual swap transaction
+- If tokens are not found, use debug_token_resolution to troubleshoot
 
 Always ask for the user's wallet address when performing swaps or transactions.
 Provide clear, helpful responses about crypto prices, transactions, and swaps."""
@@ -286,6 +288,16 @@ Provide clear, helpful responses about crypto prices, transactions, and swaps.""
                             "content": result,
                             "tool_call_id": tool_call.id
                         })
+                    elif tool_name == "debug_token_resolution":
+                        result = debug_token_resolution(
+                            args.get("symbol", ""),
+                            args.get("chain_id", "1")
+                        )
+                        tool_responses.append({
+                            "name": tool_name,
+                            "content": result,
+                            "tool_call_id": tool_call.id
+                        })
                     elif tool_name == "get_swap_quote":
                         result = get_swap_quote(
                             args.get("from_token", ""),
@@ -407,6 +419,24 @@ async def handle_list_tools() -> list[Tool]:
                     }
                 },
                 "required": []
+            }
+        ),
+        Tool(
+            name="debug_token_resolution",
+            description="Debug token resolution to troubleshoot token not found issues",
+            inputSchema={
+                "type": "object",
+                "properties": {
+                    "symbol": {
+                        "type": "string",
+                        "description": "Token symbol to debug (e.g., ETH, USDC)"
+                    },
+                    "chain_id": {
+                        "type": "string",
+                        "description": "Chain ID (default: 1 for Ethereum mainnet)"
+                    }
+                },
+                "required": ["symbol"]
             }
         ),
         Tool(
@@ -542,7 +572,15 @@ async def handle_call_tool(name: str, arguments: dict | None) -> list[TextConten
         chains = arguments.get("chains", None)
         result = get_lifi_tokens(chains)
         return [TextContent(type="text", text=result)]
-    
+
+    if name == "debug_token_resolution":
+        symbol = arguments.get("symbol", "")
+        chain_id = arguments.get("chain_id", "1")
+        if symbol:
+            result = debug_token_resolution(symbol, chain_id)
+            return [TextContent(type="text", text=result)]
+        return [TextContent(type="text", text="❌ symbol required")]
+
     if name == "get_swap_quote":
         from_token = arguments.get("from_token", "")
         to_token = arguments.get("to_token", "")
@@ -550,13 +588,13 @@ async def handle_call_tool(name: str, arguments: dict | None) -> list[TextConten
         from_address = arguments.get("from_address", "")
         from_chain = arguments.get("from_chain", "1")
         to_chain = arguments.get("to_chain", "1")
-        
+
         if not all([from_token, to_token, amount, from_address]):
             return [TextContent(type="text", text="❌ Missing required parameters: from_token, to_token, amount, from_address")]
-        
+
         result = get_swap_quote(from_token, to_token, amount, from_address, from_chain, to_chain)
         return [TextContent(type="text", text=result)]
-    
+
     if name == "execute_swap":
         from_token = arguments.get("from_token", "")
         to_token = arguments.get("to_token", "")
@@ -564,13 +602,13 @@ async def handle_call_tool(name: str, arguments: dict | None) -> list[TextConten
         from_address = arguments.get("from_address", "")
         from_chain = arguments.get("from_chain", "1")
         to_chain = arguments.get("to_chain", "1")
-        
+
         if not all([from_token, to_token, amount, from_address]):
             return [TextContent(type="text", text="❌ Missing required parameters: from_token, to_token, amount, from_address")]
-        
+
         result = execute_swap(from_token, to_token, amount, from_address, from_chain, to_chain)
         return [TextContent(type="text", text=result)]
-    
+
     if name == "agent_chat_configured":
         message = arguments.get("message", "")
         context = arguments.get("context", "")
