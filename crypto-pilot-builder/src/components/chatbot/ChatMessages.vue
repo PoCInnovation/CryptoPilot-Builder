@@ -93,7 +93,8 @@ watch(() => props.messages, () => {
 }
 
 .message.user {
-  background-color: #dcf8c6;
+  background-color: #000000;
+  color: white;
   align-self: flex-end;
 }
 
