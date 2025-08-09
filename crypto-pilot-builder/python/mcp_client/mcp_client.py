@@ -8,7 +8,7 @@ import json
 from typing import Dict, Any
 from mcp import ClientSession, StdioServerParameters
 from mcp.client.stdio import stdio_client
-from config import MCP_SERVER_COMMAND, MCP_SERVER_ARGS
+from .config import MCP_SERVER_COMMAND, MCP_SERVER_ARGS
 
 class MCPClient:
     """MCP client for crypto agent"""

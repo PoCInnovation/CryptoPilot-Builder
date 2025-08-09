@@ -9,10 +9,10 @@ from flask import Flask
 from flask_cors import CORS
 
 # Local modules imports
-from config import HOST, PORT, DEBUG
-from mcp_client import mcp_client
-from session_manager import session_manager
-from api_routes import create_api_routes
+from .config import HOST, PORT, DEBUG
+from .mcp_client import mcp_client
+from .session_manager import session_manager
+from .api_routes import create_api_routes
 
 def create_app():
     """Factory to create Flask application"""

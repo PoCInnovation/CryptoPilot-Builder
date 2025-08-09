@@ -14,9 +14,9 @@ from flask_sqlalchemy import SQLAlchemy
 from flask_bcrypt import Bcrypt
 from flask_jwt_extended import JWTManager, create_access_token, jwt_required, get_jwt_identity
 from sqlalchemy.dialects.postgresql import UUID
-from mcp_client import mcp_client
-from session_manager import session_manager
-from user_memory import user_memory_manager
+from .mcp_client import mcp_client
+from .session_manager import session_manager
+from .user_memory import user_memory_manager
 import uuid
 
 # Configuration du logging
