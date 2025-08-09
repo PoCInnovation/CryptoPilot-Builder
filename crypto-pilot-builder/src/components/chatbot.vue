@@ -813,6 +813,141 @@ function rejectSwap() {
   }
   pendingSwap.value = null;
 }
+  if (activeSessionId.value) {
+    sessionManager.addMessage(activeSessionId.value, rejectionMessage);
+    console.log('❌ [CHATBOT] Rejection message added to session:', activeSessionId.value);
+  }
+  pendingTransaction.value = null;
+}
+
+// Fonctions pour gérer les swaps
+async function confirmSwap() {
+  console.log("🔥 confirmSwap() appelée");
+  console.log("📋 pendingSwap.value:", pendingSwap.value);
+  console.log("💼 walletFunctions disponible:", !!walletFunctions.value);
+  
+  if (!pendingSwap.value) {
+    console.error("❌ Pas de swap en attente");
+    return;
+  }
+  
+  isProcessingSwap.value = true;
+  console.log("🔍 Vérification du wallet...");
+  
+  if (!walletFunctions.value) {
+    console.error("❌ walletFunctions non disponible");
+    const errorMessage = {
+      text: "❌ Erreur : Wallet non disponible. Veuillez connecter votre wallet.",
+      isUser: false,
+      created_at: new Date().toISOString()
+    };
+    
+    if (activeSessionId.value) {
+      sessionManager.addMessage(activeSessionId.value, errorMessage);
+    }
+    pendingSwap.value = null;
+    isProcessingSwap.value = false;
+    return;
+  }
+  
+  console.log("🔗 Vérification connexion wallet...");
+  const isConnected = walletFunctions.value.isConnected();
+  console.log("🔗 Wallet connecté:", isConnected);
+  
+  if (!isConnected) {
+    console.error("❌ Wallet non connecté");
+    const errorMessage = {
+      text: "❌ Erreur : Wallet non connecté. Veuillez d'abord connecter votre wallet MetaMask.",
+      isUser: false,
+      created_at: new Date().toISOString()
+    };
+    
+    if (activeSessionId.value) {
+      sessionManager.addMessage(activeSessionId.value, errorMessage);
+    }
+    pendingSwap.value = null;
+    isProcessingSwap.value = false;
+    return;
+  }
+
+  try {
+    console.log("🚀 Début du swap...");
+    const processingMessage = {
+      text: `🔄 Traitement du swap : ${pendingSwap.value.amount} ${pendingSwap.value.fromToken} → ${pendingSwap.value.toToken}`,
+      isUser: false,
+      created_at: new Date().toISOString()
+    };
+    
+    if (activeSessionId.value) {
+      sessionManager.addMessage(activeSessionId.value, processingMessage);
+    }
+    
+    console.log("💱 Paramètres de swap:");
+    console.log("  - De:", pendingSwap.value.fromToken);
+    console.log("  - Vers:", pendingSwap.value.toToken);
+    console.log("  - Montant:", pendingSwap.value.amount);
+    console.log("  - Données de transaction:", pendingSwap.value.transactionData);
+    
+    console.log("⚡ Appel de executeSwap...");
+    const result = await walletFunctions.value.executeSwap(pendingSwap.value.transactionData);
+    console.log("✅ Résultat du swap:", result);
+    
+    const successMessage = {
+      text: `✅ Swap réussi ! Hash: ${result.hash?.slice(0, 10)}... - ${pendingSwap.value.amount} ${pendingSwap.value.fromToken} échangé contre ~${pendingSwap.value.estimate?.toAmount?.toFixed(6)} ${pendingSwap.value.toToken}`,
+      isUser: false,
+      created_at: new Date().toISOString()
+    };
+    
+    if (activeSessionId.value) {
+      sessionManager.addMessage(activeSessionId.value, successMessage);
+    }
+    
+    console.log("📡 Notification au serveur...");
+    const confirmResponse = await fetch(
+      "http://localhost:5000/confirm-swap",
+      {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          confirmed: true,
+          swap: pendingSwap.value,
+          session_id: currentSessionId.value,
+          transaction_hash: result.hash,
+        }),
+      }
+    );
+    if (confirmResponse.ok) {
+      const confirmData = await confirmResponse.json();
+      console.log("📡 Réponse serveur confirmation swap:", confirmData);
+    }
+  } catch (error) {
+    console.error("❌ Erreur swap complète:", error);
+    let errorText = `❌ Erreur lors du swap : ${error.message}`;
+    
+    if (error.message.includes("User rejected")) {
+      errorText = "❌ Swap rejeté par l'utilisateur dans MetaMask";
+    } else if (error.message.includes("insufficient funds")) {
+      errorText = "💸 Fonds insuffisants pour effectuer le swap";
+    } else if (error.message.includes("Wallet non connecté")) {
+      errorText = "🔗 Wallet non connecté. Veuillez connecter MetaMask d'abord.";
+    } else if (error.message.includes("Failed to fetch")) {
+      errorText = "✅ Swap réussi mais le serveur n'a pas répondu.";
+    }
+    
+    const errorMessage = { 
+      text: errorText, 
+      isUser: false,
+      created_at: new Date().toISOString()
+    };
+    
+    if (activeSessionId.value) {
+      sessionManager.addMessage(activeSessionId.value, errorMessage);
+    }
+  } finally {
+    pendingSwap.value = null;
+    isProcessingSwap.value = false;
+  }
+}
 
 watch(
   pendingTransaction,
