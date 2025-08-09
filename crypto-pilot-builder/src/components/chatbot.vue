@@ -418,6 +418,7 @@ async function handleSendMessage(text) {
 
     let botResponse = "";
     let transactionRequest = null;
+    let swapRequest = null;
 
     // Vérifier s'il y a un marqueur TRANSACTION_REQUEST dans la réponse
     if (responseText.includes("TRANSACTION_REQUEST:")) {
@@ -454,8 +455,39 @@ async function handleSendMessage(text) {
           transactionRequest = null;
         }
       }
+    }
+    // Check if SWAP_REQUEST in the response
+    else if (responseText.includes("SWAP_REQUEST:")) {
+      console.log("🔍 Marqueur SWAP_REQUEST détecté");
+
+      // Split the message from the JSON
+      const parts = responseText.split("SWAP_REQUEST:");
+      botResponse = parts[0].trim();
+
+      if (parts[1]) {
+        try {
+          const jsonPart = parts[1].trim();
+          console.log("🔍 Partie JSON swap à parser:", jsonPart);
+
+          swapRequest = JSON.parse(jsonPart);
+          console.log("✅ Swap parsé avec succès:", swapRequest);
+
+          // Check required fields
+          const requiredFields = ["fromToken", "toToken", "amount", "fromAddress"];
+          const hasAllFields = requiredFields.every(field => swapRequest[field]);
+
+          if (!hasAllFields) {
+            console.warn("⚠️ Champs manquants dans le swap:", swapRequest);
+            swapRequest = null;
+            botResponse = responseText;
+          }
+        } catch {
+          botResponse = responseText;
+          swapRequest = null;
+        }
+      }
     } else {
-      // Pas de transaction, message normal
+      // No transaction or swap, normal message
       botResponse = responseText;
     }
 
@@ -477,6 +509,11 @@ async function handleSendMessage(text) {
     if (transactionRequest) {
       console.log("🚀 Affichage de la modal de transaction");
       pendingTransaction.value = { ...transactionRequest };
+    }
+
+    // Si un swap est détecté, afficher la modal
+    if (swapRequest) {
+      pendingSwap.value = { ...swapRequest };
     }
 
   } catch (err) {
