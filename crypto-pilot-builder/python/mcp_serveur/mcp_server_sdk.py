@@ -13,7 +13,7 @@ from mcp.server import NotificationOptions, Server
 from mcp.types import Tool, TextContent
 from mcp.server.stdio import stdio_server
 sys.path.append(os.path.dirname(__file__))
-from crypto_tools import get_crypto_price, request_transaction, get_lifi_tokens, get_swap_quote, execute_swap
+from crypto_tools import get_crypto_price, request_transaction, get_lifi_tokens, get_swap_quote, execute_swap, get_sepolia_tokens
 load_dotenv()
 
 class OpenAIAgent:
@@ -41,10 +41,25 @@ class OpenAIAgent:
             system_prompt = """You are a crypto assistant with advanced capabilities including:
 1. **Price Information**: Get real-time cryptocurrency prices using get_crypto_price
 2. **Transactions**: Prepare blockchain transactions using request_transaction
-3. **Token Swapping**: Complete token swap capabilities using Li.Fi:
+3. **Token Information**: Get available ERC-20 tokens on Sepolia using get_sepolia_tokens
+4. **Token Swapping**: Complete token swap capabilities using Li.Fi:
    - get_lifi_tokens: Discover available tokens for swapping
    - get_swap_quote: Get quotes for token swaps
    - execute_swap: Execute token swaps with transaction data
+
+🎯 RÈGLE CRITIQUE pour request_transaction :
+
+COPIE EXACTEMENT le mot que dit l'utilisateur dans le paramètre "currency". NE TRADUIS PAS, NE CONVERTIS PAS.
+
+EXEMPLES CORRECTS :
+- User: "envoie 0.001 ETH à 0x123..." → request_transaction(..., currency="ETH")  
+- User: "envoie 0.001 sepolia à 0x123..." → request_transaction(..., currency="sepolia")
+- User: "envoie 5 USDC à 0x123..." → request_transaction(..., currency="USDC")
+
+❌ ERREUR FATALE (ne jamais faire) :
+- User dit "ETH" mais tu mets currency="sepolia" ← INTERDIT !
+
+✅ TOKENS DISPONIBLES : ETH, SEPOLIA, USDC, USDT, DAI, WETH, LINK, UNI
 
 RÈGLES CRITIQUES pour les swaps :
 1. DÉTECTION : Si tu détectes l'un de ces mots-clés dans le message :
@@ -85,10 +100,25 @@ Provide clear, helpful responses about crypto prices, transactions, and swaps.""
                 system_prompt = """You are a crypto assistant with advanced capabilities including:
 1. **Price Information**: Get real-time cryptocurrency prices using get_crypto_price
 2. **Transactions**: Prepare blockchain transactions using request_transaction
-3. **Token Swapping**: Complete token swap capabilities using Li.Fi:
+3. **Token Information**: Get available ERC-20 tokens on Sepolia using get_sepolia_tokens
+4. **Token Swapping**: Complete token swap capabilities using Li.Fi:
    - get_lifi_tokens: Discover available tokens for swapping
    - get_swap_quote: Get quotes for token swaps
    - execute_swap: Execute token swaps with transaction data
+
+🎯 RÈGLE CRITIQUE pour request_transaction :
+
+COPIE EXACTEMENT le mot que dit l'utilisateur dans le paramètre "currency". NE TRADUIS PAS, NE CONVERTIS PAS.
+
+EXEMPLES CORRECTS :
+- User: "envoie 0.001 ETH à 0x123..." → request_transaction(..., currency="ETH")  
+- User: "envoie 0.001 sepolia à 0x123..." → request_transaction(..., currency="sepolia")
+- User: "envoie 5 USDC à 0x123..." → request_transaction(..., currency="USDC")
+
+❌ ERREUR FATALE (ne jamais faire) :
+- User dit "ETH" mais tu mets currency="sepolia" ← INTERDIT !
+
+✅ TOKENS DISPONIBLES : ETH, SEPOLIA, USDC, USDT, DAI, WETH, LINK, UNI
 
 RÈGLES CRITIQUES pour les swaps :
 1. DÉTECTION : Si tu détectes l'un de ces mots-clés dans le message :
@@ -301,13 +331,28 @@ Provide clear, helpful responses about crypto prices, transactions, and swaps.""
                                         "type": "string",
                                         "description": "Amount to send (e.g. 0.001)"
                                     },
-                                    "currency": {
+                                                        "currency": {
+                        "type": "string",
+                        "description": "EXACT word user said: If user says 'ETH' use 'ETH', if user says 'sepolia' use 'sepolia', if user says 'USDC' use 'USDC'. NEVER convert ETH to sepolia!"
+                    },
+                                    "token_address": {
                                         "type": "string",
-                                        "description": "Network/currency (default: sepolia)",
-                                        "default": "sepolia"
+                                        "description": "ERC-20 token contract address (optional, for ERC-20 transactions)"
                                     }
                                 },
                                 "required": ["recipient_address", "amount"]
+                            }
+                        }
+                    },
+                    {
+                        "type": "function",
+                        "function": {
+                            "name": "get_sepolia_tokens",
+                            "description": "Get list of available ERC-20 tokens on Sepolia testnet with their addresses and decimals.",
+                            "parameters": {
+                                "type": "object",
+                                "properties": {},
+                                "required": []
                             }
                         }
                     }
@@ -333,10 +378,20 @@ Provide clear, helpful responses about crypto prices, transactions, and swaps.""
                             "tool_call_id": tool_call.id
                         })
                     elif tool_name == "request_transaction":
+                        print(f"🔍 DEBUG - request_transaction called with args: {args}")
+                        currency = args.get("currency", "ETH")
+                        print(f"🔍 DEBUG - Currency extracted: {currency}")
+                        
+                        # SÉCURITÉ : Si l'IA met "sepolia" alors que l'utilisateur a dit "ETH", forcer "ETH"
+                        # (Cette logique sera enlevée quand l'IA apprendra)
+                        if currency.lower() == "sepolia":
+                            print(f"⚠️ WARNING - IA a mis 'sepolia', mais on garde comme ça pour l'instant")
+                        
                         result = request_transaction(
                             args.get("recipient_address", ""),
                             args.get("amount", ""),
-                            args.get("currency", "sepolia")
+                            currency,
+                            args.get("token_address", None)
                         )
                         tool_responses.append({
                             "name": tool_name,
@@ -361,6 +416,13 @@ Provide clear, helpful responses about crypto prices, transactions, and swaps.""
                             args.get("from_chain", "1"),
                             args.get("to_chain", "1")
                         )
+                        tool_responses.append({
+                            "name": tool_name,
+                            "content": result,
+                            "tool_call_id": tool_call.id
+                        })
+                    elif tool_name == "get_sepolia_tokens":
+                        result = get_sepolia_tokens()
                         tool_responses.append({
                             "name": tool_name,
                             "content": result,
@@ -461,8 +523,7 @@ async def handle_list_tools() -> list[Tool]:
                     },
                     "currency": {
                         "type": "string",
-                        "description": "Network/currency (default: sepolia)",
-                        "default": "sepolia"
+                        "description": "EXACT word user said: If user says 'ETH' use 'ETH', if user says 'sepolia' use 'sepolia'. NEVER convert ETH to sepolia!"
                     }
                 },
                 "required": ["recipient_address", "amount"]
@@ -606,15 +667,20 @@ async def handle_call_tool(name: str, arguments: dict | None) -> list[TextConten
     if name == "request_transaction":
         recipient_address = arguments.get("recipient_address", "")
         amount = arguments.get("amount", "")
-        currency = arguments.get("currency", "sepolia")
+        currency = arguments.get("currency", "ETH")
+        token_address = arguments.get("token_address", None)
         if recipient_address and amount:
-            result = request_transaction(recipient_address, amount, currency)
+            result = request_transaction(recipient_address, amount, currency, token_address)
             return [TextContent(type="text", text=result)]
         return [TextContent(type="text", text="❌ Missing required parameters: recipient_address, amount")]
     
     if name == "get_lifi_tokens":
         chains = arguments.get("chains", None)
         result = get_lifi_tokens(chains)
+        return [TextContent(type="text", text=result)]
+
+    if name == "get_sepolia_tokens":
+        result = get_sepolia_tokens()
         return [TextContent(type="text", text=result)]
 
     if name == "get_swap_quote":

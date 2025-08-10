@@ -630,10 +630,37 @@ async function confirmTransaction() {
     console.log("  - Destinataire:", pendingTransaction.value.recipient);
     console.log("  - Montant:", pendingTransaction.value.amount);
     console.log("  - Devise:", pendingTransaction.value.currency);
+    console.log("  - Type:", pendingTransaction.value.type);
     console.log("⚡ Appel de sendTransaction...");
+    
+    // Déterminer le symbole du token - UTILISER LA CURRENCY DE L'IA !
+    let tokenSymbol = pendingTransaction.value.currency || 'ETH'
+    
+    if (pendingTransaction.value.type === 'erc20_transaction' && pendingTransaction.value.token_address) {
+      // Mapper l'adresse du token vers le symbole (Mainnet + Sepolia)
+      const tokenMap = {
+        // Sepolia tokens
+        '0x1c7D4B196Cb0C7B01d743Fbc6116a902379C7238': 'USDC',
+        '0x7169D38820dfd117C3FA1f22a697dBA58d90BA06': 'USDT',
+        '0x68194a729C2450ad26072b3D33ADaCbcef39D574': 'DAI',
+        '0x7b79995e5f793A07Bc00c21412e50Ecae098E7f9': 'WETH',
+        '0x779877A7B0D9E8603169DdbD7836e478b4624789': 'LINK',
+        '0x1f9840a85d5aF5bf1D1762F925BDADdC4201F984': 'UNI',
+        // Mainnet tokens
+        '0xA0b86991c6218b36c1d19D4a2e9Eb0cE3606eB48': 'USDC',
+        '0xdAC17F958D2ee523a2206206994597C13D831ec7': 'USDT',
+        '0x6B175474E89094C44Da98b954EedeAC495271d0F': 'DAI',
+        '0xC02aaA39b223FE8D0A0e5C4F27eAD9083C756Cc2': 'WETH'
+      }
+      tokenSymbol = tokenMap[pendingTransaction.value.token_address] || tokenSymbol
+    }
+    
+    console.log(`🎯 TokenSymbol utilisé: ${tokenSymbol} (depuis currency: ${pendingTransaction.value.currency})`)
+    
     const result = await walletFunctions.value.sendTransactionFromChat(
       pendingTransaction.value.recipient,
-      pendingTransaction.value.amount
+      pendingTransaction.value.amount,
+      tokenSymbol
     );
     console.log("✅ Résultat de la transaction:", result);
     const successMessage = {

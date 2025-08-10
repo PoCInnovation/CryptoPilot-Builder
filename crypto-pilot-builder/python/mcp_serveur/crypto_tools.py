@@ -25,7 +25,8 @@ def get_crypto_price(crypto_id: str, currency: str = "usd") -> str:
     except Exception as e:
         return f"Unexpected error: {str(e)}"
 
-def request_transaction(recipient_address: str, amount: str, currency: str = "sepolia") -> str:
+def request_transaction(recipient_address: str, amount: str, currency: str = "ETH", token_address: str = None) -> str:
+    print(f"🔍 DEBUG - request_transaction called with currency: {currency}")
     if not recipient_address.startswith('0x') or len(recipient_address) != 42:
         return "❌ Invalid Ethereum address. Must start with 0x and be 42 characters."
     try:
@@ -34,17 +35,84 @@ def request_transaction(recipient_address: str, amount: str, currency: str = "se
             return "❌ Amount must be greater than 0."
     except ValueError:
         return "❌ Invalid amount. Please enter a valid number."
-    transaction_request = (
-        f"TRANSACTION_REQUEST:{{"
-        f"\"type\":\"transaction_request\","
-        f"\"recipient\":\"{recipient_address}\","
-        f"\"amount\":\"{amount}\","
-        f"\"currency\":\"{currency}\","
-        f"\"status\":\"pending_confirmation\""
-        f"}}"
-    )
-    message = f"Transaction of {amount} {currency} to {recipient_address[:6]}...{recipient_address[-4:]} prepared."
-    return f"{message}\n\n{transaction_request}"
+    
+    # Mapping des tokens ERC-20 sur Sepolia
+    sepolia_tokens = {
+        "USDC": {
+            "address": "0x1c7D4B196Cb0C7B01d743Fbc6116a902379C7238",
+            "decimals": 6,
+            "symbol": "USDC",
+            "name": "USD Coin"
+        },
+        "USDT": {
+            "address": "0x7169D38820dfd117C3FA1f22a697dBA58d90BA06",
+            "decimals": 6,
+            "symbol": "USDT",
+            "name": "Tether USD"
+        },
+        "DAI": {
+            "address": "0x68194a729C2450ad26072b3D33ADaCbcef39D574",
+            "decimals": 18,
+            "symbol": "DAI",
+            "name": "Dai Stablecoin"
+        },
+        "WETH": {
+            "address": "0x7b79995e5f793A07Bc00c21412e50Ecae098E7f9",
+            "decimals": 18,
+            "symbol": "WETH",
+            "name": "Wrapped Ether"
+        },
+        "LINK": {
+            "address": "0x779877A7B0D9E8603169DdbD7836e478b4624789",
+            "decimals": 18,
+            "symbol": "LINK",
+            "name": "Chainlink"
+        },
+        "UNI": {
+            "address": "0x1f9840a85d5aF5bf1D1762F925BDADdC4201F984",
+            "decimals": 18,
+            "symbol": "UNI",
+            "name": "Uniswap"
+        }
+    }
+    
+    # Déterminer le type de transaction et l'adresse du token
+    transaction_type = "native_transaction"
+    final_token_address = token_address
+    
+    # Si pas d'adresse de token fournie, essayer de détecter automatiquement
+    if not token_address:
+        currency_upper = currency.upper()
+        if currency_upper in sepolia_tokens:
+            transaction_type = "erc20_transaction"
+            final_token_address = sepolia_tokens[currency_upper]["address"]
+        elif currency_upper in ["ETH", "SEPOLIA"]:
+            transaction_type = "native_transaction"
+            final_token_address = None
+        else:
+            # Par défaut, considérer comme transaction native
+            transaction_type = "native_transaction"
+            final_token_address = None
+    
+    transaction_request = {
+        "type": transaction_type,
+        "recipient": recipient_address,
+        "amount": amount,
+        "currency": currency,
+        "token_address": final_token_address,
+        "status": "pending_confirmation"
+    }
+    
+    # Message différent selon le type de transaction
+    if transaction_type == "erc20_transaction":
+        token_info = sepolia_tokens.get(currency.upper(), {})
+        token_name = token_info.get("name", currency.upper())
+        message = f"ERC-20 transaction of {amount} {currency.upper()} ({token_name}) to {recipient_address[:6]}...{recipient_address[-4:]} prepared."
+    else:
+        message = f"Transaction of {amount} {currency} to {recipient_address[:6]}...{recipient_address[-4:]} prepared."
+    
+    transaction_json = json.dumps(transaction_request, separators=(',', ':'))
+    return f"{message}\n\nTRANSACTION_REQUEST:{transaction_json}"
 
 def get_lifi_tokens(chains: str = None) -> str:
     """Get available tokens from Li.Fi API"""
@@ -213,3 +281,65 @@ def execute_swap(from_token: str, to_token: str, amount: str, from_address: str,
         return quote_result
     else:
         return f"❌ Failed to generate swap transaction data"
+
+def get_sepolia_tokens() -> str:
+    """Get available ERC-20 tokens on Sepolia testnet"""
+    sepolia_tokens = {
+        "USDC": {
+            "address": "0x1c7D4B196Cb0C7B01d743Fbc6116a902379C7238",
+            "decimals": 6,
+            "symbol": "USDC",
+            "name": "USD Coin",
+            "faucet": "https://faucet.sepolia.dev/ ou https://faucets.chain.link/sepolia"
+        },
+        "USDT": {
+            "address": "0x7169D38820dfd117C3FA1f22a697dBA58d90BA06",
+            "decimals": 6,
+            "symbol": "USDT",
+            "name": "Tether USD",
+            "faucet": "https://faucet.sepolia.dev/"
+        },
+        "DAI": {
+            "address": "0x68194a729C2450ad26072b3D33ADaCbcef39D574",
+            "decimals": 18,
+            "symbol": "DAI",
+            "name": "Dai Stablecoin",
+            "faucet": "https://faucet.sepolia.dev/"
+        },
+        "WETH": {
+            "address": "0x7b79995e5f793A07Bc00c21412e50Ecae098E7f9",
+            "decimals": 18,
+            "symbol": "WETH",
+            "name": "Wrapped Ether",
+            "faucet": "Obtenu en wrappant de l'ETH de test"
+        },
+        "LINK": {
+            "address": "0x779877A7B0D9E8603169DdbD7836e478b4624789",
+            "decimals": 18,
+            "symbol": "LINK",
+            "name": "Chainlink",
+            "faucet": "https://faucets.chain.link/sepolia"
+        },
+        "UNI": {
+            "address": "0x1f9840a85d5aF5bf1D1762F925BDADdC4201F984",
+            "decimals": 18,
+            "symbol": "UNI",
+            "name": "Uniswap",
+            "faucet": "https://faucet.sepolia.dev/"
+        }
+    }
+    
+    result = "✅ Available ERC-20 tokens on Sepolia:\n\n"
+    for symbol, info in sepolia_tokens.items():
+        result += f"• {symbol} ({info['name']})\n"
+        result += f"  Address: {info['address']}\n"
+        result += f"  Decimals: {info['decimals']}\n"
+        result += f"  Faucet: {info['faucet']}\n\n"
+    
+    result += "💡 Pour obtenir des tokens de test:\n"
+    result += "1. ETH: https://sepoliafaucet.com/\n"
+    result += "2. USDC/USDT/DAI: https://faucet.sepolia.dev/\n"
+    result += "3. LINK: https://faucets.chain.link/sepolia\n"
+    result += "4. WETH: Wrap de l'ETH via un DEX ou contrat\n"
+    
+    return result

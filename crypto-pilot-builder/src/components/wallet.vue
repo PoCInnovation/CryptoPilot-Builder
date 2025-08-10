@@ -1,7 +1,7 @@
 <script setup>
-import { ref, onMounted } from 'vue'
-import { createWalletClient, custom, parseEther } from 'viem'
-import { sepolia } from 'viem/chains'
+import { ref, onMounted, watch } from 'vue'
+import { createWalletClient, custom, parseEther, parseUnits, encodeFunctionData, getContract } from 'viem'
+import { sepolia, mainnet } from 'viem/chains'
 import apiService from '../services/apiService'
 
 const address = ref(null)
@@ -10,6 +10,224 @@ const status = ref('')
 const isProcessing = ref(false)
 const manualAddress = ref('')
 const showManualInput = ref(false)
+
+// ERC-20 ABI pour les fonctions transfer et balanceOf
+const ERC20_ABI = [
+  {
+    "constant": false,
+    "inputs": [
+      {
+        "name": "_to",
+        "type": "address"
+      },
+      {
+        "name": "_value",
+        "type": "uint256"
+      }
+    ],
+    "name": "transfer",
+    "outputs": [
+      {
+        "name": "",
+        "type": "bool"
+      }
+    ],
+    "payable": false,
+    "stateMutability": "nonpayable",
+    "type": "function"
+  },
+  {
+    "constant": true,
+    "inputs": [
+      {
+        "name": "_owner",
+        "type": "address"
+      }
+    ],
+    "name": "balanceOf",
+    "outputs": [
+      {
+        "name": "balance",
+        "type": "uint256"
+      }
+    ],
+    "payable": false,
+    "stateMutability": "view",
+    "type": "function"
+  },
+  {
+    "constant": true,
+    "inputs": [],
+    "name": "decimals",
+    "outputs": [
+      {
+        "name": "",
+        "type": "uint8"
+      }
+    ],
+    "payable": false,
+    "stateMutability": "view",
+    "type": "function"
+  },
+  {
+    "constant": true,
+    "inputs": [],
+    "name": "symbol",
+    "outputs": [
+      {
+        "name": "",
+        "type": "string"
+      }
+    ],
+    "payable": false,
+    "stateMutability": "view",
+    "type": "function"
+  }
+]
+
+// Configuration des réseaux et tokens
+const NETWORK_CONFIG = {
+  // Ethereum Mainnet
+  'ETH': {
+    chain: mainnet,
+    nativeCurrency: 'ETH',
+    tokens: {
+      'USDC': {
+        address: '0xA0b86991c6218b36c1d19D4a2e9Eb0cE3606eB48',
+        decimals: 6,
+        symbol: 'USDC'
+      },
+      'USDT': {
+        address: '0xdAC17F958D2ee523a2206206994597C13D831ec7',
+        decimals: 6,
+        symbol: 'USDT'
+      },
+      'DAI': {
+        address: '0x6B175474E89094C44Da98b954EedeAC495271d0F',
+        decimals: 18,
+        symbol: 'DAI'
+      },
+      'WETH': {
+        address: '0xC02aaA39b223FE8D0A0e5C4F27eAD9083C756Cc2',
+        decimals: 18,
+        symbol: 'WETH'
+      }
+    }
+  },
+  // Sepolia Testnet
+  'SEPOLIA': {
+    chain: sepolia,
+    nativeCurrency: 'SEPOLIA',
+    tokens: {
+      'USDC': {
+        address: '0x1c7D4B196Cb0C7B01d743Fbc6116a902379C7238',
+        decimals: 6,
+        symbol: 'USDC'
+      },
+      'USDT': {
+        address: '0x7169D38820dfd117C3FA1f22a697dBA58d90BA06',
+        decimals: 6,
+        symbol: 'USDT'
+      },
+      'DAI': {
+        address: '0x68194a729C2450ad26072b3D33ADaCbcef39D574',
+        decimals: 18,
+        symbol: 'DAI'
+      },
+      'WETH': {
+        address: '0x7b79995e5f793A07Bc00c21412e50Ecae098E7f9',
+        decimals: 18,
+        symbol: 'WETH'
+      },
+      'LINK': {
+        address: '0x779877A7B0D9E8603169DdbD7836e478b4624789',
+        decimals: 18,
+        symbol: 'LINK'
+      },
+      'UNI': {
+        address: '0x1f9840a85d5aF5bf1D1762F925BDADdC4201F984',
+        decimals: 18,
+        symbol: 'UNI'
+      }
+    }
+  }
+}
+
+// Fonction pour détecter le réseau selon la currency
+function getNetworkFromCurrency(currency) {
+  const currencyUpper = currency.toUpperCase()
+  
+  // ETH = Ethereum Mainnet
+  if (currencyUpper === 'ETH') {
+    return 'ETH'
+  }
+  
+  // SEPOLIA = Sepolia Testnet
+  if (currencyUpper === 'SEPOLIA') {
+    return 'SEPOLIA'
+  }
+  
+  // Pour les tokens ERC-20, vérifier dans quel réseau ils sont disponibles
+  // Par défaut, chercher d'abord sur mainnet, puis sepolia
+  if (NETWORK_CONFIG.ETH.tokens[currencyUpper]) {
+    return 'ETH'
+  }
+  
+  if (NETWORK_CONFIG.SEPOLIA.tokens[currencyUpper]) {
+    return 'SEPOLIA'
+  }
+  
+  // Par défaut, mainnet
+  return 'ETH'
+}
+
+// Fonction pour changer de réseau dans MetaMask
+async function switchToNetwork(networkKey) {
+  if (!window.ethereum) {
+    throw new Error('MetaMask non trouvé')
+  }
+  
+  const networkConfig = NETWORK_CONFIG[networkKey]
+  const chainIdHex = `0x${networkConfig.chain.id.toString(16)}`
+  
+  try {
+    // Essayer de basculer vers le réseau
+    await window.ethereum.request({
+      method: 'wallet_switchEthereumChain',
+      params: [{ chainId: chainIdHex }]
+    })
+    console.log(`✅ Basculé vers ${networkKey}`)
+  } catch (switchError) {
+    // Si le réseau n'existe pas, l'ajouter
+    if (switchError.code === 4902 || switchError.code === -32603) {
+      try {
+        const networkParams = {
+          chainId: chainIdHex,
+          chainName: networkConfig.chain.name,
+          nativeCurrency: {
+            name: networkConfig.chain.nativeCurrency.name,
+            symbol: networkConfig.chain.nativeCurrency.symbol,
+            decimals: networkConfig.chain.nativeCurrency.decimals
+          },
+          rpcUrls: networkConfig.chain.rpcUrls.default.http,
+          blockExplorerUrls: networkConfig.chain.blockExplorers?.default ? [networkConfig.chain.blockExplorers.default.url] : []
+        }
+        
+        await window.ethereum.request({
+          method: 'wallet_addEthereumChain',
+          params: [networkParams]
+        })
+        console.log(`✅ Réseau ${networkKey} ajouté et activé`)
+      } catch (addError) {
+        console.error('❌ Erreur ajout réseau:', addError)
+        throw new Error(`Impossible d'ajouter le réseau ${networkKey}`)
+      }
+    } else {
+      console.error('❌ Erreur changement réseau:', switchError)
+      throw new Error(`Impossible de basculer vers ${networkKey}`)
+    }
+  }
+}
 
 async function connectWallet() {
   if (!window.ethereum) {
@@ -94,22 +312,44 @@ async function loadWalletAddressFromBackend() {
   }
 }
 
-async function sendTransactionFromChat(recipientAddress, amountEth) {
+async function sendTransactionFromChat(recipientAddress, amount, tokenSymbol = 'ETH') {
   if (!window.ethereum || !address.value) {
     throw new Error('Wallet non connecté')
   }
-  if (!recipientAddress || !amountEth) {
+  if (!recipientAddress || !amount) {
     throw new Error('Adresse ou montant manquant')
   }
-  return await executeTransaction(recipientAddress, amountEth)
+  
+  // Détecter le réseau selon la currency
+  const networkKey = getNetworkFromCurrency(tokenSymbol)
+  const networkConfig = NETWORK_CONFIG[networkKey]
+  
+  console.log(`🌐 Réseau détecté pour ${tokenSymbol}: ${networkKey}`)
+  
+  // Basculer automatiquement vers le bon réseau
+  status.value = `🔄 Basculement vers ${networkKey}...`
+  try {
+    await switchToNetwork(networkKey)
+    status.value = `✅ Connecté à ${networkKey}`
+  } catch (error) {
+    status.value = `❌ Erreur réseau: ${error.message}`
+    throw error
+  }
+  
+  // Déterminer si c'est une transaction native ou ERC-20
+  if (tokenSymbol.toUpperCase() === networkConfig.nativeCurrency) {
+    return await executeTransaction(recipientAddress, amount, networkConfig.chain)
+  } else {
+    return await executeERC20Transaction(recipientAddress, amount, tokenSymbol, networkKey)
+  }
 }
 
-async function executeTransaction(recipientAddress, amountEth) {
+async function executeTransaction(recipientAddress, amountEth, chain = sepolia) {
   isProcessing.value = true
   status.value = "Signature..."
   try {
     const transport = custom(window.ethereum)
-    const walletClient = createWalletClient({ chain: sepolia, transport })
+    const walletClient = createWalletClient({ chain, transport })
     const hash = await walletClient.sendTransaction({
       account: address.value,
       to: recipientAddress,
@@ -137,6 +377,118 @@ async function executeTransaction(recipientAddress, amountEth) {
   }
 }
 
+async function executeERC20Transaction(recipientAddress, amount, tokenSymbol, networkKey = 'SEPOLIA') {
+  isProcessing.value = true
+  status.value = "Signature token..."
+  
+  try {
+    const networkConfig = NETWORK_CONFIG[networkKey]
+    const transport = custom(window.ethereum)
+    const walletClient = createWalletClient({ chain: networkConfig.chain, transport })
+    
+    // Récupérer les informations du token
+    const tokenInfo = networkConfig.tokens[tokenSymbol.toUpperCase()]
+    if (!tokenInfo) {
+      throw new Error(`Token ${tokenSymbol} non supporté sur ${networkKey}`)
+    }
+    
+    // Convertir le montant selon les décimales du token
+    const amountInWei = parseUnits(amount.toString(), tokenInfo.decimals)
+    
+    // Encoder les données de la fonction transfer
+    const data = encodeFunctionData({
+      abi: ERC20_ABI,
+      functionName: 'transfer',
+      args: [recipientAddress, amountInWei]
+    })
+    
+    // Envoyer la transaction
+    const hash = await walletClient.sendTransaction({
+      account: address.value,
+      to: tokenInfo.address,
+      data: data,
+      value: 0n // Pas de valeur pour les tokens ERC-20
+    })
+    
+    status.value = `✅ Tx ${tokenSymbol} envoyée : ${hash.slice(0, 10)}...`
+    if (recipientAddress === recipient.value) {
+      recipient.value = ''
+    }
+    return { success: true, hash, message: status.value, token: tokenSymbol }
+    
+  } catch (err) {
+    console.error(err)
+    let errorMessage
+    if (err.message.includes('User rejected')) {
+      errorMessage = '❌ Rejeté'
+    } else if (err.message.includes('insufficient funds') || err.message.includes('ERC20: transfer amount exceeds balance')) {
+      errorMessage = `💸 Fonds ${tokenSymbol} insuffisants`
+    } else if (err.message.includes('Token')) {
+      errorMessage = err.message
+    } else {
+      errorMessage = '⚠️ Erreur transaction token'
+    }
+    status.value = errorMessage
+    throw new Error(errorMessage)
+  } finally {
+    isProcessing.value = false
+  }
+}
+
+// Fonction pour obtenir le solde d'un token ERC-20
+async function getTokenBalance(tokenSymbol, networkKey = null) {
+  if (!address.value) return '0'
+  
+  try {
+    // Auto-détecter le réseau si non spécifié
+    if (!networkKey) {
+      networkKey = getNetworkFromCurrency(tokenSymbol)
+    }
+    
+    const networkConfig = NETWORK_CONFIG[networkKey]
+    const transport = custom(window.ethereum)
+    const walletClient = createWalletClient({ chain: networkConfig.chain, transport })
+    
+    const tokenInfo = networkConfig.tokens[tokenSymbol.toUpperCase()]
+    if (!tokenInfo) {
+      throw new Error(`Token ${tokenSymbol} non supporté sur ${networkKey}`)
+    }
+    
+    const contract = getContract({
+      address: tokenInfo.address,
+      abi: ERC20_ABI,
+      client: walletClient
+    })
+    
+    const balance = await contract.read.balanceOf([address.value])
+    const decimals = await contract.read.decimals()
+    
+    // Convertir le solde en format lisible
+    const balanceInUnits = balance / (10n ** BigInt(decimals))
+    return balanceInUnits.toString()
+    
+  } catch (error) {
+    console.error(`Erreur récupération solde ${tokenSymbol}:`, error)
+    return '0'
+  }
+}
+
+// Fonction pour obtenir la liste des tokens supportés
+function getSupportedTokens(networkKey = null) {
+  if (networkKey) {
+    const networkConfig = NETWORK_CONFIG[networkKey]
+    return [networkConfig.nativeCurrency, ...Object.keys(networkConfig.tokens)]
+  }
+  
+  // Retourner tous les tokens de tous les réseaux
+  const allTokens = new Set()
+  Object.values(NETWORK_CONFIG).forEach(config => {
+    allTokens.add(config.nativeCurrency)
+    Object.keys(config.tokens).forEach(token => allTokens.add(token))
+  })
+  return Array.from(allTokens)
+}
+
 function shortenAddress(addr) {
   if (!addr) return ''
   return addr.slice(0, 4) + '...' + addr.slice(-4)
@@ -147,12 +499,21 @@ onMounted(() => {
   loadWalletAddressFromBackend()
 })
 
+// Surveiller les changements d'adresse pour charger les soldes
+watch(address, (newAddress) => {
+  if (newAddress) {
+    console.log('💼 Nouvelle adresse connectée:', newAddress)
+  }
+})
+
 // Exposer les méthodes pour que le parent puisse les utiliser
 defineExpose({
   sendTransactionFromChat,
   address,
   connectWallet,
-  isConnected: () => !!address.value
+  isConnected: () => !!address.value,
+  getTokenBalance,
+  getSupportedTokens
 })
 </script>
 
