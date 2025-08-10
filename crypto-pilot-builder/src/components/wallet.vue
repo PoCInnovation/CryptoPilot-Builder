@@ -232,6 +232,47 @@ async function switchToNetwork(networkKey) {
   }
 }
 
+// Fonction pour ajouter un token ERC-20 dans MetaMask
+async function addTokenToMetaMask(tokenSymbol, networkKey) {
+  if (!window.ethereum) {
+    console.error('MetaMask non trouvé')
+    return false
+  }
+  
+  const networkConfig = NETWORK_CONFIG[networkKey]
+  const tokenInfo = networkConfig.tokens[tokenSymbol.toUpperCase()]
+  
+  if (!tokenInfo) {
+    console.error(`Token ${tokenSymbol} non trouvé sur ${networkKey}`)
+    return false
+  }
+  
+  try {
+    await window.ethereum.request({
+      method: 'wallet_watchAsset',
+      params: {
+        type: 'ERC20',
+        options: {
+          address: tokenInfo.address,
+          symbol: tokenInfo.symbol,
+          decimals: tokenInfo.decimals,
+          image: `https://cryptologos.cc/logos/${tokenSymbol.toLowerCase()}-${tokenSymbol.toLowerCase()}-logo.png`
+        }
+      }
+    })
+    
+    console.log(`✅ Token ${tokenSymbol} proposé à MetaMask sur ${networkKey}`)
+    return true
+  } catch (error) {
+    if (error.code === 4001) {
+      console.log(`⚠️ Utilisateur a refusé l'ajout du token ${tokenSymbol}`)
+    } else {
+      console.error(`❌ Erreur ajout token ${tokenSymbol}:`, error)
+    }
+    return false
+  }
+}
+
 async function connectWallet() {
   if (!window.ethereum) {
     status.value = "🦊 MetaMask non trouvé"
@@ -394,6 +435,14 @@ async function executeERC20Transaction(recipientAddress, amount, tokenSymbol, ne
     if (!tokenInfo) {
       throw new Error(`Token ${tokenSymbol} non supporté sur ${networkKey}`)
     }
+    
+    // Proposer d'ajouter le token à MetaMask (surtout pour Sepolia)
+    if (networkKey === 'SEPOLIA') {
+      status.value = `🪙 Ajout ${tokenSymbol} à MetaMask...`
+      await addTokenToMetaMask(tokenSymbol, networkKey)
+    }
+    
+    status.value = "Signature token..."
     
     // Convertir le montant selon les décimales du token
     const amountInWei = parseUnits(amount.toString(), tokenInfo.decimals)
