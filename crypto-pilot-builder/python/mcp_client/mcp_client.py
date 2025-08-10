@@ -158,17 +158,19 @@ RÈGLES CRITIQUES pour les swaps :
    - Le token source (ex: ETH, USDC, BTC)
    - Le token destination (ex: USDC, DAI, WETH)
    - Le montant numérique
-3. ACTION IMMÉDIATE : Utilise DIRECTEMENT l'outil execute_swap avec ces paramètres ET l'adresse du wallet connecté comme from_address.
+3. ACTION IMMÉDIATE : Utilise DIRECTEMENT l'outil execute_swap avec ces paramètres ET l'adresse du wallet de l'utilisateur comme from_address.
 EXEMPLES D'APPELS IMMÉDIATS :
-- "0.001 eth en usdc" → APPELLE execute_swap("ETH", "USDC", "0.001", adresse_wallet)
-- "swap 100 usdc vers dai" → APPELLE execute_swap("USDC", "DAI", "100", adresse_wallet)
-- "échanger 0.5 eth" → APPELLE execute_swap("ETH", "USDC", "0.5", adresse_wallet) (USDC par défaut)
+- "0.001 eth en usdc" → APPELLE execute_swap("ETH", "USDC", "0.001", wallet_address)
+- "swap 100 usdc vers dai" → APPELLE execute_swap("USDC", "DAI", "100", wallet_address)
+- "échanger 0.5 eth" → APPELLE execute_swap("ETH", "USDC", "0.5", wallet_address) (USDC par défaut)
 IMPORTANT :
 - NE DONNE JAMAIS d'explication préalable sur le swap
 - N'INFORME PAS l'utilisateur des détails avant d'appeler l'outil
 - NE DEMANDE JAMAIS de confirmation comme "Souhaitez-vous continuer ?"
 - APPELLE execute_swap IMMÉDIATEMENT dès que tu détectes une demande de swap
 - La modal d'interface se charge de tout afficher à l'utilisateur
+- UTILISE l'adresse du wallet fournie dans le contexte (wallet_address) pour les swaps
+- Si l'adresse du wallet n'est pas disponible, demande à l'utilisateur de configurer son wallet d'abord
 IMPORTANT : Dès que tu identifies une demande de transaction ou de swap, utilise l'outil IMMÉDIATEMENT sans autre discussion."""
 
         # NOUVELLE FONCTIONNALITÉ: Intégrer la mémoire utilisateur
@@ -196,6 +198,13 @@ IMPORTANT : Dès que tu identifies une demande de transaction ou de swap, utilis
 
         # Construire le prompt final
         system_prompt = base_prompt
+
+        # Ajouter l'adresse du wallet si disponible
+        if context and context.get('wallet_address'):
+            wallet_address = context.get('wallet_address')
+            system_prompt += f"\n\nADRESSE WALLET UTILISATEUR: {wallet_address}\nUtilise cette adresse pour tous les swaps et transactions.\nIMPORTANT: Quand tu appelles execute_swap, utilise TOUJOURS cette adresse comme from_address."
+        else:
+            system_prompt += "\n\nATTENTION: Aucune adresse wallet configurée. Si l'utilisateur demande un swap, demande-lui d'abord de configurer son adresse wallet."
 
         # Ajouter la mémoire utilisateur si disponible
         if user_memory:

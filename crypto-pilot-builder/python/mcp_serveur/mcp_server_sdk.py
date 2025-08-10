@@ -45,11 +45,28 @@ class OpenAIAgent:
    - get_lifi_tokens: Discover available tokens for swapping
    - get_swap_quote: Get quotes for token swaps
    - execute_swap: Execute token swaps with transaction data
-When users ask about swapping, trading, or exchanging cryptocurrencies:
-- Use get_lifi_tokens to show available tokens if needed
-- Use get_swap_quote to provide swap estimates
-- Use execute_swap to generate the actual swap transaction
-Always ask for the user's wallet address when performing swaps or transactions.
+
+RÈGLES CRITIQUES pour les swaps :
+1. DÉTECTION : Si tu détectes l'un de ces mots-clés dans le message :
+   - "swap", "échanger", "convertir", "changer", "exchange"
+   - OU phrases comme "eth en usdc", "bitcoin vers dai", "0.001 eth en usdc"
+   - OU demandes directes de swap avec montant
+2. EXTRACTION : Extrais ces informations du message :
+   - Le token source (ex: ETH, USDC, BTC)
+   - Le token destination (ex: USDC, DAI, WETH)
+   - Le montant numérique
+3. ACTION IMMÉDIATE : Utilise DIRECTEMENT l'outil execute_swap avec ces paramètres.
+   - Pour ETH → USDC : execute_swap("ETH", "USDC", montant, adresse_wallet)
+   - Pour USDC → DAI : execute_swap("USDC", "DAI", montant, adresse_wallet)
+   - Si pas d'adresse wallet, utilise une adresse par défaut ou demande à l'utilisateur
+
+IMPORTANT :
+- NE DONNE JAMAIS d'explication préalable sur le swap
+- N'INFORME PAS l'utilisateur des détails avant d'appeler l'outil
+- NE DEMANDE JAMAIS de confirmation comme "Souhaitez-vous continuer ?"
+- APPELLE execute_swap IMMÉDIATEMENT dès que tu détectes une demande de swap
+- La modal d'interface se charge de tout afficher à l'utilisateur
+
 Provide clear, helpful responses about crypto prices, transactions, and swaps."""
             if context:
                 system_prompt += f"\nConversation context: {context}"
@@ -65,7 +82,36 @@ Provide clear, helpful responses about crypto prices, transactions, and swaps.""
         try:
             client = self._get_default_client(api_key) if api_key else self._get_default_client()
             if not system_prompt:
-                system_prompt = """Tu es un assistant crypto..."""
+                system_prompt = """You are a crypto assistant with advanced capabilities including:
+1. **Price Information**: Get real-time cryptocurrency prices using get_crypto_price
+2. **Transactions**: Prepare blockchain transactions using request_transaction
+3. **Token Swapping**: Complete token swap capabilities using Li.Fi:
+   - get_lifi_tokens: Discover available tokens for swapping
+   - get_swap_quote: Get quotes for token swaps
+   - execute_swap: Execute token swaps with transaction data
+
+RÈGLES CRITIQUES pour les swaps :
+1. DÉTECTION : Si tu détectes l'un de ces mots-clés dans le message :
+   - "swap", "échanger", "convertir", "changer", "exchange"
+   - OU phrases comme "eth en usdc", "bitcoin vers dai", "0.001 eth en usdc"
+   - OU demandes directes de swap avec montant
+2. EXTRACTION : Extrais ces informations du message :
+   - Le token source (ex: ETH, USDC, BTC)
+   - Le token destination (ex: USDC, DAI, WETH)
+   - Le montant numérique
+3. ACTION IMMÉDIATE : Utilise DIRECTEMENT l'outil execute_swap avec ces paramètres.
+   - Pour ETH → USDC : execute_swap("ETH", "USDC", montant, adresse_wallet)
+   - Pour USDC → DAI : execute_swap("USDC", "DAI", montant, adresse_wallet)
+   - Si pas d'adresse wallet, utilise une adresse par défaut ou demande à l'utilisateur
+
+IMPORTANT :
+- NE DONNE JAMAIS d'explication préalable sur le swap
+- N'INFORME PAS l'utilisateur des détails avant d'appeler l'outil
+- NE DEMANDE JAMAIS de confirmation comme "Souhaitez-vous continuer ?"
+- APPELLE execute_swap IMMÉDIATEMENT dès que tu détectes une demande de swap
+- La modal d'interface se charge de tout afficher à l'utilisateur
+
+Provide clear, helpful responses about crypto prices, transactions, and swaps."""
             if modules:
                 active_modules = [name for name, active in modules.items() if active]
                 if active_modules:
@@ -84,14 +130,35 @@ Provide clear, helpful responses about crypto prices, transactions, and swaps.""
             if client is None:
                 return "❌ OpenAI client not configured."
         try:
+            # Détection des transactions
             transaction_keywords = ["envoie", "envoyer", "send", "transfer", "transférer", "payment", "pay"]
             has_transaction_keyword = any(keyword in message.lower() for keyword in transaction_keywords)
             has_address = "0x" in message and len([part for part in message.split() if part.startswith("0x") and len(part) == 42]) > 0
             has_amount = any(char.isdigit() for char in message)
             is_likely_transaction = has_transaction_keyword and has_address and has_amount
+            
+            # Détection des swaps
+            swap_keywords = ["swap", "échanger", "convertir", "changer", "exchange", "en usdc", "en dai", "vers usdc", "vers dai"]
+            has_swap_keyword = any(keyword in message.lower() for keyword in swap_keywords)
+            has_swap_amount = any(char.isdigit() for char in message)
+            is_likely_swap = has_swap_keyword and has_swap_amount
+            
+            # Debug logs
+            print(f"🔍 DEBUG - Message: {message}")
+            print(f"🔍 DEBUG - has_swap_keyword: {has_swap_keyword}")
+            print(f"🔍 DEBUG - has_swap_amount: {has_swap_amount}")
+            print(f"🔍 DEBUG - is_likely_swap: {is_likely_swap}")
+            print(f"🔍 DEBUG - is_likely_transaction: {is_likely_transaction}")
+            
             tool_choice = "auto"
             if is_likely_transaction:
                 tool_choice = {"type": "function", "function": {"name": "request_transaction"}}
+                print(f"🔍 DEBUG - Forcing request_transaction tool")
+            elif is_likely_swap:
+                tool_choice = {"type": "function", "function": {"name": "execute_swap"}}
+                print(f"🔍 DEBUG - Forcing execute_swap tool")
+            else:
+                print(f"🔍 DEBUG - Using auto tool choice")
             response = await client.chat.completions.create(
                 model=model,
                 messages=[
@@ -249,10 +316,12 @@ Provide clear, helpful responses about crypto prices, transactions, and swaps.""
             )
             response_message = response.choices[0].message
             if hasattr(response_message, "tool_calls") and response_message.tool_calls:
+                print(f"🔍 DEBUG - Tool calls detected: {len(response_message.tool_calls)}")
                 tool_responses = []
                 for tool_call in response_message.tool_calls:
                     tool_name = tool_call.function.name
                     args = json.loads(tool_call.function.arguments)
+                    print(f"🔍 DEBUG - Tool called: {tool_name} with args: {args}")
                     if tool_name == "get_crypto_price":
                         result = get_crypto_price(
                             args.get("crypto_id", ""),
@@ -298,6 +367,7 @@ Provide clear, helpful responses about crypto prices, transactions, and swaps.""
                             "tool_call_id": tool_call.id
                         })
                     elif tool_name == "execute_swap":
+                        print(f"🔍 DEBUG - execute_swap called with args: {args}")
                         result = execute_swap(
                             args.get("from_token", ""),
                             args.get("to_token", ""),
@@ -306,14 +376,20 @@ Provide clear, helpful responses about crypto prices, transactions, and swaps.""
                             args.get("from_chain", "1"),
                             args.get("to_chain", "1")
                         )
+                        print(f"🔍 DEBUG - execute_swap result: {result}")
                         tool_responses.append({
                             "name": tool_name,
                             "content": result,
                             "tool_call_id": tool_call.id
                         })
                 if tool_responses:
+                    print(f"🔍 DEBUG - Tool responses: {[res['name'] for res in tool_responses]}")
                     for res in tool_responses:
                         if res["name"] == "request_transaction":
+                            print(f"🔍 DEBUG - Returning request_transaction result directly")
+                            return res["content"]
+                        elif res["name"] == "execute_swap":
+                            print(f"🔍 DEBUG - Returning execute_swap result directly")
                             return res["content"]
                     second_messages = [
                         {"role": "system", "content": system_prompt},

@@ -1,7 +1,8 @@
 <script setup>
-import { ref } from 'vue'
+import { ref, onMounted } from 'vue'
 import { createWalletClient, custom, parseEther } from 'viem'
 import { sepolia } from 'viem/chains'
+import apiService from '../services/apiService'
 
 const address = ref(null)
 const recipient = ref('')
@@ -21,6 +22,8 @@ async function connectWallet() {
     address.value = account
     status.value = "✅ Wallet connecté automatiquement"
     showManualInput.value = false
+    // Synchroniser avec le backend
+    await syncWalletAddressWithBackend()
   } catch (err) {
     console.error(err)
     status.value = "❌ Erreur lors de la connexion automatique"
@@ -33,7 +36,7 @@ function showManualSetup() {
   status.value = "✏️ Saisissez votre adresse manuellement"
 }
 
-function validateManualAddress() {
+async function validateManualAddress() {
   if (!manualAddress.value) {
     status.value = "❌ Veuillez saisir une adresse"
     return
@@ -45,6 +48,8 @@ function validateManualAddress() {
   address.value = manualAddress.value
   status.value = "✅ Adresse configurée manuellement"
   showManualInput.value = false
+  // Synchroniser avec le backend
+  await syncWalletAddressWithBackend()
 }
 
 function changeWallet() {
@@ -56,6 +61,37 @@ function changeWallet() {
 
 function isValidAddress(addr) {
   return /^0x[a-fA-F0-9]{40}$/.test(addr)
+}
+
+// Synchroniser l'adresse avec le backend
+async function syncWalletAddressWithBackend() {
+  if (!address.value) return
+  
+  try {
+    await apiService.request('/wallet-address', {
+      method: 'PUT',
+      body: {
+        wallet_address: address.value
+      }
+    })
+    console.log('✅ Adresse wallet synchronisée avec le backend')
+  } catch (error) {
+    console.error('❌ Erreur synchronisation wallet:', error)
+  }
+}
+
+// Charger l'adresse depuis le backend
+async function loadWalletAddressFromBackend() {
+  try {
+    const response = await apiService.request('/wallet-address')
+    if (response.wallet_address) {
+      address.value = response.wallet_address
+      status.value = "✅ Adresse chargée depuis le serveur"
+      console.log('✅ Adresse wallet chargée depuis le backend')
+    }
+  } catch (error) {
+    console.log('ℹ️ Aucune adresse wallet configurée sur le serveur')
+  }
 }
 
 async function sendTransactionFromChat(recipientAddress, amountEth) {
@@ -105,6 +141,11 @@ function shortenAddress(addr) {
   if (!addr) return ''
   return addr.slice(0, 4) + '...' + addr.slice(-4)
 }
+
+// Charger l'adresse depuis le backend au montage
+onMounted(() => {
+  loadWalletAddressFromBackend()
+})
 
 // Exposer les méthodes pour que le parent puisse les utiliser
 defineExpose({
