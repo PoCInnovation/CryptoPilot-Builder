@@ -27,12 +27,24 @@ class MCPClient:
                 command=MCP_SERVER_COMMAND,
                 args=MCP_SERVER_ARGS,
             )
-            self.connected = True
-            print("✅ MCP client configured for connection")
-            return True
+            
+            # Test the connection by trying to list tools
+            try:
+                async with stdio_client(self.server_params) as (read, write):
+                    async with ClientSession(read, write) as session:
+                        await session.initialize()
+                        tools = await session.list_tools()
+                        print(f"✅ MCP client connected successfully - {len(tools.tools)} tools available")
+                        self.connected = True
+                        return True
+            except Exception as e:
+                print(f"❌ MCP connection test failed: {e}")
+                self.connected = False
+                return False
 
         except Exception as e:
             print(f"❌ MCP configuration error: {e}")
+            self.connected = False
             return False
 
     async def ensure_connection(self) -> bool:

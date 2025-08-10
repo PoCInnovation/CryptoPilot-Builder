@@ -19,6 +19,18 @@ def create_app():
     app = Flask(__name__)
     CORS(app)
 
+    # Initialize MCP client
+    print("🔧 Initializing MCP client...")
+    loop = asyncio.new_event_loop()
+    asyncio.set_event_loop(loop)
+    mcp_ready = loop.run_until_complete(init_mcp())
+    loop.close()
+
+    if not mcp_ready:
+        print("❌ MCP initialization failed - continuing without MCP")
+    else:
+        print("✅ MCP client initialized successfully")
+
     # Register routes
     create_api_routes(app)
 

@@ -13,7 +13,7 @@ from mcp.server import NotificationOptions, Server
 from mcp.types import Tool, TextContent
 from mcp.server.stdio import stdio_server
 sys.path.append(os.path.dirname(__file__))
-from crypto_tools import get_crypto_price, request_transaction
+from crypto_tools import get_crypto_price, request_transaction, get_lifi_tokens, get_swap_quote, execute_swap
 load_dotenv()
 
 class OpenAIAgent:
@@ -534,7 +534,9 @@ async def handle_call_tool(name: str, arguments: dict | None) -> list[TextConten
         if recipient_address and amount:
             result = request_transaction(recipient_address, amount, currency)
             return [TextContent(type="text", text=result)]
-        if name == "get_lifi_tokens":
+        return [TextContent(type="text", text="❌ Missing required parameters: recipient_address, amount")]
+    
+    if name == "get_lifi_tokens":
         chains = arguments.get("chains", None)
         result = get_lifi_tokens(chains)
         return [TextContent(type="text", text=result)]

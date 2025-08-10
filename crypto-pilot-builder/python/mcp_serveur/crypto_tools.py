@@ -4,6 +4,7 @@ Crypto tools for MCP agent
 """
 
 import requests
+import json
 
 def get_crypto_price(crypto_id: str, currency: str = "usd") -> str:
     url = "https://api.coingecko.com/api/v3/simple/price"
@@ -45,7 +46,7 @@ def request_transaction(recipient_address: str, amount: str, currency: str = "se
     message = f"Transaction of {amount} {currency} to {recipient_address[:6]}...{recipient_address[-4:]} prepared."
     return f"{message}\n\n{transaction_request}"
 
-    def get_lifi_tokens(chains: str = None) -> str:
+def get_lifi_tokens(chains: str = None) -> str:
     """Get available tokens from Li.Fi API"""
     url = "https://li.quest/v1/tokens"
     params = {}
