@@ -157,7 +157,7 @@ const NETWORK_CONFIG = {
 function getNetworkFromCurrency(currency) {
   const currencyUpper = currency.toUpperCase()
   
-  // ETH = Ethereum Mainnet
+  // ETH = Ethereum Mainnet (VRAIE CRYPTO CHÈRE !)
   if (currencyUpper === 'ETH') {
     return 'ETH'
   }
@@ -167,18 +167,21 @@ function getNetworkFromCurrency(currency) {
     return 'SEPOLIA'
   }
   
-  // Pour les tokens ERC-20, vérifier dans quel réseau ils sont disponibles
-  // Par défaut, chercher d'abord sur mainnet, puis sepolia
-  if (NETWORK_CONFIG.ETH.tokens[currencyUpper]) {
-    return 'ETH'
-  }
-  
+  // ⚠️ SÉCURITÉ : Pour les tokens ERC-20, utiliser SEPOLIA par défaut pour éviter les frais énormes !
+  // Priorité : Sepolia d'abord (gratuit), puis mainnet seulement si pas trouvé
   if (NETWORK_CONFIG.SEPOLIA.tokens[currencyUpper]) {
+    console.log(`🧪 ${currencyUpper} trouvé sur SEPOLIA (testnet gratuit)`)
     return 'SEPOLIA'
   }
   
-  // Par défaut, mainnet
-  return 'ETH'
+  if (NETWORK_CONFIG.ETH.tokens[currencyUpper]) {
+    console.log(`💰 ${currencyUpper} trouvé sur ETH MAINNET (ATTENTION: FRAIS ÉLEVÉS!)`)
+    return 'ETH'
+  }
+  
+  // Par défaut, SEPOLIA pour éviter les frais
+  console.log(`🧪 Token ${currencyUpper} non trouvé, utilisation de SEPOLIA par sécurité`)
+  return 'SEPOLIA'
 }
 
 // Fonction pour changer de réseau dans MetaMask
