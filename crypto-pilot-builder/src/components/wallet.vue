@@ -86,71 +86,147 @@ const ERC20_ABI = [
 ]
 
 // Configuration des réseaux et tokens
-const NETWORK_CONFIG = {
+const NETWORK_CONFIG = ref({
   // Ethereum Mainnet
   'ETH': {
     chain: mainnet,
     nativeCurrency: 'ETH',
-    tokens: {
-      'USDC': {
-        address: '0xA0b86991c6218b36c1d19D4a2e9Eb0cE3606eB48',
-        decimals: 6,
-        symbol: 'USDC'
-      },
-      'USDT': {
-        address: '0xdAC17F958D2ee523a2206206994597C13D831ec7',
-        decimals: 6,
-        symbol: 'USDT'
-      },
-      'DAI': {
-        address: '0x6B175474E89094C44Da98b954EedeAC495271d0F',
-        decimals: 18,
-        symbol: 'DAI'
-      },
-      'WETH': {
-        address: '0xC02aaA39b223FE8D0A0e5C4F27eAD9083C756Cc2',
-        decimals: 18,
-        symbol: 'WETH'
-      }
-    }
+    tokens: {}
   },
   // Sepolia Testnet
   'SEPOLIA': {
     chain: sepolia,
     nativeCurrency: 'SEPOLIA',
-    tokens: {
+    tokens: {}
+  }
+})
+
+// Fonction pour récupérer dynamiquement les tokens ERC-20
+const loadTokensFromAPI = async (network = 'SEPOLIA') => {
+  try {
+    console.log(`🔄 Chargement des tokens pour ${network}...`)
+    
+    // Appel à l'API MCP pour récupérer les tokens
+    const response = await apiService.callMCPTool('get_all_erc20_tokens', {
+      chain_id: network === 'SEPOLIA' ? '11155111' : '1'
+    })
+    
+    if (response && response.content) {
+      // Parser la réponse pour extraire les informations des tokens
+      const content = response.content
+      
+      // Extraire les adresses des tokens depuis la réponse
+      const tokenMatches = content.match(/• ([A-Z]+) \(([^)]+)\)\n\s+Address: (0x[a-fA-F0-9]{40})\n\s+Decimals: (\d+)/g)
+      
+      if (tokenMatches) {
+        const tokens = {}
+        tokenMatches.forEach(match => {
+          const parts = match.match(/• ([A-Z]+) \(([^)]+)\)\n\s+Address: (0x[a-fA-F0-9]{40})\n\s+Decimals: (\d+)/)
+          if (parts) {
+            const [, symbol, name, address, decimals] = parts
+            tokens[symbol] = {
+              address: address,
+              decimals: parseInt(decimals),
+              symbol: symbol,
+              name: name
+            }
+          }
+        })
+        
+        // Mettre à jour la configuration
+        if (NETWORK_CONFIG.value[network]) {
+          NETWORK_CONFIG.value[network].tokens = tokens
+        }
+        
+        console.log(`✅ ${Object.keys(tokens).length} tokens chargés pour ${network}:`, tokens)
+        return tokens
+      }
+    }
+    
+    // Fallback vers les tokens prédéfinis si l'API échoue
+    console.warn('⚠️ Impossible de charger les tokens depuis l\'API, utilisation des tokens prédéfinis')
+    return loadFallbackTokens(network)
+    
+  } catch (error) {
+    console.error('❌ Erreur lors du chargement des tokens:', error)
+    return loadFallbackTokens(network)
+  }
+}
+
+// Fonction de fallback avec les tokens prédéfinis
+const loadFallbackTokens = (network) => {
+  const fallbackTokens = {
+    'SEPOLIA': {
       'USDC': {
         address: '0x1c7D4B196Cb0C7B01d743Fbc6116a902379C7238',
         decimals: 6,
-        symbol: 'USDC'
+        symbol: 'USDC',
+        name: 'USD Coin'
       },
       'USDT': {
         address: '0x7169D38820dfd117C3FA1f22a697dBA58d90BA06',
         decimals: 6,
-        symbol: 'USDT'
+        symbol: 'USDT',
+        name: 'Tether USD'
       },
       'DAI': {
         address: '0x68194a729C2450ad26072b3D33ADaCbcef39D574',
         decimals: 18,
-        symbol: 'DAI'
+        symbol: 'DAI',
+        name: 'Dai Stablecoin'
       },
       'WETH': {
         address: '0x7b79995e5f793A07Bc00c21412e50Ecae098E7f9',
         decimals: 18,
-        symbol: 'WETH'
+        symbol: 'WETH',
+        name: 'Wrapped Ether'
       },
       'LINK': {
         address: '0x779877A7B0D9E8603169DdbD7836e478b4624789',
         decimals: 18,
-        symbol: 'LINK'
+        symbol: 'LINK',
+        name: 'Chainlink'
       },
       'UNI': {
         address: '0x1f9840a85d5aF5bf1D1762F925BDADdC4201F984',
         decimals: 18,
-        symbol: 'UNI'
+        symbol: 'UNI',
+        name: 'Uniswap'
+      }
+    },
+    'ETH': {
+      'USDC': {
+        address: '0xA0b86991c6218b36c1d19D4a2e9Eb0cE3606eB48',
+        decimals: 6,
+        symbol: 'USDC',
+        name: 'USD Coin'
+      },
+      'USDT': {
+        address: '0xdAC17F958D2ee523a2206206994597C13D831ec7',
+        decimals: 6,
+        symbol: 'USDT',
+        name: 'Tether USD'
+      },
+      'DAI': {
+        address: '0x6B175474E89094C44Da98b954EedeAC495271d0F',
+        decimals: 18,
+        symbol: 'DAI',
+        name: 'Dai Stablecoin'
+      },
+      'WETH': {
+        address: '0xC02aaA39b223FE8D0A0e5C4F27eAD9083C756Cc2',
+        decimals: 18,
+        symbol: 'WETH',
+        name: 'Wrapped Ether'
       }
     }
   }
+  
+  if (NETWORK_CONFIG.value[network]) {
+    NETWORK_CONFIG.value[network].tokens = fallbackTokens[network] || {}
+  }
+  
+  return fallbackTokens[network] || {}
 }
 
 // Fonction pour détecter le réseau selon la currency
@@ -169,12 +245,12 @@ function getNetworkFromCurrency(currency) {
   
   // ⚠️ SÉCURITÉ : Pour les tokens ERC-20, utiliser SEPOLIA par défaut pour éviter les frais énormes !
   // Priorité : Sepolia d'abord (gratuit), puis mainnet seulement si pas trouvé
-  if (NETWORK_CONFIG.SEPOLIA.tokens[currencyUpper]) {
+  if (NETWORK_CONFIG.value.SEPOLIA.tokens[currencyUpper]) {
     console.log(`🧪 ${currencyUpper} trouvé sur SEPOLIA (testnet gratuit)`)
     return 'SEPOLIA'
   }
   
-  if (NETWORK_CONFIG.ETH.tokens[currencyUpper]) {
+  if (NETWORK_CONFIG.value.ETH.tokens[currencyUpper]) {
     console.log(`💰 ${currencyUpper} trouvé sur ETH MAINNET (ATTENTION: FRAIS ÉLEVÉS!)`)
     return 'ETH'
   }
@@ -190,7 +266,7 @@ async function switchToNetwork(networkKey) {
     throw new Error('MetaMask non trouvé')
   }
   
-  const networkConfig = NETWORK_CONFIG[networkKey]
+  const networkConfig = NETWORK_CONFIG.value[networkKey]
   const chainIdHex = `0x${networkConfig.chain.id.toString(16)}`
   
   try {
@@ -239,7 +315,7 @@ async function addTokenToMetaMask(tokenSymbol, networkKey) {
     return false
   }
   
-  const networkConfig = NETWORK_CONFIG[networkKey]
+  const networkConfig = NETWORK_CONFIG.value[networkKey]
   const tokenInfo = networkConfig.tokens[tokenSymbol.toUpperCase()]
   
   if (!tokenInfo) {
@@ -366,7 +442,7 @@ async function sendTransactionFromChat(recipientAddress, amount, tokenSymbol = '
   
   // Détecter le réseau selon la currency
   const networkKey = getNetworkFromCurrency(tokenSymbol)
-  const networkConfig = NETWORK_CONFIG[networkKey]
+  const networkConfig = NETWORK_CONFIG.value[networkKey]
   
   console.log(`🌐 Réseau détecté pour ${tokenSymbol}: ${networkKey}`)
   
@@ -426,7 +502,7 @@ async function executeERC20Transaction(recipientAddress, amount, tokenSymbol, ne
   status.value = "Signature token..."
   
   try {
-    const networkConfig = NETWORK_CONFIG[networkKey]
+    const networkConfig = NETWORK_CONFIG.value[networkKey]
     const transport = custom(window.ethereum)
     const walletClient = createWalletClient({ chain: networkConfig.chain, transport })
     
@@ -497,7 +573,7 @@ async function getTokenBalance(tokenSymbol, networkKey = null) {
       networkKey = getNetworkFromCurrency(tokenSymbol)
     }
     
-    const networkConfig = NETWORK_CONFIG[networkKey]
+    const networkConfig = NETWORK_CONFIG.value[networkKey]
     const transport = custom(window.ethereum)
     const walletClient = createWalletClient({ chain: networkConfig.chain, transport })
     
@@ -528,13 +604,13 @@ async function getTokenBalance(tokenSymbol, networkKey = null) {
 // Fonction pour obtenir la liste des tokens supportés
 function getSupportedTokens(networkKey = null) {
   if (networkKey) {
-    const networkConfig = NETWORK_CONFIG[networkKey]
+    const networkConfig = NETWORK_CONFIG.value[networkKey]
     return [networkConfig.nativeCurrency, ...Object.keys(networkConfig.tokens)]
   }
   
   // Retourner tous les tokens de tous les réseaux
   const allTokens = new Set()
-  Object.values(NETWORK_CONFIG).forEach(config => {
+  Object.values(NETWORK_CONFIG.value).forEach(config => {
     allTokens.add(config.nativeCurrency)
     Object.keys(config.tokens).forEach(token => allTokens.add(token))
   })
@@ -547,8 +623,14 @@ function shortenAddress(addr) {
 }
 
 // Charger l'adresse depuis le backend au montage
-onMounted(() => {
+onMounted(async () => {
   loadWalletAddressFromBackend()
+  
+  // Charger dynamiquement les tokens ERC-20
+  console.log('🔄 Chargement des tokens ERC-20...')
+  await loadTokensFromAPI('SEPOLIA')
+  await loadTokensFromAPI('ETH')
+  console.log('✅ Tokens ERC-20 chargés')
 })
 
 // Surveiller les changements d'adresse pour charger les soldes

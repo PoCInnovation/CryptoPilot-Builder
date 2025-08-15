@@ -5,6 +5,8 @@ Crypto tools for MCP agent
 
 import requests
 import json
+import os
+from typing import Dict, List, Optional
 
 def get_crypto_price(crypto_id: str, currency: str = "usd") -> str:
     url = "https://api.coingecko.com/api/v3/simple/price"
@@ -343,3 +345,228 @@ def get_sepolia_tokens() -> str:
     result += "4. WETH: Wrap de l'ETH via un DEX ou contrat\n"
     
     return result
+
+def get_all_erc20_tokens(chain_id: str = "11155111") -> str:
+    """
+    Récupère dynamiquement tous les tokens ERC-20 disponibles sur Sepolia
+    Utilise l'API Etherscan pour récupérer les tokens les plus populaires
+    """
+    # Configuration pour Sepolia (chain_id: 11155111)
+    if chain_id == "11155111":  # Sepolia
+        api_url = "https://api-sepolia.etherscan.io/api"
+        chain_name = "Sepolia"
+    elif chain_id == "1":  # Ethereum Mainnet
+        api_url = "https://api.etherscan.io/api"
+        chain_name = "Ethereum Mainnet"
+    else:
+        return "❌ Chaîne non supportée. Utilisez '11155111' pour Sepolia ou '1' pour Ethereum Mainnet."
+    
+    # Récupérer la clé API Etherscan depuis les variables d'environnement
+    etherscan_api_key = os.getenv('ETHERSCAN_API_KEY', '')
+    
+    if not etherscan_api_key:
+        # Si pas de clé API, retourner les tokens prédéfinis selon la chaîne
+        if chain_id == "11155111":  # Sepolia
+            return get_sepolia_tokens()
+        elif chain_id == "1":  # Ethereum Mainnet
+            # Tokens prédéfinis pour Ethereum Mainnet
+            mainnet_tokens = {
+                "USDC": {
+                    "address": "0xA0b86991c6218b36c1d19D4a2e9Eb0cE3606eB48",
+                    "decimals": 6,
+                    "symbol": "USDC",
+                    "name": "USD Coin",
+                    "faucet": "Acheter sur un exchange"
+                },
+                "USDT": {
+                    "address": "0xdAC17F958D2ee523a2206206994597C13D831ec7",
+                    "decimals": 6,
+                    "symbol": "USDT",
+                    "name": "Tether USD",
+                    "faucet": "Acheter sur un exchange"
+                },
+                "DAI": {
+                    "address": "0x6B175474E89094C44Da98b954EedeAC495271d0F",
+                    "decimals": 18,
+                    "symbol": "DAI",
+                    "name": "Dai Stablecoin",
+                    "faucet": "Acheter sur un exchange"
+                },
+                "WETH": {
+                    "address": "0xC02aaA39b223FE8D0A0e5C4F27eAD9083C756Cc2",
+                    "decimals": 18,
+                    "symbol": "WETH",
+                    "name": "Wrapped Ether",
+                    "faucet": "Wrap de l'ETH via un DEX"
+                }
+            }
+            
+            result = f"✅ Available ERC-20 tokens on {chain_name}:\n\n"
+            for symbol, info in mainnet_tokens.items():
+                result += f"• {symbol} ({info['name']})\n"
+                result += f"  Address: {info['address']}\n"
+                result += f"  Decimals: {info['decimals']}\n"
+                result += f"  Faucet: {info['faucet']}\n\n"
+            
+            result += "💡 Pour obtenir des tokens:\n"
+            result += "1. ETH: Acheter sur un exchange (Coinbase, Binance, etc.)\n"
+            result += "2. USDC/USDT/DAI: Acheter sur un exchange\n"
+            result += "3. WETH: Wrap de l'ETH via un DEX (Uniswap, etc.)\n"
+            
+            return result
+        else:
+            return "❌ Chaîne non supportée. Utilisez '11155111' pour Sepolia ou '1' pour Ethereum Mainnet."
+    
+    try:
+        # Récupérer les tokens les plus populaires via l'API Etherscan
+        params = {
+            'module': 'account',
+            'action': 'tokentx',
+            'contractaddress': '',  # Vide pour récupérer toutes les transactions
+            'page': 1,
+            'offset': 100,  # Limiter à 100 résultats
+            'sort': 'desc',
+            'apikey': etherscan_api_key
+        }
+        
+        response = requests.get(api_url, params=params, timeout=15)
+        response.raise_for_status()
+        data = response.json()
+        
+        if data.get('status') != '1':
+            # Si l'API échoue, retourner les tokens prédéfinis
+            return get_sepolia_tokens()
+        
+        # Extraire les adresses de contrats uniques
+        transactions = data.get('result', [])
+        unique_contracts = {}
+        
+        for tx in transactions:
+            contract_address = tx.get('contractAddress', '').lower()
+            if contract_address and contract_address not in unique_contracts:
+                unique_contracts[contract_address] = {
+                    'address': tx.get('contractAddress', ''),
+                    'symbol': tx.get('tokenSymbol', ''),
+                    'name': tx.get('tokenName', ''),
+                    'decimals': int(tx.get('tokenDecimal', '18')),
+                    'tx_count': 1
+                }
+            elif contract_address in unique_contracts:
+                unique_contracts[contract_address]['tx_count'] += 1
+        
+        # Trier par nombre de transactions (popularité)
+        sorted_contracts = sorted(unique_contracts.items(), 
+                                key=lambda x: x[1]['tx_count'], reverse=True)
+        
+        # Limiter aux 20 tokens les plus populaires
+        top_tokens = sorted_contracts[:20]
+        
+        # Ajouter les tokens prédéfinis importants
+        predefined_tokens = {
+            "USDC": {
+                "address": "0x1c7D4B196Cb0C7B01d743Fbc6116a902379C7238",
+                "decimals": 6,
+                "symbol": "USDC",
+                "name": "USD Coin",
+                "faucet": "https://faucet.sepolia.dev/"
+            },
+            "USDT": {
+                "address": "0x7169D38820dfd117C3FA1f22a697dBA58d90BA06",
+                "decimals": 6,
+                "symbol": "USDT",
+                "name": "Tether USD",
+                "faucet": "https://faucet.sepolia.dev/"
+            },
+            "DAI": {
+                "address": "0x68194a729C2450ad26072b3D33ADaCbcef39D574",
+                "decimals": 18,
+                "symbol": "DAI",
+                "name": "Dai Stablecoin",
+                "faucet": "https://faucet.sepolia.dev/"
+            },
+            "WETH": {
+                "address": "0x7b79995e5f793A07Bc00c21412e50Ecae098E7f9",
+                "decimals": 18,
+                "symbol": "WETH",
+                "name": "Wrapped Ether",
+                "faucet": "Obtenu en wrappant de l'ETH de test"
+            },
+            "LINK": {
+                "address": "0x779877A7B0D9E8603169DdbD7836e478b4624789",
+                "decimals": 18,
+                "symbol": "LINK",
+                "name": "Chainlink",
+                "faucet": "https://faucets.chain.link/sepolia"
+            },
+            "UNI": {
+                "address": "0x1f9840a85d5aF5bf1D1762F925BDADdC4201F984",
+                "decimals": 18,
+                "symbol": "UNI",
+                "name": "Uniswap",
+                "faucet": "https://faucet.sepolia.dev/"
+            }
+        }
+        
+        # Combiner les tokens dynamiques avec les prédéfinis
+        all_tokens = {}
+        
+        # Ajouter d'abord les tokens prédéfinis
+        for symbol, info in predefined_tokens.items():
+            all_tokens[symbol] = info
+        
+        # Ajouter les tokens dynamiques (en évitant les doublons)
+        for contract_address, token_info in top_tokens:
+            symbol = token_info['symbol']
+            if symbol and symbol not in all_tokens:
+                all_tokens[symbol] = {
+                    "address": token_info['address'],
+                    "decimals": token_info['decimals'],
+                    "symbol": symbol,
+                    "name": token_info['name'],
+                    "faucet": "https://faucet.sepolia.dev/",
+                    "popularity": token_info['tx_count']
+                }
+        
+        # Formater le résultat
+        result = f"✅ Tokens ERC-20 disponibles sur {chain_name}:\n\n"
+        
+        # Afficher d'abord les tokens prédéfinis
+        result += "🔵 Tokens principaux:\n"
+        for symbol, info in predefined_tokens.items():
+            result += f"• {symbol} ({info['name']})\n"
+            result += f"  Address: {info['address']}\n"
+            result += f"  Decimals: {info['decimals']}\n"
+            result += f"  Faucet: {info['faucet']}\n\n"
+        
+        # Afficher les tokens dynamiques
+        if len(all_tokens) > len(predefined_tokens):
+            result += "🟢 Tokens populaires détectés:\n"
+            for symbol, info in all_tokens.items():
+                if symbol not in predefined_tokens:
+                    popularity = info.get('popularity', 0)
+                    result += f"• {symbol} ({info['name']}) - {popularity} tx\n"
+                    result += f"  Address: {info['address']}\n"
+                    result += f"  Decimals: {info['decimals']}\n"
+                    result += f"  Faucet: https://faucet.sepolia.dev/\n\n"
+        
+        result += "💡 Pour obtenir des tokens de test:\n"
+        result += "1. ETH: https://sepoliafaucet.com/\n"
+        result += "2. USDC/USDT/DAI: https://faucet.sepolia.dev/\n"
+        result += "3. LINK: https://faucets.chain.link/sepolia\n"
+        result += "4. WETH: Wrap de l'ETH via un DEX ou contrat\n"
+        result += "5. Autres tokens: https://faucet.sepolia.dev/\n\n"
+        
+        result += f"📊 Total: {len(all_tokens)} tokens disponibles"
+        
+        return result
+        
+    except requests.exceptions.RequestException as e:
+        if chain_id == "11155111":
+            return f"❌ Erreur API Etherscan: {str(e)}\n\nUtilisation des tokens prédéfinis:\n{get_sepolia_tokens()}"
+        else:
+            return f"❌ Erreur API Etherscan: {str(e)}\n\nUtilisation des tokens prédéfinis pour {chain_name}."
+    except Exception as e:
+        if chain_id == "11155111":
+            return f"❌ Erreur inattendue: {str(e)}\n\nUtilisation des tokens prédéfinis:\n{get_sepolia_tokens()}"
+        else:
+            return f"❌ Erreur inattendue: {str(e)}\n\nUtilisation des tokens prédéfinis pour {chain_name}."

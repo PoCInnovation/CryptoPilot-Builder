@@ -13,7 +13,7 @@ from mcp.server import NotificationOptions, Server
 from mcp.types import Tool, TextContent
 from mcp.server.stdio import stdio_server
 sys.path.append(os.path.dirname(__file__))
-from crypto_tools import get_crypto_price, request_transaction, get_lifi_tokens, get_swap_quote, execute_swap, get_sepolia_tokens
+from crypto_tools import get_crypto_price, request_transaction, get_lifi_tokens, get_swap_quote, execute_swap, get_sepolia_tokens, get_all_erc20_tokens
 load_dotenv()
 
 class OpenAIAgent:
@@ -355,6 +355,24 @@ Provide clear, helpful responses about crypto prices, transactions, and swaps.""
                                 "required": []
                             }
                         }
+                    },
+                    {
+                        "type": "function",
+                        "function": {
+                            "name": "get_all_erc20_tokens",
+                            "description": "Get all available ERC-20 tokens dynamically from blockchain (Sepolia or Ethereum Mainnet). Uses Etherscan API to discover popular tokens.",
+                            "parameters": {
+                                "type": "object",
+                                "properties": {
+                                    "chain_id": {
+                                        "type": "string",
+                                        "description": "Chain ID: '11155111' for Sepolia, '1' for Ethereum Mainnet",
+                                        "default": "11155111"
+                                    }
+                                },
+                                "required": []
+                            }
+                        }
                     }
                 ],
                 tool_choice=tool_choice
@@ -423,6 +441,14 @@ Provide clear, helpful responses about crypto prices, transactions, and swaps.""
                         })
                     elif tool_name == "get_sepolia_tokens":
                         result = get_sepolia_tokens()
+                        tool_responses.append({
+                            "name": tool_name,
+                            "content": result,
+                            "tool_call_id": tool_call.id
+                        })
+                    elif tool_name == "get_all_erc20_tokens":
+                        chain_id = args.get("chain_id", "11155111")
+                        result = get_all_erc20_tokens(chain_id)
                         tool_responses.append({
                             "name": tool_name,
                             "content": result,
@@ -681,6 +707,11 @@ async def handle_call_tool(name: str, arguments: dict | None) -> list[TextConten
 
     if name == "get_sepolia_tokens":
         result = get_sepolia_tokens()
+        return [TextContent(type="text", text=result)]
+
+    if name == "get_all_erc20_tokens":
+        chain_id = arguments.get("chain_id", "11155111")
+        result = get_all_erc20_tokens(chain_id)
         return [TextContent(type="text", text=result)]
 
     if name == "get_swap_quote":
