@@ -461,8 +461,8 @@ Provide clear, helpful responses about crypto prices, transactions, and swaps.""
                             args.get("to_token", ""),
                             args.get("amount", ""),
                             args.get("from_address", ""),
-                            args.get("from_chain", "1"),
-                            args.get("to_chain", "1")
+                            args.get("from_chain", "11155111"),
+                            args.get("to_chain", "11155111")
                         )
                         print(f"🔍 DEBUG - execute_swap result: {result}")
                         tool_responses.append({
@@ -739,7 +739,7 @@ async def handle_call_tool(name: str, arguments: dict | None) -> list[TextConten
         if not all([from_token, to_token, amount, from_address]):
             return [TextContent(type="text", text="❌ Missing required parameters: from_token, to_token, amount, from_address")]
 
-        result = execute_swap(from_token, to_token, amount, from_address, from_chain, to_chain)
+        result = execute_swap(from_token, to_token, amount, from_address, from_chain or "11155111", to_chain or "11155111")
         return [TextContent(type="text", text=result)]
 
     if name == "agent_chat_configured":

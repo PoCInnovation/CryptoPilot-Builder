@@ -316,7 +316,9 @@ const walletFunctions = computed(() => {
     sendTransactionFromChat: walletRef.value.sendTransactionFromChat,
     address: walletRef.value.address,
     connectWallet: walletRef.value.connectWallet,
-    isConnected: walletRef.value.isConnected
+    isConnected: walletRef.value.isConnected,
+    executeSwap: walletRef.value.executeSwap,
+    getAddress: walletRef.value.getAddress
   } : null;
 });
 

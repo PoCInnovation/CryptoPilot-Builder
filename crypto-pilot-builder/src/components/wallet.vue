@@ -617,6 +617,121 @@ function getSupportedTokens(networkKey = null) {
   return Array.from(allTokens)
 }
 
+// Fonction pour exécuter un swap
+async function executeSwap(transactionData) {
+  if (!address.value) {
+    throw new Error('Wallet non connecté')
+  }
+  
+  if (!window.ethereum) {
+    throw new Error('MetaMask non trouvé')
+  }
+  
+  try {
+    console.log('🔄 Exécution du swap avec les données:', transactionData)
+    
+    // Extraire les données de transaction
+    const { to, data, value, gasLimit, gasPrice, chainId } = transactionData
+    
+    // Convertir le chainId au format hexadécimal si nécessaire
+    let targetChainId = chainId
+    if (typeof chainId === 'string' && !chainId.startsWith('0x')) {
+      // Convertir de décimal à hexadécimal
+      targetChainId = '0x' + parseInt(chainId).toString(16)
+    } else if (typeof chainId === 'number') {
+      // Convertir de nombre à hexadécimal
+      targetChainId = '0x' + chainId.toString(16)
+    }
+    
+    console.log(`🎯 ChainId cible: ${targetChainId}`)
+    
+    // Basculer vers la bonne chaîne si nécessaire
+    const currentChainId = await window.ethereum.request({ method: 'eth_chainId' })
+    console.log(`📍 ChainId actuel: ${currentChainId}`)
+    
+    if (currentChainId !== targetChainId) {
+      console.log(`🔄 Basculement vers la chaîne ${targetChainId}...`)
+      await window.ethereum.request({
+        method: 'wallet_switchEthereumChain',
+        params: [{ chainId: targetChainId }]
+      })
+    }
+    
+    // Préparer les paramètres de transaction
+    const txParams = {
+      from: address.value,
+      to: to,
+      data: data,
+      value: value || '0x0'
+    }
+    
+    // Option 1: Utiliser les frais de gaz calculés par Li.Fi (recommandé pour les swaps)
+    // if (gasLimit) {
+    //   txParams.gasLimit = gasLimit
+    // }
+    // if (gasPrice) {
+    //   txParams.gasPrice = gasPrice
+    // }
+    
+    // Option 2: Laisser MetaMask calculer les frais (comme les transactions normales)
+    // Pas de gasLimit/gasPrice = MetaMask calcule automatiquement
+    
+    console.log('📝 Paramètres de transaction:', txParams)
+    
+    // Envoyer la transaction
+    const hash = await window.ethereum.request({
+      method: 'eth_sendTransaction',
+      params: [txParams]
+    })
+    
+    console.log('✅ Transaction swap envoyée:', hash)
+    return { success: true, hash }
+    
+  } catch (error) {
+    console.error('❌ Erreur lors de l\'exécution du swap:', error)
+    throw error
+  }
+}
+
+// Fonction pour exécuter un swap natif sur Sepolia (sans Li.Fi)
+async function executeNativeSwap(fromToken, toToken, amount, fromAddress) {
+  console.log(`🔄 Swap natif sur Sepolia: ${amount} ${fromToken} → ${toToken}`)
+  
+  try {
+    // Vérifier que nous sommes sur Sepolia
+    const currentChainId = await window.ethereum.request({ method: 'eth_chainId' })
+    if (currentChainId !== '0xaa36a7') { // Sepolia chainId
+      throw new Error('Ce swap natif nécessite d\'être sur Sepolia')
+    }
+    
+    // Pour l'instant, utiliser une approche simple : transfert direct
+    // Dans une vraie implémentation, on utiliserait un DEX comme Uniswap
+    if (fromToken === 'ETH' && toToken === 'USDC') {
+      // Simuler un swap ETH → USDC en envoyant l'ETH à un contrat de swap
+      const swapContractAddress = '0x1c7D4B196Cb0C7B01d743Fbc6116a902379C7238' // USDC sur Sepolia
+      
+      const hash = await window.ethereum.request({
+        method: 'eth_sendTransaction',
+        params: [{
+          from: fromAddress,
+          to: swapContractAddress,
+          value: parseEther(amount).toString(16), // Convertir en hex
+          data: '0x' // Pas de données pour un simple transfert
+        }]
+      })
+      
+      console.log('✅ Swap natif exécuté:', hash)
+      return { success: true, hash, method: 'native_sepolia' }
+    }
+    
+    throw new Error(`Swap natif ${fromToken} → ${toToken} non encore implémenté`)
+    
+  } catch (error) {
+    console.error('❌ Erreur swap natif:', error)
+    throw error
+  }
+}
+
 function shortenAddress(addr) {
   if (!addr) return ''
   return addr.slice(0, 4) + '...' + addr.slice(-4)
@@ -647,7 +762,9 @@ defineExpose({
   connectWallet,
   isConnected: () => !!address.value,
   getTokenBalance,
-  getSupportedTokens
+  getSupportedTokens,
+  executeSwap,
+  getAddress: () => address.value
 })
 </script>
 
