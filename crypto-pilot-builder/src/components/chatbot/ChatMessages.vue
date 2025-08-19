@@ -78,7 +78,7 @@ watch(() => props.messages, () => {
   color: black;
   gap: 0.5rem;
   padding: 0.5rem;
-  background-color: #f0f0f0;
+  background-color: #111421;
   border-radius: 8px;
   max-height: 80%;
 }
@@ -88,17 +88,18 @@ watch(() => props.messages, () => {
   border-radius: 10px;
   word-wrap: break-word;
   line-height: 1.4;
-  color: black;
+  color: white;
   max-width: 70%;
 }
 
 .message.user {
-  background-color: #dcf8c6;
+  background-color: #000000;
+  color: white;
   align-self: flex-end;
 }
 
 .message.bot {
-  background-color: #ececec;
+  background-color: #111421;
   align-self: flex-start;
 }
 

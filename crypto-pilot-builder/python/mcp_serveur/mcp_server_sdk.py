@@ -13,7 +13,7 @@ from mcp.server import NotificationOptions, Server
 from mcp.types import Tool, TextContent
 from mcp.server.stdio import stdio_server
 sys.path.append(os.path.dirname(__file__))
-from crypto_tools import get_crypto_price, request_transaction, get_lifi_tokens, get_swap_quote, execute_swap
+from crypto_tools import get_crypto_price, request_transaction, get_lifi_tokens, get_swap_quote, execute_swap, get_sepolia_tokens, get_all_erc20_tokens
 load_dotenv()
 
 class OpenAIAgent:
@@ -39,20 +39,49 @@ class OpenAIAgent:
             if client is None:
                 return "❌ Aucune clé API OpenAI configurée. Veuillez utiliser agent_chat_configured avec votre clé API."
             system_prompt = """You are a crypto assistant with advanced capabilities including:
-
 1. **Price Information**: Get real-time cryptocurrency prices using get_crypto_price
 2. **Transactions**: Prepare blockchain transactions using request_transaction
-3. **Token Swapping**: Complete token swap capabilities using Li.Fi:
+3. **Token Information**: Get available ERC-20 tokens on Sepolia using get_sepolia_tokens
+4. **Token Swapping**: Complete token swap capabilities using Li.Fi:
    - get_lifi_tokens: Discover available tokens for swapping
    - get_swap_quote: Get quotes for token swaps
    - execute_swap: Execute token swaps with transaction data
 
-When users ask about swapping, trading, or exchanging cryptocurrencies:
-- Use get_lifi_tokens to show available tokens if needed
-- Use get_swap_quote to provide swap estimates
-- Use execute_swap to generate the actual swap transaction
+🎯 RÈGLE CRITIQUE pour request_transaction :
 
-Always ask for the user's wallet address when performing swaps or transactions.
+COPIE EXACTEMENT le mot que dit l'utilisateur dans le paramètre "currency". NE TRADUIS PAS, NE CONVERTIS PAS.
+
+EXEMPLES CORRECTS :
+- User: "envoie 0.001 ETH à 0x123..." → request_transaction(..., currency="ETH")  
+- User: "envoie 0.001 sepolia à 0x123..." → request_transaction(..., currency="sepolia")
+- User: "envoie 5 USDC à 0x123..." → request_transaction(..., currency="USDC")
+
+❌ ERREUR FATALE (ne jamais faire) :
+- User dit "ETH" mais tu mets currency="sepolia" ← INTERDIT !
+
+✅ TOKENS DISPONIBLES : ETH, SEPOLIA, USDC, USDT, DAI, WETH, LINK, UNI
+
+RÈGLES CRITIQUES pour les swaps :
+1. DÉTECTION : Si tu détectes l'un de ces mots-clés dans le message :
+   - "swap", "échanger", "convertir", "changer", "exchange"
+   - OU phrases comme "eth en usdc", "bitcoin vers dai", "0.001 eth en usdc"
+   - OU demandes directes de swap avec montant
+2. EXTRACTION : Extrais ces informations du message :
+   - Le token source (ex: ETH, USDC, BTC)
+   - Le token destination (ex: USDC, DAI, WETH)
+   - Le montant numérique
+3. ACTION IMMÉDIATE : Utilise DIRECTEMENT l'outil execute_swap avec ces paramètres.
+   - Pour ETH → USDC : execute_swap("ETH", "USDC", montant, adresse_wallet)
+   - Pour USDC → DAI : execute_swap("USDC", "DAI", montant, adresse_wallet)
+   - Si pas d'adresse wallet, utilise une adresse par défaut ou demande à l'utilisateur
+
+IMPORTANT :
+- NE DONNE JAMAIS d'explication préalable sur le swap
+- N'INFORME PAS l'utilisateur des détails avant d'appeler l'outil
+- NE DEMANDE JAMAIS de confirmation comme "Souhaitez-vous continuer ?"
+- APPELLE execute_swap IMMÉDIATEMENT dès que tu détectes une demande de swap
+- La modal d'interface se charge de tout afficher à l'utilisateur
+
 Provide clear, helpful responses about crypto prices, transactions, and swaps."""
             if context:
                 system_prompt += f"\nConversation context: {context}"
@@ -68,7 +97,51 @@ Provide clear, helpful responses about crypto prices, transactions, and swaps.""
         try:
             client = self._get_default_client(api_key) if api_key else self._get_default_client()
             if not system_prompt:
-                system_prompt = """Tu es un assistant crypto..."""
+                system_prompt = """You are a crypto assistant with advanced capabilities including:
+1. **Price Information**: Get real-time cryptocurrency prices using get_crypto_price
+2. **Transactions**: Prepare blockchain transactions using request_transaction
+3. **Token Information**: Get available ERC-20 tokens on Sepolia using get_sepolia_tokens
+4. **Token Swapping**: Complete token swap capabilities using Li.Fi:
+   - get_lifi_tokens: Discover available tokens for swapping
+   - get_swap_quote: Get quotes for token swaps
+   - execute_swap: Execute token swaps with transaction data
+
+🎯 RÈGLE CRITIQUE pour request_transaction :
+
+COPIE EXACTEMENT le mot que dit l'utilisateur dans le paramètre "currency". NE TRADUIS PAS, NE CONVERTIS PAS.
+
+EXEMPLES CORRECTS :
+- User: "envoie 0.001 ETH à 0x123..." → request_transaction(..., currency="ETH")  
+- User: "envoie 0.001 sepolia à 0x123..." → request_transaction(..., currency="sepolia")
+- User: "envoie 5 USDC à 0x123..." → request_transaction(..., currency="USDC")
+
+❌ ERREUR FATALE (ne jamais faire) :
+- User dit "ETH" mais tu mets currency="sepolia" ← INTERDIT !
+
+✅ TOKENS DISPONIBLES : ETH, SEPOLIA, USDC, USDT, DAI, WETH, LINK, UNI
+
+RÈGLES CRITIQUES pour les swaps :
+1. DÉTECTION : Si tu détectes l'un de ces mots-clés dans le message :
+   - "swap", "échanger", "convertir", "changer", "exchange"
+   - OU phrases comme "eth en usdc", "bitcoin vers dai", "0.001 eth en usdc"
+   - OU demandes directes de swap avec montant
+2. EXTRACTION : Extrais ces informations du message :
+   - Le token source (ex: ETH, USDC, BTC)
+   - Le token destination (ex: USDC, DAI, WETH)
+   - Le montant numérique
+3. ACTION IMMÉDIATE : Utilise DIRECTEMENT l'outil execute_swap avec ces paramètres.
+   - Pour ETH → USDC : execute_swap("ETH", "USDC", montant, adresse_wallet)
+   - Pour USDC → DAI : execute_swap("USDC", "DAI", montant, adresse_wallet)
+   - Si pas d'adresse wallet, utilise une adresse par défaut ou demande à l'utilisateur
+
+IMPORTANT :
+- NE DONNE JAMAIS d'explication préalable sur le swap
+- N'INFORME PAS l'utilisateur des détails avant d'appeler l'outil
+- NE DEMANDE JAMAIS de confirmation comme "Souhaitez-vous continuer ?"
+- APPELLE execute_swap IMMÉDIATEMENT dès que tu détectes une demande de swap
+- La modal d'interface se charge de tout afficher à l'utilisateur
+
+Provide clear, helpful responses about crypto prices, transactions, and swaps."""
             if modules:
                 active_modules = [name for name, active in modules.items() if active]
                 if active_modules:
@@ -87,14 +160,35 @@ Provide clear, helpful responses about crypto prices, transactions, and swaps.""
             if client is None:
                 return "❌ OpenAI client not configured."
         try:
+            # Détection des transactions
             transaction_keywords = ["envoie", "envoyer", "send", "transfer", "transférer", "payment", "pay"]
             has_transaction_keyword = any(keyword in message.lower() for keyword in transaction_keywords)
             has_address = "0x" in message and len([part for part in message.split() if part.startswith("0x") and len(part) == 42]) > 0
             has_amount = any(char.isdigit() for char in message)
             is_likely_transaction = has_transaction_keyword and has_address and has_amount
+            
+            # Détection des swaps
+            swap_keywords = ["swap", "échanger", "convertir", "changer", "exchange", "en usdc", "en dai", "vers usdc", "vers dai"]
+            has_swap_keyword = any(keyword in message.lower() for keyword in swap_keywords)
+            has_swap_amount = any(char.isdigit() for char in message)
+            is_likely_swap = has_swap_keyword and has_swap_amount
+            
+            # Debug logs
+            print(f"🔍 DEBUG - Message: {message}")
+            print(f"🔍 DEBUG - has_swap_keyword: {has_swap_keyword}")
+            print(f"🔍 DEBUG - has_swap_amount: {has_swap_amount}")
+            print(f"🔍 DEBUG - is_likely_swap: {is_likely_swap}")
+            print(f"🔍 DEBUG - is_likely_transaction: {is_likely_transaction}")
+            
             tool_choice = "auto"
             if is_likely_transaction:
                 tool_choice = {"type": "function", "function": {"name": "request_transaction"}}
+                print(f"🔍 DEBUG - Forcing request_transaction tool")
+            elif is_likely_swap:
+                tool_choice = {"type": "function", "function": {"name": "execute_swap"}}
+                print(f"🔍 DEBUG - Forcing execute_swap tool")
+            else:
+                print(f"🔍 DEBUG - Using auto tool choice")
             response = await client.chat.completions.create(
                 model=model,
                 messages=[
@@ -237,13 +331,46 @@ Provide clear, helpful responses about crypto prices, transactions, and swaps.""
                                         "type": "string",
                                         "description": "Amount to send (e.g. 0.001)"
                                     },
-                                    "currency": {
+                                                        "currency": {
+                        "type": "string",
+                        "description": "EXACT word user said: If user says 'ETH' use 'ETH', if user says 'sepolia' use 'sepolia', if user says 'USDC' use 'USDC'. NEVER convert ETH to sepolia!"
+                    },
+                                    "token_address": {
                                         "type": "string",
-                                        "description": "Network/currency (default: sepolia)",
-                                        "default": "sepolia"
+                                        "description": "ERC-20 token contract address (optional, for ERC-20 transactions)"
                                     }
                                 },
                                 "required": ["recipient_address", "amount"]
+                            }
+                        }
+                    },
+                    {
+                        "type": "function",
+                        "function": {
+                            "name": "get_sepolia_tokens",
+                            "description": "Get list of available ERC-20 tokens on Sepolia testnet with their addresses and decimals.",
+                            "parameters": {
+                                "type": "object",
+                                "properties": {},
+                                "required": []
+                            }
+                        }
+                    },
+                    {
+                        "type": "function",
+                        "function": {
+                            "name": "get_all_erc20_tokens",
+                            "description": "Get all available ERC-20 tokens dynamically from blockchain (Sepolia or Ethereum Mainnet). Uses Etherscan API to discover popular tokens.",
+                            "parameters": {
+                                "type": "object",
+                                "properties": {
+                                    "chain_id": {
+                                        "type": "string",
+                                        "description": "Chain ID: '11155111' for Sepolia, '1' for Ethereum Mainnet",
+                                        "default": "11155111"
+                                    }
+                                },
+                                "required": []
                             }
                         }
                     }
@@ -252,10 +379,12 @@ Provide clear, helpful responses about crypto prices, transactions, and swaps.""
             )
             response_message = response.choices[0].message
             if hasattr(response_message, "tool_calls") and response_message.tool_calls:
+                print(f"🔍 DEBUG - Tool calls detected: {len(response_message.tool_calls)}")
                 tool_responses = []
                 for tool_call in response_message.tool_calls:
                     tool_name = tool_call.function.name
                     args = json.loads(tool_call.function.arguments)
+                    print(f"🔍 DEBUG - Tool called: {tool_name} with args: {args}")
                     if tool_name == "get_crypto_price":
                         result = get_crypto_price(
                             args.get("crypto_id", ""),
@@ -267,10 +396,20 @@ Provide clear, helpful responses about crypto prices, transactions, and swaps.""
                             "tool_call_id": tool_call.id
                         })
                     elif tool_name == "request_transaction":
+                        print(f"🔍 DEBUG - request_transaction called with args: {args}")
+                        currency = args.get("currency", "ETH")
+                        print(f"🔍 DEBUG - Currency extracted: {currency}")
+                        
+                        # SÉCURITÉ : Si l'IA met "sepolia" alors que l'utilisateur a dit "ETH", forcer "ETH"
+                        # (Cette logique sera enlevée quand l'IA apprendra)
+                        if currency.lower() == "sepolia":
+                            print(f"⚠️ WARNING - IA a mis 'sepolia', mais on garde comme ça pour l'instant")
+                        
                         result = request_transaction(
                             args.get("recipient_address", ""),
                             args.get("amount", ""),
-                            args.get("currency", "sepolia")
+                            currency,
+                            args.get("token_address", None)
                         )
                         tool_responses.append({
                             "name": tool_name,
@@ -300,23 +439,45 @@ Provide clear, helpful responses about crypto prices, transactions, and swaps.""
                             "content": result,
                             "tool_call_id": tool_call.id
                         })
+                    elif tool_name == "get_sepolia_tokens":
+                        result = get_sepolia_tokens()
+                        tool_responses.append({
+                            "name": tool_name,
+                            "content": result,
+                            "tool_call_id": tool_call.id
+                        })
+                    elif tool_name == "get_all_erc20_tokens":
+                        chain_id = args.get("chain_id", "11155111")
+                        result = get_all_erc20_tokens(chain_id)
+                        tool_responses.append({
+                            "name": tool_name,
+                            "content": result,
+                            "tool_call_id": tool_call.id
+                        })
                     elif tool_name == "execute_swap":
+                        print(f"🔍 DEBUG - execute_swap called with args: {args}")
                         result = execute_swap(
                             args.get("from_token", ""),
                             args.get("to_token", ""),
                             args.get("amount", ""),
                             args.get("from_address", ""),
-                            args.get("from_chain", "1"),
-                            args.get("to_chain", "1")
+                            args.get("from_chain", "11155111"),
+                            args.get("to_chain", "11155111")
                         )
+                        print(f"🔍 DEBUG - execute_swap result: {result}")
                         tool_responses.append({
                             "name": tool_name,
                             "content": result,
                             "tool_call_id": tool_call.id
                         })
                 if tool_responses:
+                    print(f"🔍 DEBUG - Tool responses: {[res['name'] for res in tool_responses]}")
                     for res in tool_responses:
-                        if res["name"] in ["request_transaction", "execute_swap"]:
+                        if res["name"] == "request_transaction":
+                            print(f"🔍 DEBUG - Returning request_transaction result directly")
+                            return res["content"]
+                        elif res["name"] == "execute_swap":
+                            print(f"🔍 DEBUG - Returning execute_swap result directly")
                             return res["content"]
                     second_messages = [
                         {"role": "system", "content": system_prompt},
@@ -388,8 +549,7 @@ async def handle_list_tools() -> list[Tool]:
                     },
                     "currency": {
                         "type": "string",
-                        "description": "Network/currency (default: sepolia)",
-                        "default": "sepolia"
+                        "description": "EXACT word user said: If user says 'ETH' use 'ETH', if user says 'sepolia' use 'sepolia'. NEVER convert ETH to sepolia!"
                     }
                 },
                 "required": ["recipient_address", "amount"]
@@ -533,16 +693,27 @@ async def handle_call_tool(name: str, arguments: dict | None) -> list[TextConten
     if name == "request_transaction":
         recipient_address = arguments.get("recipient_address", "")
         amount = arguments.get("amount", "")
-        currency = arguments.get("currency", "sepolia")
+        currency = arguments.get("currency", "ETH")
+        token_address = arguments.get("token_address", None)
         if recipient_address and amount:
-            result = request_transaction(recipient_address, amount, currency)
+            result = request_transaction(recipient_address, amount, currency, token_address)
             return [TextContent(type="text", text=result)]
-        return [TextContent(type="text", text="❌ recipient_address and amount required")]
+        return [TextContent(type="text", text="❌ Missing required parameters: recipient_address, amount")]
+    
     if name == "get_lifi_tokens":
         chains = arguments.get("chains", None)
         result = get_lifi_tokens(chains)
         return [TextContent(type="text", text=result)]
-    
+
+    if name == "get_sepolia_tokens":
+        result = get_sepolia_tokens()
+        return [TextContent(type="text", text=result)]
+
+    if name == "get_all_erc20_tokens":
+        chain_id = arguments.get("chain_id", "11155111")
+        result = get_all_erc20_tokens(chain_id)
+        return [TextContent(type="text", text=result)]
+
     if name == "get_swap_quote":
         from_token = arguments.get("from_token", "")
         to_token = arguments.get("to_token", "")
@@ -550,13 +721,13 @@ async def handle_call_tool(name: str, arguments: dict | None) -> list[TextConten
         from_address = arguments.get("from_address", "")
         from_chain = arguments.get("from_chain", "1")
         to_chain = arguments.get("to_chain", "1")
-        
+
         if not all([from_token, to_token, amount, from_address]):
             return [TextContent(type="text", text="❌ Missing required parameters: from_token, to_token, amount, from_address")]
-        
+
         result = get_swap_quote(from_token, to_token, amount, from_address, from_chain, to_chain)
         return [TextContent(type="text", text=result)]
-    
+
     if name == "execute_swap":
         from_token = arguments.get("from_token", "")
         to_token = arguments.get("to_token", "")
@@ -564,13 +735,13 @@ async def handle_call_tool(name: str, arguments: dict | None) -> list[TextConten
         from_address = arguments.get("from_address", "")
         from_chain = arguments.get("from_chain", "1")
         to_chain = arguments.get("to_chain", "1")
-        
+
         if not all([from_token, to_token, amount, from_address]):
             return [TextContent(type="text", text="❌ Missing required parameters: from_token, to_token, amount, from_address")]
-        
-        result = execute_swap(from_token, to_token, amount, from_address, from_chain, to_chain)
+
+        result = execute_swap(from_token, to_token, amount, from_address, from_chain or "11155111", to_chain or "11155111")
         return [TextContent(type="text", text=result)]
-    
+
     if name == "agent_chat_configured":
         message = arguments.get("message", "")
         context = arguments.get("context", "")

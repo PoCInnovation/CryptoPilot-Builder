@@ -93,14 +93,20 @@ class ApiService {
 
   // ===== CHAT =====
 
-  async sendChatMessage(message, sessionId = null, walletAddress = null) {
+  async sendChatMessage(message, sessionId = null) {
     return this.request("/chat", {
       method: "POST",
       body: {
         message,
         session_id: sessionId,
-        wallet_address: walletAddress,
       },
+    });
+  }
+
+  async renameSession(sessionId, newName) {
+    return this.request(`/sessions/${sessionId}/rename`, {
+      method: "PUT",
+      body: { session_name: newName },
     });
   }
 
@@ -197,5 +203,6 @@ export const {
   healthCheck,
   getUserMemory,
   addUserMemory,
+  renameSession,
   deleteUserMemory,
 } = apiService;

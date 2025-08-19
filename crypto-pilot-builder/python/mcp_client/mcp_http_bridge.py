@@ -9,15 +9,27 @@ from flask import Flask
 from flask_cors import CORS
 
 # Local modules imports
-from config import HOST, PORT, DEBUG
-from mcp_client import mcp_client
-from session_manager import session_manager
-from api_routes import create_api_routes
+from .config import HOST, PORT, DEBUG
+from .mcp_client import mcp_client
+from .session_manager import session_manager
+from .api_routes import create_api_routes
 
 def create_app():
     """Factory to create Flask application"""
     app = Flask(__name__)
     CORS(app)
+
+    # Initialize MCP client
+    print("🔧 Initializing MCP client...")
+    loop = asyncio.new_event_loop()
+    asyncio.set_event_loop(loop)
+    mcp_ready = loop.run_until_complete(init_mcp())
+    loop.close()
+
+    if not mcp_ready:
+        print("❌ MCP initialization failed - continuing without MCP")
+    else:
+        print("✅ MCP client initialized successfully")
 
     # Register routes
     create_api_routes(app)

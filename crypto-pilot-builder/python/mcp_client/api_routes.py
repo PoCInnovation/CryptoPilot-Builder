@@ -14,9 +14,9 @@ from flask_sqlalchemy import SQLAlchemy
 from flask_bcrypt import Bcrypt
 from flask_jwt_extended import JWTManager, create_access_token, jwt_required, get_jwt_identity
 from sqlalchemy.dialects.postgresql import UUID
-from mcp_client import mcp_client
-from session_manager import session_manager
-from user_memory import user_memory_manager
+from .mcp_client import mcp_client
+from .session_manager import session_manager
+from .user_memory import user_memory_manager
 import uuid
 
 # Configuration du logging
@@ -549,7 +549,6 @@ def create_api_routes(app):
 
         user_input = data['message']
         session_id = data.get('session_id')
-        wallet_address = data.get('wallet_address')
         user_id = get_jwt_identity()
 
         # Récupérer la configuration de l'utilisateur
@@ -593,10 +592,14 @@ def create_api_routes(app):
             # NOUVELLE FONCTIONNALITÉ: Intégrer la mémoire utilisateur dans le contexte
             user_memory_summary = user_memory_manager.get_user_memory_summary(user_id)
 
+            # Récupérer l'adresse du wallet de l'utilisateur
+            user = User.query.get(user_id)
+            wallet_address = user.wallet_address if user else None
+
             context = {
                 'conversation_history': conversation_history,
                 'user_memory': user_memory_summary,  # Nouvelle clé pour la mémoire utilisateur
-                'wallet_address': wallet_address,
+                'wallet_address': wallet_address,  # Adresse du wallet pour les swaps
                 'agent_config': {
                     'model': config.selected_model,
                     'prompt': config.prompt,
@@ -835,3 +838,56 @@ def create_api_routes(app):
             'architecture': 'Agent-based with crypto tools',
             'available_tools': ['get_crypto_price']
         })
+
+    # ===== WALLET MANAGEMENT =====
+
+    @app.route('/wallet-address', methods=['PUT'])
+    @jwt_required()
+    def update_wallet_address():
+        """Update user's wallet address"""
+        user_id = get_jwt_identity()
+        data = request.get_json()
+        
+        if not data or 'wallet_address' not in data:
+            return jsonify({'error': 'Wallet address is required'}), 400
+            
+        wallet_address = data['wallet_address'].strip()
+        
+        # Validate Ethereum address format
+        if not wallet_address.startswith('0x') or len(wallet_address) != 42:
+            return jsonify({'error': 'Invalid Ethereum address format. Must start with 0x and be 42 characters long.'}), 400
+            
+        try:
+            user = User.query.get(user_id)
+            if not user:
+                return jsonify({'error': 'User not found'}), 404
+                
+            user.wallet_address = wallet_address
+            db.session.commit()
+            
+            return jsonify({
+                'message': 'Wallet address updated successfully',
+                'wallet_address': wallet_address
+            }), 200
+            
+        except Exception as e:
+            db.session.rollback()
+            return jsonify({'error': f'Failed to update wallet address: {str(e)}'}), 500
+
+    @app.route('/wallet-address', methods=['GET'])
+    @jwt_required()
+    def get_wallet_address():
+        """Get user's wallet address"""
+        user_id = get_jwt_identity()
+        
+        try:
+            user = User.query.get(user_id)
+            if not user:
+                return jsonify({'error': 'User not found'}), 404
+                
+            return jsonify({
+                'wallet_address': user.wallet_address
+            }), 200
+            
+        except Exception as e:
+            return jsonify({'error': f'Failed to get wallet address: {str(e)}'}), 500

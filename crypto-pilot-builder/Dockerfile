@@ -31,7 +31,7 @@ COPY public/ ./public/
 COPY index.html ./
 COPY vite.config.js ./
 
-EXPOSE 3000
+EXPOSE 5173
 
 # Commande pour démarrer le serveur de développement
-CMD ["npm", "run", "dev", "--", "--host", "0.0.0.0", "--port", "3000"]
+CMD ["npm", "run", "dev", "--", "--host", "0.0.0.0", "--port", "5173"]
