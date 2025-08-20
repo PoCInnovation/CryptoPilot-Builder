@@ -99,290 +99,17 @@
 
       <!-- Dashboard -->
       <section v-if="!showChat" class="dashboard-section">
-        <div class="bento-grid">
-          <!-- Bitcoin Widget (Large) -->
-          <article class="bento-item bento-large">
-            <div class="crypto-main-widget">
-              <div class="crypto-compact-header">
-                <div class="crypto-title-section">
-                  <img
-                    v-if="mainCryptoData"
-                    :src="mainCryptoIcon"
-                    :alt="mainCryptoName"
-                    class="crypto-compact-icon"
-                  />
-                  <div class="crypto-compact-info">
-                    <h3 class="crypto-compact-name">
-                      {{ mainCryptoName }}
-                      <span v-if="isPersonalized" class="personalization-badge"
-                        >✨</span
-                      >
-                    </h3>
-                    <span class="crypto-compact-symbol">{{
-                      mainCryptoSymbol
-                    }}</span>
-                  </div>
-                </div>
-                <div class="crypto-metrics">
-                  <div class="crypto-compact-price">
-                    {{ formatPrice(mainCryptoData?.current_price || 0) }}
-                  </div>
-                  <div
-                    :class="[
-                      'crypto-compact-change',
-                      mainCryptoData?.price_change_percentage_24h >= 0
-                        ? 'positive'
-                        : 'negative',
-                    ]"
-                  >
-                    {{
-                      formatPercentage(
-                        mainCryptoData?.price_change_percentage_24h || 0
-                      )
-                    }}
-                  </div>
-                </div>
-              </div>
-              <div class="chart-section" v-if="mainCryptoData?.sparkline_in_7d">
-                <div class="chart-period-label">7 jours</div>
-                <canvas
-                  ref="bitcoinChart"
-                  class="full-sparkline-chart"
-                ></canvas>
-              </div>
-            </div>
-          </article>
-
-          <!-- Ethereum Widget -->
-          <article class="bento-item bento-medium">
-            <div class="crypto-widget">
-              <div class="crypto-mini-header">
-                <img
-                  v-if="ethereumData"
-                  :src="ethereumData.image"
-                  alt="Ethereum"
-                  class="crypto-mini-icon"
-                />
-                <span class="crypto-mini-symbol">{{
-                  ethereumData?.symbol?.toUpperCase() || "ETH"
-                }}</span>
-              </div>
-              <div class="crypto-mini-price">
-                {{ formatPrice(ethereumData?.current_price || 0) }}
-              </div>
-              <div
-                :class="[
-                  'crypto-mini-change',
-                  ethereumData?.price_change_percentage_24h >= 0
-                    ? 'positive'
-                    : 'negative',
-                ]"
-              >
-                {{
-                  formatPercentage(
-                    ethereumData?.price_change_percentage_24h || 0
-                  )
-                }}
-              </div>
-            </div>
-          </article>
-
-          <!-- Market Cap Widget -->
-          <article class="bento-item bento-medium">
-            <div class="stats-widget">
-              <div class="stats-header">
-                <span class="stats-icon">🌍</span>
-                <span class="stats-title">Market Cap</span>
-              </div>
-              <div class="stats-value">
-                {{ formatMarketCap(globalStats?.total_market_cap?.usd || 0) }}
-              </div>
-              <div class="stats-change">
-                {{
-                  formatPercentage(
-                    globalStats?.market_cap_change_percentage_24h_usd || 0
-                  )
-                }}
-              </div>
-            </div>
-          </article>
-
-          <!-- Top Gainer Widget -->
-          <article class="bento-item bento-medium">
-            <div class="gainer-widget">
-              <div class="gainer-header">
-                <span class="gainer-icon">📈</span>
-                <span class="gainer-title">Top Gainer</span>
-              </div>
-              <div v-if="topGainer" class="gainer-content">
-                <div class="gainer-name">
-                  {{ topGainer.symbol?.toUpperCase() }}
-                </div>
-                <div class="gainer-change positive">
-                  {{ formatPercentage(topGainer.price_change_percentage_24h) }}
-                </div>
-              </div>
-            </div>
-          </article>
-
-          <!-- News Widget 1 -->
-          <article class="bento-item bento-medium" v-if="displayNews[0]">
-            <div
-              class="news-single-widget"
-              @click="openNewsLink(displayNews[0].url)"
-              :style="{ backgroundImage: `url(${getNewsBackgroundImage(0)})` }"
-            >
-              <div class="news-single-overlay"></div>
-              <div class="news-single-content">
-                <div class="news-single-header">
-                  <span class="news-single-icon">📰</span>
-                  <span class="news-single-source">{{
-                    displayNews[0].source
-                  }}</span>
-                  <span v-if="isPersonalized" class="personalization-badge"
-                    >✨</span
-                  >
-                </div>
-                <h4 class="news-single-title">{{ displayNews[0].title }}</h4>
-                <div class="news-single-time">{{ displayNews[0].time }}</div>
-              </div>
-            </div>
-          </article>
-
-          <!-- News Widget 2 -->
-          <article class="bento-item bento-medium" v-if="displayNews[1]">
-            <div
-              class="news-single-widget"
-              @click="openNewsLink(displayNews[1].url)"
-              :style="{ backgroundImage: `url(${getNewsBackgroundImage(1)})` }"
-            >
-              <div class="news-single-overlay"></div>
-              <div class="news-single-content">
-                <div class="news-single-header">
-                  <span class="news-single-icon">📰</span>
-                  <span class="news-single-source">{{
-                    displayNews[1].source
-                  }}</span>
-                  <span v-if="isPersonalized" class="personalization-badge"
-                    >✨</span
-                  >
-                </div>
-                <h4 class="news-single-title">{{ displayNews[1].title }}</h4>
-                <div class="news-single-time">{{ displayNews[1].time }}</div>
-              </div>
-            </div>
-          </article>
-
-          <!-- News Widget 3 -->
-          <article class="bento-item bento-medium" v-if="displayNews[2]">
-            <div
-              class="news-single-widget"
-              @click="openNewsLink(displayNews[2].url)"
-              :style="{ backgroundImage: `url(${getNewsBackgroundImage(2)})` }"
-            >
-              <div class="news-single-overlay"></div>
-              <div class="news-single-content">
-                <div class="news-single-header">
-                  <span class="news-single-icon">📰</span>
-                  <span class="news-single-source">{{
-                    displayNews[2].source
-                  }}</span>
-                  <span v-if="isPersonalized" class="personalization-badge"
-                    >✨</span
-                  >
-                </div>
-                <h4 class="news-single-title">{{ displayNews[2].title }}</h4>
-                <div class="news-single-time">{{ displayNews[2].time }}</div>
-              </div>
-            </div>
-          </article>
-
-          <!-- News Widget 4 -->
-          <article class="bento-item bento-medium" v-if="displayNews[3]">
-            <div
-              class="news-single-widget"
-              @click="openNewsLink(displayNews[3].url)"
-              :style="{ backgroundImage: `url(${getNewsBackgroundImage(3)})` }"
-            >
-              <div class="news-single-overlay"></div>
-              <div class="news-single-content">
-                <div class="news-single-header">
-                  <span class="news-single-icon">📰</span>
-                  <span class="news-single-source">{{
-                    displayNews[3].source
-                  }}</span>
-                  <span v-if="isPersonalized" class="personalization-badge"
-                    >✨</span
-                  >
-                </div>
-                <h4 class="news-single-title">{{ displayNews[3].title }}</h4>
-                <div class="news-single-time">{{ displayNews[3].time }}</div>
-              </div>
-            </div>
-          </article>
-
-          <!-- Trending Widget -->
-          <article class="bento-item bento-medium">
-            <div class="trending-widget">
-              <div class="trending-header">
-                <span class="trending-icon">🔥</span>
-                <span class="trending-title">Trending</span>
-              </div>
-              <div class="trending-container">
-                <div
-                  class="trending-list"
-                  :style="{
-                    transform: `translateY(${trendingScrollOffset}px)`,
-                  }"
-                >
-                  <div
-                    v-for="(coin, index) in extendedTrendingCoins"
-                    :key="coin.id + '_' + index"
-                    class="trending-item"
-                  >
-                    <img
-                      :src="coin.thumb"
-                      :alt="coin.name"
-                      class="trending-coin-icon"
-                    />
-                    <span class="trending-coin-name">{{
-                      coin.name || coin.symbol
-                    }}</span>
-                    <span class="trending-rank"
-                      >#{{ coin.market_cap_rank || "?" }}</span
-                    >
-                  </div>
-                </div>
-              </div>
-            </div>
-          </article>
-
-          <!-- Fear & Greed Index Widget -->
-          <article class="bento-item bento-square">
-            <div class="fear-greed-widget">
-              <div class="fear-greed-header">
-                <span class="fear-greed-title">Fear & Greed</span>
-              </div>
-              <div class="fear-greed-content">
-                <div class="fear-greed-value">{{ fearGreedIndex }}</div>
-                <div class="fear-greed-label">{{ fearGreedLabel }}</div>
-              </div>
-            </div>
-          </article>
-
-          <!-- Volume Widget -->
-          <article class="bento-item bento-square">
-            <div class="volume-widget">
-              <div class="volume-header">
-                <span class="volume-icon">💰</span>
-                <span class="volume-title">24h Volume</span>
-              </div>
-              <div class="volume-value">
-                {{ formatMarketCap(globalStats?.total_volume?.usd || 0) }}
-              </div>
-            </div>
-          </article>
-        </div>
+        <BentoGrid
+          :main-crypto-data="mainCryptoData"
+          :ethereum-data="ethereumData"
+          :global-stats="globalStats"
+          :top-cryptos="topCryptos"
+          :trending-coins="trendingCoins"
+          :display-news="displayNews"
+          :personalized-news="personalizedNews"
+          :is-personalized="isPersonalized"
+          :fear-greed-index="fearGreedIndex"
+        />
 
         <!-- Actions -->
         <section class="action-section">
@@ -466,6 +193,7 @@ import Wallet from "../components/wallet.vue";
 import { useSessionManager } from "../composables/useSessionManager.js";
 import apiService from "../services/apiService";
 import cryptoService from "../services/cryptoService";
+import BentoGrid from "../components/bento/BentoGrid.vue";
 
 export default {
   name: "Accueil",
@@ -473,6 +201,7 @@ export default {
     AuthModal,
     Chatbot,
     Wallet,
+    BentoGrid,
   },
   setup() {
     const sessionManager = useSessionManager();
@@ -501,12 +230,6 @@ export default {
       cryptoNews: [],
       fearGreedIndex: 75,
       updateInterval: null,
-      chartPoints: null,
-      chartBounds: null,
-      // Défilement trending
-      trendingCurrentIndex: 0,
-      trendingScrollInterval: null,
-      trendingScrollOffset: 0,
       // Préférences utilisateur personnalisées
       userPreferences: null,
       preferredCrypto: null,
@@ -863,16 +586,7 @@ export default {
           await this.loadPersonalizedNews();
         }
 
-        // Dessiner le sparkline pour la crypto principale (préférée ou Bitcoin)
-        this.$nextTick(() => {
-          if (this.mainCryptoData?.sparkline_in_7d?.price) {
-            this.drawSparkline();
-          } else {
-            console.warn(
-              "⚠️ Pas de données sparkline pour la crypto principale"
-            );
-          }
-        });
+        console.log("✅ Données crypto chargées avec succès");
       } catch (error) {
         console.error(
           "❌ Erreur générale lors du chargement des données crypto:",
@@ -1033,11 +747,6 @@ export default {
       this.fearGreedIndex = 67;
 
       console.log("✅ Données de fallback chargées");
-
-      // Dessiner le sparkline avec les données de fallback
-      this.$nextTick(() => {
-        this.drawSparkline();
-      });
     },
 
     drawSparkline() {
@@ -3621,6 +3330,13 @@ export default {
   cursor: pointer;
   transition: all 0.2s ease;
   backdrop-filter: blur(20px);
+}
+
+.auth-message {
+  color: rgba(255, 255, 255, 0.7);
+  text-align: center;
+  margin-top: 12px;
+  font-size: 14px;
 }
 
 /* Responsive Design Apple Style */
