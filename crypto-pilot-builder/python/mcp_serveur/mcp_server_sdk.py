@@ -14,9 +14,10 @@ from mcp.types import Tool, TextContent
 from mcp.server.stdio import stdio_server
 sys.path.append(os.path.dirname(__file__))
 from crypto_tools import get_crypto_price, request_transaction, get_lifi_tokens, get_swap_quote, execute_swap, get_sepolia_tokens, get_all_erc20_tokens
+from base_agent import BaseAgent
 load_dotenv()
 
-class OpenAIAgent:
+class OpenAIAgent(BaseAgent):
     """OpenAI Agent with crypto capabilities"""
     def __init__(self):
         self.default_client = None  # Client async
@@ -52,7 +53,7 @@ class OpenAIAgent:
 COPIE EXACTEMENT le mot que dit l'utilisateur dans le paramètre "currency". NE TRADUIS PAS, NE CONVERTIS PAS.
 
 EXEMPLES CORRECTS :
-- User: "envoie 0.001 ETH à 0x123..." → request_transaction(..., currency="ETH")  
+- User: "envoie 0.001 ETH à 0x123..." → request_transaction(..., currency="ETH")
 - User: "envoie 0.001 sepolia à 0x123..." → request_transaction(..., currency="sepolia")
 - User: "envoie 5 USDC à 0x123..." → request_transaction(..., currency="USDC")
 
@@ -111,7 +112,7 @@ Provide clear, helpful responses about crypto prices, transactions, and swaps.""
 COPIE EXACTEMENT le mot que dit l'utilisateur dans le paramètre "currency". NE TRADUIS PAS, NE CONVERTIS PAS.
 
 EXEMPLES CORRECTS :
-- User: "envoie 0.001 ETH à 0x123..." → request_transaction(..., currency="ETH")  
+- User: "envoie 0.001 ETH à 0x123..." → request_transaction(..., currency="ETH")
 - User: "envoie 0.001 sepolia à 0x123..." → request_transaction(..., currency="sepolia")
 - User: "envoie 5 USDC à 0x123..." → request_transaction(..., currency="USDC")
 
@@ -166,20 +167,20 @@ Provide clear, helpful responses about crypto prices, transactions, and swaps.""
             has_address = "0x" in message and len([part for part in message.split() if part.startswith("0x") and len(part) == 42]) > 0
             has_amount = any(char.isdigit() for char in message)
             is_likely_transaction = has_transaction_keyword and has_address and has_amount
-            
+
             # Détection des swaps
             swap_keywords = ["swap", "échanger", "convertir", "changer", "exchange", "en usdc", "en dai", "vers usdc", "vers dai"]
             has_swap_keyword = any(keyword in message.lower() for keyword in swap_keywords)
             has_swap_amount = any(char.isdigit() for char in message)
             is_likely_swap = has_swap_keyword and has_swap_amount
-            
+
             # Debug logs
             print(f"🔍 DEBUG - Message: {message}")
             print(f"🔍 DEBUG - has_swap_keyword: {has_swap_keyword}")
             print(f"🔍 DEBUG - has_swap_amount: {has_swap_amount}")
             print(f"🔍 DEBUG - is_likely_swap: {is_likely_swap}")
             print(f"🔍 DEBUG - is_likely_transaction: {is_likely_transaction}")
-            
+
             tool_choice = "auto"
             if is_likely_transaction:
                 tool_choice = {"type": "function", "function": {"name": "request_transaction"}}
@@ -504,8 +505,9 @@ Provide clear, helpful responses about crypto prices, transactions, and swaps.""
         except Exception as e:
             return f"❌ Error in chat: {str(e)}"
 
-# Agent instance
-openai_agent = OpenAIAgent()
+# Agent instance - using factory for future extensibility
+from agent_factory import AgentFactory
+openai_agent = AgentFactory.create_agent("openai")
 
 # MCP server instance
 server = Server("crypto-pilot-agent-server")

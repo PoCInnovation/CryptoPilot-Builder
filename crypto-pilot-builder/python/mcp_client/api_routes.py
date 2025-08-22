@@ -496,6 +496,25 @@ def create_api_routes(app):
         except Exception as e:
             return jsonify({"error": str(e)}), 500
 
+    @app.route('/mcp/providers', methods=['GET'])
+    def list_available_providers():
+        """List available AI providers"""
+        try:
+            # Import here to avoid circular imports
+            import sys
+            import os
+            sys.path.append(os.path.join(os.path.dirname(__file__), '..', 'mcp_serveur'))
+            from agent_factory import AgentFactory
+
+            providers = AgentFactory.get_available_providers()
+            return jsonify({
+                "providers": providers,
+                "current": "openai",
+                "note": "Currently only OpenAI is fully implemented"
+            })
+        except Exception as e:
+            return jsonify({"error": f"Failed to get providers: {str(e)}"}), 500
+
     @app.route('/crypto/price', methods=['POST'])
     def get_crypto_price():
         """Get cryptocurrency price via MCP tool"""
