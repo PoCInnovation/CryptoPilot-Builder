@@ -24,6 +24,13 @@
             title="Mémoire IA"
             >🧠</router-link
           >
+          <router-link
+            v-if="isAuthenticated"
+            to="/autowallet"
+            class="btn-icon"
+            title="AutoWallet"
+            >🤖</router-link
+          >
           <button
             v-if="isAuthenticated"
             class="btn-icon"
@@ -117,6 +124,11 @@
             <router-link to="/AI" class="agent-navigation-link">
               <button class="configure-agent-button">
                 ⚙️ Configurer mon Agent
+              </button>
+            </router-link>
+            <router-link to="/autowallet" class="agent-navigation-link">
+              <button class="configure-agent-button">
+                🤖 AutoWallet
               </button>
             </router-link>
             <button

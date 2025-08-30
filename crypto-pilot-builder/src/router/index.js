@@ -5,6 +5,7 @@ import Module from "../agent_building/Module.vue";
 import Prompte from "../agent_building/Prompte.vue";
 import ChatPage from "../acceuil/Chat_Page.vue";
 import UserMemory from "../components/UserMemory.vue";
+import AutoWallet from "../components/AutoWallet.vue";
 import store from "../store";
 
 const routes = [
@@ -45,6 +46,12 @@ const routes = [
     path: "/memory",
     name: "UserMemory",
     component: UserMemory,
+    meta: { requiresAuth: true },
+  },
+  {
+    path: "/autowallet",
+    name: "AutoWallet",
+    component: AutoWallet,
     meta: { requiresAuth: true },
   },
 ];
