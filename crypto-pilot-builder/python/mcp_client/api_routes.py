@@ -891,3 +891,9 @@ def create_api_routes(app):
             
         except Exception as e:
             return jsonify({'error': f'Failed to get wallet address: {str(e)}'}), 500
+
+    # ===== AUTOWALLET ROUTES =====
+    
+    # Importer et créer les routes d'autowallet
+    from .autowallet_routes import create_autowallet_routes
+    create_autowallet_routes(app)
