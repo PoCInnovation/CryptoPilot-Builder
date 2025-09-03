@@ -897,3 +897,9 @@ def create_api_routes(app):
     # Importer et créer les routes d'autowallet
     from .autowallet_routes import create_autowallet_routes
     create_autowallet_routes(app)
+    
+    # ===== TRADING PIPELINE ROUTES =====
+    
+    # Importer et créer les routes de la pipeline de trading unifiée
+    from .trading_pipeline_routes import create_trading_pipeline_routes
+    create_trading_pipeline_routes(app)

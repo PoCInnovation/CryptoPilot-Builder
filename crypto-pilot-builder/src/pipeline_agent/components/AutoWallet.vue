@@ -219,154 +219,24 @@
         </button>
       </div>
 
-      <!-- Section de la pipeline de trading unifiée -->
-      <div class="trading-pipeline-section">
-        <div class="section-header">
-          <h3>🚀 Pipeline de Trading Unifiée</h3>
-          <p class="section-description">
-            Pipeline d'agents intégrée avec l'autowallet pour le trading automatique avancé
-          </p>
-        </div>
+          <!-- Onglets de navigation -->
+    <div class="tabs-navigation">
+      <button 
+        @click="activeTab = 'autowallet'" 
+        :class="['tab-button', { active: activeTab === 'autowallet' }]"
+      >
+        🤖 AutoWallet
+      </button>
+      <button 
+        @click="activeTab = 'pipeline'" 
+        :class="['tab-button', { active: activeTab === 'pipeline' }]"
+      >
+        🚀 Pipeline de Trading
+      </button>
+    </div>
 
-        <!-- Statut de la pipeline -->
-        <div class="pipeline-status-card card">
-          <h4>📊 Statut de la Pipeline</h4>
-          <div class="pipeline-status-grid">
-            <div class="status-item">
-              <span class="label">Pipeline:</span>
-              <span :class="['status', pipelineStatus.is_running ? 'active' : 'inactive']">
-                {{ pipelineStatus.is_running ? 'Active' : 'Inactive' }}
-              </span>
-            </div>
-            <div class="status-item">
-              <span class="label">Données:</span>
-              <span class="value">{{ pipelineStatus.market_data_count || 0 }}</span>
-            </div>
-            <div class="status-item">
-              <span class="label">Prédictions:</span>
-              <span class="value">{{ pipelineStatus.predictions_count || 0 }}</span>
-            </div>
-            <div class="status-item">
-              <span class="label">Signaux:</span>
-              <span class="value">{{ pipelineStatus.signals_count || 0 }}</span>
-            </div>
-            <div class="status-item">
-              <span class="label">Trades:</span>
-              <span class="value">{{ pipelineStatus.trades_count || 0 }}</span>
-            </div>
-          </div>
-          
-          <div class="pipeline-actions">
-            <button 
-              @click="startTradingPipeline" 
-              class="btn btn-success" 
-              :disabled="pipelineStatus.is_running || isLoading"
-            >
-              🚀 Démarrer Pipeline
-            </button>
-            <button 
-              @click="stopTradingPipeline" 
-              class="btn btn-warning" 
-              :disabled="!pipelineStatus.is_running || isLoading"
-            >
-              ⏹️ Arrêter Pipeline
-            </button>
-          </div>
-        </div>
-
-        <!-- Données en temps réel de la pipeline -->
-        <div class="pipeline-data-section">
-          <!-- Données de marché -->
-          <div class="pipeline-data-card card">
-            <h4>📊 Données de Marché</h4>
-            <div class="data-list" v-if="pipelineMarketData && Object.keys(pipelineMarketData).length > 0">
-              <div v-for="(data, symbol) in pipelineMarketData" :key="symbol" class="data-item">
-                <div class="data-header">
-                  <span class="symbol">{{ symbol }}</span>
-                  <span class="price">${{ data.price?.toFixed(2) || 'N/A' }}</span>
-                </div>
-                <div class="data-details">
-                  <span class="sentiment" :class="getSentimentClass(data.news_sentiment)">
-                    {{ formatSentiment(data.news_sentiment) }}
-                  </span>
-                  <span class="volume">Vol: {{ formatVolume(data.volume) }}</span>
-                </div>
-              </div>
-            </div>
-            <div v-else class="no-data">
-              <p>Aucune donnée de marché disponible</p>
-            </div>
-          </div>
-
-          <!-- Prédictions -->
-          <div class="pipeline-data-card card">
-            <h4>🔮 Prédictions</h4>
-            <div class="data-list" v-if="pipelinePredictions && Object.keys(pipelinePredictions).length > 0">
-              <div v-for="(pred, symbol) in pipelinePredictions" :key="symbol" class="data-item">
-                <div class="data-header">
-                  <span class="symbol">{{ symbol }}</span>
-                  <span class="direction" :class="getDirectionClass(pred.direction_prob)">
-                    {{ getDirectionLabel(pred.direction_prob) }}
-                  </span>
-                </div>
-                <div class="data-details">
-                  <span class="confidence">{{ Math.round(pred.confidence * 100) }}%</span>
-                  <span class="volatility">Vol: {{ Math.round(pred.volatility * 100) }}%</span>
-                </div>
-              </div>
-            </div>
-            <div v-else class="no-data">
-              <p>Aucune prédiction disponible</p>
-            </div>
-          </div>
-
-          <!-- Signaux de trading -->
-          <div class="pipeline-data-card card">
-            <h4>📈 Signaux</h4>
-            <div class="data-list" v-if="pipelineSignals && Object.keys(pipelineSignals).length > 0">
-              <div v-for="(signal, symbol) in pipelineSignals" :key="symbol" class="data-item">
-                <div class="data-header">
-                  <span class="symbol">{{ symbol }}</span>
-                  <span :class="['signal-type', signal.signal_type.toLowerCase()]">
-                    {{ signal.signal_type }}
-                  </span>
-                </div>
-                <div class="data-details">
-                  <span class="confidence">{{ Math.round(signal.confidence * 100) }}%</span>
-                  <span class="position">{{ Math.round(signal.position_size * 100) }}%</span>
-                </div>
-              </div>
-            </div>
-            <div v-else class="no-data">
-              <p>Aucun signal disponible</p>
-            </div>
-          </div>
-        </div>
-
-        <!-- Actions manuelles de la pipeline -->
-        <div class="pipeline-actions-card card">
-          <h4>🔧 Actions Manuelles</h4>
-          <p class="info-text">
-            Actions pour forcer l'exécution des étapes de la pipeline
-          </p>
-          
-          <div class="pipeline-actions-grid">
-            <button @click="forcePipelineDataCollection" class="btn btn-secondary" :disabled="isLoading">
-              📊 Collecter Données
-            </button>
-            <button @click="forcePipelinePrediction" class="btn btn-secondary" :disabled="isLoading">
-              🔮 Générer Prédictions
-            </button>
-            <button @click="forcePipelineSignals" class="btn btn-secondary" :disabled="isLoading">
-              📈 Générer Signaux
-            </button>
-            <button @click="forcePipelineExecution" class="btn btn-secondary" :disabled="isLoading">
-              💼 Exécuter Trades
-            </button>
-          </div>
-        </div>
-      </div>
-
+    <!-- Contenu de l'onglet AutoWallet -->
+    <div v-if="activeTab === 'autowallet'" class="tab-content">
       <!-- Section des alertes et trades -->
       <div class="alerts-trades-section">
         <!-- Alertes récentes -->
@@ -467,6 +337,12 @@
       </div>
     </div>
 
+    <!-- Contenu de l'onglet Pipeline -->
+    <div v-if="activeTab === 'pipeline'" class="tab-content">
+      <TradingPipeline />
+    </div>
+  </div>
+
     <!-- Modals -->
     <Modal v-if="showEditConfig" @close="showEditConfig = false">
       <template #header>Modifier la configuration</template>
@@ -494,13 +370,15 @@ import apiService from '../services/apiService'
 import Modal from './Modal.vue'
 import EditConfigForm from './EditConfigForm.vue'
 import AddChannelForm from './AddChannelForm.vue'
+import TradingPipeline from './TradingPipeline.vue'
 
 export default {
   name: 'AutoWallet',
   components: {
     Modal,
     EditConfigForm,
-    AddChannelForm
+    AddChannelForm,
+    TradingPipeline
   },
   setup() {
     const autowalletConfig = ref(null)
@@ -511,12 +389,7 @@ export default {
     const isLoading = ref(false)
     const showEditConfig = ref(false)
     const showAddChannel = ref(false)
-    
-    // Variables pour la pipeline de trading
-    const pipelineStatus = ref({})
-    const pipelineMarketData = ref({})
-    const pipelinePredictions = ref({})
-    const pipelineSignals = ref({})
+    const activeTab = ref('autowallet')
 
     const newConfig = ref({
       is_active: true,
@@ -543,7 +416,6 @@ export default {
           await loadRecentNews()
           await loadTradeHistory()
           await loadRecentAlerts()
-          await loadPipelineStatus()
         }
       } catch (error) {
         console.error('Erreur lors du chargement de la config:', error)
@@ -556,7 +428,6 @@ export default {
       
       // Toujours charger les alertes, même si la config n'existe pas
       await loadRecentAlerts()
-      await loadPipelineStatus()
     }
 
     // Créer une configuration par défaut
@@ -767,147 +638,6 @@ export default {
       await loadRecentNews()
     }
 
-    // ===== MÉTHODES DE LA PIPELINE DE TRADING =====
-    
-    // Charger le statut de la pipeline
-    const loadPipelineStatus = async () => {
-      try {
-        const response = await apiService.request('/api/trading-pipeline/status')
-        if (response.success) {
-          pipelineStatus.value = response.status
-        }
-      } catch (error) {
-        console.error('Erreur lors du chargement du statut de la pipeline:', error)
-      }
-    }
-
-    // Charger les données de marché de la pipeline
-    const loadPipelineMarketData = async () => {
-      try {
-        const response = await apiService.request('/api/trading-pipeline/market-data')
-        if (response.success) {
-          pipelineMarketData.value = response.market_data || {}
-        }
-      } catch (error) {
-        console.error('Erreur lors du chargement des données de marché:', error)
-      }
-    }
-
-    // Charger les prédictions de la pipeline
-    const loadPipelinePredictions = async () => {
-      try {
-        const response = await apiService.request('/api/trading-pipeline/predictions')
-        if (response.success) {
-          pipelinePredictions.value = response.predictions || {}
-        }
-      } catch (error) {
-        console.error('Erreur lors du chargement des prédictions:', error)
-      }
-    }
-
-    // Charger les signaux de la pipeline
-    const loadPipelineSignals = async () => {
-      try {
-        const response = await apiService.request('/api/trading-pipeline/signals')
-        if (response.success) {
-          pipelineSignals.value = response.signals || {}
-        }
-      } catch (error) {
-        console.error('Erreur lors du chargement des signaux:', error)
-      }
-    }
-
-    // Démarrer la pipeline
-    const startTradingPipeline = async () => {
-      isLoading.value = true
-      try {
-        const response = await apiService.request('/api/trading-pipeline/start', {
-          method: 'POST'
-        })
-        
-        if (response.success) {
-          await loadPipelineStatus()
-        }
-      } catch (error) {
-        console.error('Erreur lors du démarrage de la pipeline:', error)
-      } finally {
-        isLoading.value = false
-      }
-    }
-
-    // Arrêter la pipeline
-    const stopTradingPipeline = async () => {
-      isLoading.value = true
-      try {
-        const response = await apiService.request('/api/trading-pipeline/stop', {
-          method: 'POST'
-        })
-        
-        if (response.success) {
-          await loadPipelineStatus()
-        }
-      } catch (error) {
-        console.error('Erreur lors de l\'arrêt de la pipeline:', error)
-      } finally {
-        isLoading.value = false
-      }
-    }
-
-    // Actions manuelles de la pipeline
-    const forcePipelineDataCollection = async () => {
-      isLoading.value = true
-      try {
-        await apiService.request('/api/trading-pipeline/force-collect', { method: 'POST' })
-        await loadPipelineMarketData()
-      } catch (error) {
-        console.error('Erreur lors de la collecte forcée:', error)
-      } finally {
-        isLoading.value = false
-      }
-    }
-
-    const forcePipelinePrediction = async () => {
-      isLoading.value = true
-      try {
-        await apiService.request('/api/trading-pipeline/force-predict', { method: 'POST' })
-        await loadPipelinePredictions()
-      } catch (error) {
-        console.error('Erreur lors de la génération forcée:', error)
-      } finally {
-        isLoading.value = false
-      }
-    }
-
-    const forcePipelineSignals = async () => {
-      isLoading.value = true
-      try {
-        await apiService.request('/api/trading-pipeline/force-signals', { method: 'POST' })
-        await loadPipelineSignals()
-      } catch (error) {
-        console.error('Erreur lors de la génération forcée:', error)
-      } finally {
-        isLoading.value = false
-      }
-    }
-
-    const forcePipelineExecution = async () => {
-      isLoading.value = true
-      try {
-        await apiService.request('/api/trading-pipeline/force-execute', { method: 'POST' })
-        // Recharger toutes les données de la pipeline
-        await Promise.all([
-          loadPipelineStatus(),
-          loadPipelineMarketData(),
-          loadPipelinePredictions(),
-          loadPipelineSignals()
-        ])
-      } catch (error) {
-        console.error('Erreur lors de l\'exécution forcée:', error)
-      } finally {
-        isLoading.value = false
-      }
-    }
-
     // Ajouter un canal d'alerte
     const addChannel = async (channelData) => {
       try {
@@ -1019,12 +749,6 @@ export default {
       await loadAutowalletConfig()
       // Charger aussi les alertes directement
       await loadRecentAlerts()
-      // Charger les données de la pipeline
-      await Promise.all([
-        loadPipelineMarketData(),
-        loadPipelinePredictions(),
-        loadPipelineSignals()
-      ])
     })
 
     return {
@@ -1036,6 +760,7 @@ export default {
       isLoading,
       showEditConfig,
       showAddChannel,
+      activeTab,
       newConfig,
       availableCryptos,
       createAutowallet,
@@ -1057,18 +782,7 @@ export default {
       formatSentiment,
       getImpactClass,
       getImpactLabel,
-      formatTime,
-      // Pipeline de trading
-      pipelineStatus,
-      pipelineMarketData,
-      pipelinePredictions,
-      pipelineSignals,
-      startTradingPipeline,
-      stopTradingPipeline,
-      forcePipelineDataCollection,
-      forcePipelinePrediction,
-      forcePipelineSignals,
-      forcePipelineExecution
+      formatTime
     }
   }
 }
@@ -1754,172 +1468,36 @@ export default {
     margin: 0;
   }
 
-  /* Styles pour la pipeline de trading */
-  .trading-pipeline-section {
-    margin-bottom: 30px;
+  .tabs-navigation {
+    display: flex;
+    gap: 8px;
+    margin-bottom: 24px;
+    border-bottom: 2px solid #e1e8ed;
   }
 
-  .section-header {
-    margin-bottom: 20px;
-    text-align: center;
-  }
-
-  .section-header h3 {
-    color: #2c3e50;
-    margin-bottom: 8px;
-  }
-
-  .section-description {
+  .tab-button {
+    padding: 12px 24px;
+    border: none;
+    background: none;
+    font-size: 16px;
+    font-weight: 600;
     color: #7f8c8d;
-    font-size: 0.95em;
+    cursor: pointer;
+    border-bottom: 3px solid transparent;
+    transition: all 0.2s;
   }
 
-  .pipeline-status-card {
-    margin-bottom: 20px;
+  .tab-button:hover {
+    color: #3498db;
   }
 
-  .pipeline-status-card h4 {
-    color: #2c3e50;
-    margin-bottom: 16px;
+  .tab-button.active {
+    color: #3498db;
+    border-bottom-color: #3498db;
   }
 
-  .pipeline-status-grid {
-    display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
-    gap: 12px;
-    margin-bottom: 16px;
-  }
-
-  .pipeline-actions {
-    display: flex;
-    gap: 12px;
-    flex-wrap: wrap;
-    justify-content: center;
-  }
-
-  .pipeline-data-section {
-    display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
-    gap: 20px;
-    margin-bottom: 20px;
-  }
-
-  .pipeline-data-card {
-    min-height: 200px;
-  }
-
-  .pipeline-data-card h4 {
-    color: #2c3e50;
-    margin-bottom: 16px;
-  }
-
-  .data-list {
-    max-height: 300px;
-    overflow-y: auto;
-  }
-
-  .data-item {
-    padding: 12px;
-    background: #f8f9fa;
-    border-radius: 8px;
-    margin-bottom: 8px;
-    border-left: 3px solid #3498db;
-  }
-
-  .data-header {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    margin-bottom: 6px;
-  }
-
-  .symbol {
-    font-weight: 600;
-    color: #2c3e50;
-  }
-
-  .price {
-    font-weight: 600;
-    color: #27ae60;
-  }
-
-  .direction,
-  .signal-type {
-    padding: 3px 10px;
-    border-radius: 16px;
-    font-size: 12px;
-    font-weight: 600;
-    color: white;
-  }
-
-  .direction.bullish,
-  .signal-type.buy {
-    background: #27ae60;
-  }
-
-  .direction.bearish,
-  .signal-type.sell {
-    background: #e74c3c;
-  }
-
-  .direction.neutral,
-  .signal-type.hold {
-    background: #f39c12;
-  }
-
-  .data-details {
-    display: flex;
-    gap: 12px;
-    font-size: 13px;
-  }
-
-  .sentiment,
-  .confidence,
-  .volatility,
-  .volume,
-  .position {
-    padding: 2px 6px;
-    border-radius: 10px;
-    background: #e1e8ed;
-    color: #34495e;
-  }
-
-  .sentiment.positive {
-    background: #d4edda;
-    color: #155724;
-  }
-
-  .sentiment.negative {
-    background: #f8d7da;
-    color: #721c24;
-  }
-
-  .sentiment.neutral {
-    background: #fff3cd;
-    color: #856404;
-  }
-
-  .pipeline-actions-card {
-    text-align: center;
-  }
-
-  .pipeline-actions-card h4 {
-    color: #2c3e50;
-    margin-bottom: 12px;
-  }
-
-  .pipeline-actions-grid {
-    display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
-    gap: 12px;
-    max-width: 800px;
-    margin: 0 auto;
-  }
-
-  .no-data {
-    text-align: center;
-    padding: 30px;
-    color: #7f8c8d;
+  .tab-content {
+    min-height: 400px;
   }
 
 @media (max-width: 768px) {
@@ -1939,18 +1517,6 @@ export default {
   .news-analysis {
     flex-direction: column;
     gap: 8px;
-  }
-
-  .pipeline-data-section {
-    grid-template-columns: 1fr;
-  }
-
-  .pipeline-actions-grid {
-    grid-template-columns: 1fr;
-  }
-
-  .pipeline-status-grid {
-    grid-template-columns: repeat(2, 1fr);
   }
   
   .trade-item {

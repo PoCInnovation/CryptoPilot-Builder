@@ -1,0 +1,59 @@
+# Configuration de la base de données
+DATABASE_URL=postgresql://cryptopilot:cryptopilot123@localhost:5432/cryptopilot
+POSTGRES_HOST=localhost
+POSTGRES_USER=cryptopilot
+POSTGRES_PASSWORD=cryptopilot123
+POSTGRES_DB=cryptopilot
+
+# Configuration JWT
+JWT_SECRET_KEY=votre-clé-secrète-super-sécurisée
+
+# Configuration de la pipeline de trading unifiée
+
+# Intervalles d'exécution (en secondes)
+PIPELINE_DATA_COLLECTION_INTERVAL=60    # Collecte des données toutes les minutes
+PIPELINE_PREDICTION_INTERVAL=300        # Prédictions toutes les 5 minutes
+PIPELINE_SIGNAL_INTERVAL=300            # Signaux toutes les 5 minutes
+PIPELINE_TRADE_INTERVAL=60              # Exécution des trades toutes les minutes
+
+# Limites de trading
+PIPELINE_MAX_CONCURRENT_TRADES=5        # Nombre maximum de trades simultanés
+PIPELINE_MIN_CONFIDENCE=0.7             # Seuil de confiance minimum (70%)
+
+# Gestion des risques
+PIPELINE_MAX_POSITION_SIZE=0.1          # 10% du capital maximum par position
+PIPELINE_MAX_DAILY_LOSS=0.05            # 5% de perte maximale par jour
+PIPELINE_STOP_LOSS=0.02                 # Stop loss à 2%
+PIPELINE_TAKE_PROFIT=0.04               # Take profit à 4%
+
+# Mode de trading
+PIPELINE_PAPER_TRADING=true             # Mode simulation par défaut (true/false)
+
+# Configuration des APIs externes (optionnel)
+# COINGECKO_API_KEY=votre-clé-api-coingecko
+# BINANCE_API_KEY=votre-clé-api-binance
+# BINANCE_SECRET_KEY=votre-secret-binance
+
+# Configuration du logging
+LOG_LEVEL=INFO
+LOG_FILE=trading_pipeline.log
+
+# Configuration des performances
+ENABLE_METRICS=true
+METRICS_INTERVAL=60
+
+# Configuration des alertes
+ALERTS_ENABLED=true
+ALERT_CHANNELS=email,webhook
+MIN_ALERT_PRIORITY=medium
+
+# Configuration de sécurité
+ENABLE_RATE_LIMITING=true
+MAX_REQUESTS_PER_MINUTE=100
+ENABLE_CORS=true
+CORS_ORIGINS=http://localhost:3000,http://localhost:8080
+
+# Configuration du développement
+DEBUG=false
+FLASK_ENV=production
+FLASK_DEBUG=false

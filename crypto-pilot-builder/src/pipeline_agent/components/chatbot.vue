@@ -987,7 +987,7 @@ if (typeof window !== "undefined") {
   display: flex;
   flex-direction: column;
   padding: 0;
-  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  background: linear-gradient(135deg, #111421 0%, #111421 100%);
   backdrop-filter: blur(20px);
   position: relative;
   border-radius: 0 24px 24px 0;
@@ -998,7 +998,7 @@ if (typeof window !== "undefined") {
 .chat-header {
   position: relative;
   padding: 1.5rem 2rem;
-  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  background: linear-gradient(135deg, #111421 0%, #111421 100%);
   backdrop-filter: blur(20px);
   border-bottom: 1px solid rgba(255, 255, 255, 0.2);
   margin-bottom: 0;
