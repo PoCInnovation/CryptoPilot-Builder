@@ -34,6 +34,10 @@
 
         <div class="config-details">
           <div class="detail-row">
+            <span class="label">Provider:</span>
+            <span class="value">{{ getProviderDisplayName(config.provider) }}</span>
+          </div>
+          <div class="detail-row">
             <span class="label">Modèle:</span>
             <span class="value">{{ config.selectedModel }}</span>
           </div>
@@ -155,6 +159,7 @@ export default {
     async duplicateConfig(config) {
       try {
         const newConfig = {
+          provider: config.provider,
           selectedModel: config.selectedModel,
           modules: config.modules,
           prompt: config.prompt,
@@ -202,6 +207,15 @@ export default {
         hour: "2-digit",
         minute: "2-digit",
       });
+    },
+
+    getProviderDisplayName(provider) {
+      const providerNames = {
+        'openai': 'OpenAI',
+        'libertai': 'LibertAI',
+        '': 'Non défini'
+      };
+      return providerNames[provider] || provider || 'Non défini';
     },
   },
 

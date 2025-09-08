@@ -17,8 +17,8 @@ PORT = 5000
 DEBUG = True
 
 # MCP configuration
-MCP_SERVER_COMMAND = "python"
-MCP_SERVER_ARGS = [str(SERVER_DIR / SERVER_SCRIPT)]
+MCP_SERVER_COMMAND = "python3"
+MCP_SERVER_ARGS = ["-u", str(SERVER_DIR / SERVER_SCRIPT)]
 
 # OpenAI configuration (via .env)
 OPENAI_MODEL = "gpt-4o-mini"

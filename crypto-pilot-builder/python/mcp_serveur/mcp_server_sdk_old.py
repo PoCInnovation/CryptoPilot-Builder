@@ -15,16 +15,17 @@ from mcp.server.stdio import stdio_server
 sys.path.append(os.path.dirname(__file__))
 from crypto_tools import get_crypto_price, request_transaction, get_lifi_tokens, get_swap_quote, execute_swap, get_sepolia_tokens, get_all_erc20_tokens
 from base_agent import BaseAgent
+from base_agent_impl import BaseAgentImpl
 load_dotenv()
 
-class OpenAIAgent(BaseAgent):
+class OpenAIAgent(BaseAgent, BaseAgentImpl):
     """OpenAI Agent with crypto capabilities"""
     def __init__(self):
+        BaseAgentImpl.__init__(self, "OpenAI", "gpt-4o-mini")
         self.default_client = None  # Client async
-        self.model = "gpt-4o-mini"
 
-    def _get_default_client(self, api_key=None):
-        """Créer un client async seulement quand nécessaire"""
+    def _get_client(self, api_key=None):
+        """Create OpenAI client"""
         if self.default_client is None:
             if api_key or os.getenv('OPENAI_API_KEY'):
                 actual_api_key = api_key or os.getenv('OPENAI_API_KEY')
@@ -33,40 +34,9 @@ class OpenAIAgent(BaseAgent):
                 return None
         return self.default_client
 
-    async def process_message(self, message: str, context: str = "") -> str:
-        """Process message with default configuration"""
-        try:
-            client = self._get_default_client()
-            if client is None:
-                return "❌ Aucune clé API OpenAI configurée. Veuillez utiliser agent_chat_configured avec votre clé API."
-            system_prompt = self.get_shared_system_prompt()
-            if context:
-                system_prompt = self.append_modules_and_context(system_prompt, context)
-            result = await self._chat_with_openai(message, system_prompt, self.model, client)
-            return result
-        except Exception as e:
-            return f"❌ OpenAI agent error: {str(e)}"
+    # All methods are now inherited from BaseAgentImpl
 
-    async def process_message_with_config(self, message: str, context: str = "",
-                                        system_prompt: str = "", model: str = "gpt-4o-mini",
-                                        api_key: str = "", modules: dict = None) -> str:
-        """Process message with custom configuration"""
-        try:
-            client = self._get_default_client(api_key) if api_key else self._get_default_client()
-            if not system_prompt:
-                system_prompt = self.get_shared_system_prompt()
-            system_prompt = self.append_modules_and_context(system_prompt, context, modules)
-            result = await self._chat_with_openai(message, system_prompt, model, client)
-            return result
-        except Exception as e:
-            return f"❌ Erreur agent OpenAI avec configuration: {str(e)}"
-
-    async def _chat_with_openai(self, message: str, system_prompt: str, model: str, client=None) -> str:
-        """Handle chat with OpenAI including tool calls"""
-        if client is None:
-            client = self._get_default_client()
-            if client is None:
-                return "❌ OpenAI client not configured."
+    # All chat logic is now inherited from BaseAgentImpl
         try:
             # Détection des transactions
             transaction_keywords = ["envoie", "envoyer", "send", "transfer", "transférer", "payment", "pay"]
@@ -88,7 +58,15 @@ class OpenAIAgent(BaseAgent):
             print(f"🔍 DEBUG - is_likely_swap: {is_likely_swap}")
             print(f"🔍 DEBUG - is_likely_transaction: {is_likely_transaction}")
 
-            tool_choice = self.detect_tool_choice(message)
+            tool_choice = "auto"
+            if is_likely_transaction:
+                tool_choice = {"type": "function", "function": {"name": "request_transaction"}}
+                print(f"🔍 DEBUG - Forcing request_transaction tool")
+            elif is_likely_swap:
+                tool_choice = {"type": "function", "function": {"name": "execute_swap"}}
+                print(f"🔍 DEBUG - Forcing execute_swap tool")
+            else:
+                print(f"🔍 DEBUG - Using auto tool choice")
             response = await client.chat.completions.create(
                 model=model,
                 messages=[

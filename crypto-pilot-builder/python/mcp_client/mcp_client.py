@@ -126,6 +126,7 @@ class MCPClient:
             "message": message,
             "context": json.dumps(context),
             "api_key": api_key,
+            "provider": agent_config.get('provider', 'openai'),
             "model": agent_config.get('model', 'gpt-4o-mini'),
             "system_prompt": system_prompt,
             "modules": json.dumps(agent_config.get('modules', {}))
