@@ -129,6 +129,46 @@
         </div>
       </div>
 
+      <!-- Navigation principale -->
+      <div class="main-navigation card">
+        <h3>🎛️ Navigation du Dashboard</h3>
+        <p class="nav-description">Sélectionnez la section que vous souhaitez consulter</p>
+        
+        <div class="nav-buttons">
+          <button 
+            @click="currentPage = 'overview'"
+            class="nav-btn"
+            :class="{ active: currentPage === 'overview' }"
+          >
+            <span class="nav-icon">📊</span>
+            <span class="nav-label">Vue d'ensemble</span>
+          </button>
+          
+          <button 
+            @click="currentPage = 'news-alerts'"
+            class="nav-btn"
+            :class="{ active: currentPage === 'news-alerts' }"
+          >
+            <span class="nav-icon">📰🚨</span>
+            <span class="nav-label">News + Alertes</span>
+          </button>
+          
+          <button 
+            @click="currentPage = 'pipeline'"
+            class="nav-btn"
+            :class="{ active: currentPage === 'pipeline' }"
+          >
+            <span class="nav-icon">🔧</span>
+            <span class="nav-label">Pipeline d'exécution</span>
+          </button>
+        </div>
+      </div>
+
+      <!-- Contenu des sous-pages -->
+      <div class="page-content">
+        
+        <!-- Vue d'ensemble -->
+        <div v-if="currentPage === 'overview'" class="overview-page">
       <!-- Configuration actuelle -->
       <div class="config-card card">
         <h3>⚙️ Configuration actuelle</h3>
@@ -158,313 +198,22 @@
         <button @click="showEditConfig = true" class="btn btn-secondary">
           Modifier la configuration
         </button>
-      </div>
-
-      <!-- News récentes -->
-      <div class="news-card card">
-        <h3>📰 News récentes</h3>
-        
-        <!-- Statut de l'analyse automatique -->
-        <div class="auto-analysis-status" v-if="autowalletConfig">
-          <div class="status-indicator">
-            <span class="status-dot" :class="{ active: autowalletConfig.is_monitoring }"></span>
-            <span class="status-text">
-              {{ autowalletConfig.is_monitoring ? '🔄 Analyse automatique active' : '⏸️ Analyse automatique arrêtée' }}
-            </span>
-          </div>
-          <div class="status-details">
-            <span>Intervalle: {{ autowalletConfig.analysis_interval }} minutes</span>
-            <span>News analysées: {{ autowalletConfig.total_trades || 0 }}</span>
           </div>
         </div>
         
-        <div class="news-list" v-if="recentNews.length > 0">
-          <div v-for="news in recentNews" :key="news.id" class="news-item">
-            <div class="news-header">
-              <h4>{{ news.title }}</h4>
-              <div class="news-meta">
-                <span class="source">{{ news.source }}</span>
-                <span class="time">{{ formatTime(news.published_at) }}</span>
-              </div>
-            </div>
-            <p class="news-content">{{ news.content }}</p>
-            <div class="news-analysis">
-              <span class="sentiment" :class="getSentimentClass(news.sentiment_score)">
-                Sentiment: {{ formatSentiment(news.sentiment_score) }}
-              </span>
-              <span class="relevance">
-                Pertinence: {{ Math.round(news.relevance_score * 100) }}%
-              </span>
-              <span class="impact" :class="getImpactClass(news.impact_level)">
-                Impact: {{ getImpactLabel(news.impact_level) }}
-              </span>
-            </div>
-            <div class="news-actions">
-              <a :href="news.url" target="_blank" class="btn btn-sm btn-secondary">
-                Lire l'article
-              </a>
-              <button @click="analyzeNews([news.id])" class="btn btn-sm btn-primary">
-                🔍 Analyser manuellement
-              </button>
-            </div>
-          </div>
+        <!-- Sous-page 1: News + Alertes -->
+        <div v-if="currentPage === 'news-alerts'" class="news-alerts-page">
+          <NewsAlertsDashboard />
         </div>
         
-        <div v-else class="loading">
-          <p>Chargement des news...</p>
+        <!-- Sous-page 2: Pipeline d'exécution -->
+        <div v-if="currentPage === 'pipeline'" class="pipeline-page">
+          <FullPipelineDashboard />
         </div>
         
-        <button @click="refreshNews" class="btn btn-secondary">
-          Actualiser les news
-        </button>
       </div>
 
-      <!-- Section de la pipeline de trading unifiée -->
-      <div class="trading-pipeline-section">
-        <div class="section-header">
-          <h3>🚀 Pipeline de Trading Unifiée</h3>
-          <p class="section-description">
-            Pipeline d'agents intégrée avec l'autowallet pour le trading automatique avancé
-          </p>
-        </div>
 
-        <!-- Statut de la pipeline -->
-        <div class="pipeline-status-card card">
-          <h4>📊 Statut de la Pipeline</h4>
-          <div class="pipeline-status-grid">
-            <div class="status-item">
-              <span class="label">Pipeline:</span>
-              <span :class="['status', pipelineStatus.is_running ? 'active' : 'inactive']">
-                {{ pipelineStatus.is_running ? 'Active' : 'Inactive' }}
-              </span>
-            </div>
-            <div class="status-item">
-              <span class="label">Données:</span>
-              <span class="value">{{ pipelineStatus.market_data_count || 0 }}</span>
-            </div>
-            <div class="status-item">
-              <span class="label">Prédictions:</span>
-              <span class="value">{{ pipelineStatus.predictions_count || 0 }}</span>
-            </div>
-            <div class="status-item">
-              <span class="label">Signaux:</span>
-              <span class="value">{{ pipelineStatus.signals_count || 0 }}</span>
-            </div>
-            <div class="status-item">
-              <span class="label">Trades:</span>
-              <span class="value">{{ pipelineStatus.trades_count || 0 }}</span>
-            </div>
-          </div>
-          
-          <div class="pipeline-actions">
-            <button 
-              @click="startTradingPipeline" 
-              class="btn btn-success" 
-              :disabled="pipelineStatus.is_running || isLoading"
-            >
-              🚀 Démarrer Pipeline
-            </button>
-            <button 
-              @click="stopTradingPipeline" 
-              class="btn btn-warning" 
-              :disabled="!pipelineStatus.is_running || isLoading"
-            >
-              ⏹️ Arrêter Pipeline
-            </button>
-          </div>
-        </div>
-
-        <!-- Données en temps réel de la pipeline -->
-        <div class="pipeline-data-section">
-          <!-- Données de marché -->
-          <div class="pipeline-data-card card">
-            <h4>📊 Données de Marché</h4>
-            <div class="data-list" v-if="pipelineMarketData && Object.keys(pipelineMarketData).length > 0">
-              <div v-for="(data, symbol) in pipelineMarketData" :key="symbol" class="data-item">
-                <div class="data-header">
-                  <span class="symbol">{{ symbol }}</span>
-                  <span class="price">${{ data.price?.toFixed(2) || 'N/A' }}</span>
-                </div>
-                <div class="data-details">
-                  <span class="sentiment" :class="getSentimentClass(data.news_sentiment)">
-                    {{ formatSentiment(data.news_sentiment) }}
-                  </span>
-                  <span class="volume">Vol: {{ formatVolume(data.volume) }}</span>
-                </div>
-              </div>
-            </div>
-            <div v-else class="no-data">
-              <p>Aucune donnée de marché disponible</p>
-            </div>
-          </div>
-
-          <!-- Prédictions -->
-          <div class="pipeline-data-card card">
-            <h4>🔮 Prédictions</h4>
-            <div class="data-list" v-if="pipelinePredictions && Object.keys(pipelinePredictions).length > 0">
-              <div v-for="(pred, symbol) in pipelinePredictions" :key="symbol" class="data-item">
-                <div class="data-header">
-                  <span class="symbol">{{ symbol }}</span>
-                  <span class="direction" :class="getDirectionClass(pred.direction_prob)">
-                    {{ getDirectionLabel(pred.direction_prob) }}
-                  </span>
-                </div>
-                <div class="data-details">
-                  <span class="confidence">{{ Math.round(pred.confidence * 100) }}%</span>
-                  <span class="volatility">Vol: {{ Math.round(pred.volatility * 100) }}%</span>
-                </div>
-              </div>
-            </div>
-            <div v-else class="no-data">
-              <p>Aucune prédiction disponible</p>
-            </div>
-          </div>
-
-          <!-- Signaux de trading -->
-          <div class="pipeline-data-card card">
-            <h4>📈 Signaux</h4>
-            <div class="data-list" v-if="pipelineSignals && Object.keys(pipelineSignals).length > 0">
-              <div v-for="(signal, symbol) in pipelineSignals" :key="symbol" class="data-item">
-                <div class="data-header">
-                  <span class="symbol">{{ symbol }}</span>
-                  <span :class="['signal-type', signal.signal_type.toLowerCase()]">
-                    {{ signal.signal_type }}
-                  </span>
-                </div>
-                <div class="data-details">
-                  <span class="confidence">{{ Math.round(signal.confidence * 100) }}%</span>
-                  <span class="position">{{ Math.round(signal.position_size * 100) }}%</span>
-                </div>
-              </div>
-            </div>
-            <div v-else class="no-data">
-              <p>Aucun signal disponible</p>
-            </div>
-          </div>
-        </div>
-
-        <!-- Actions manuelles de la pipeline -->
-        <div class="pipeline-actions-card card">
-          <h4>🔧 Actions Manuelles</h4>
-          <p class="info-text">
-            Actions pour forcer l'exécution des étapes de la pipeline
-          </p>
-          
-          <div class="pipeline-actions-grid">
-            <button @click="forcePipelineDataCollection" class="btn btn-secondary" :disabled="isLoading">
-              📊 Collecter Données
-            </button>
-            <button @click="forcePipelinePrediction" class="btn btn-secondary" :disabled="isLoading">
-              🔮 Générer Prédictions
-            </button>
-            <button @click="forcePipelineSignals" class="btn btn-secondary" :disabled="isLoading">
-              📈 Générer Signaux
-            </button>
-            <button @click="forcePipelineExecution" class="btn btn-secondary" :disabled="isLoading">
-              💼 Exécuter Trades
-            </button>
-          </div>
-        </div>
-      </div>
-
-      <!-- Section des alertes et trades -->
-      <div class="alerts-trades-section">
-        <!-- Alertes récentes -->
-        <div class="alerts-card card">
-          <div class="alerts-header">
-            <h3>🚨 Alertes d'investissement</h3>
-            <button @click="loadRecentAlerts" class="btn btn-sm btn-secondary">
-              🔄 Actualiser
-            </button>
-          </div>
-          <div class="alerts-info">
-            <p class="info-text">
-              <strong>Que sont les alertes ?</strong> Ce sont des recommandations d'investissement générées par l'IA 
-              basées sur l'analyse des news crypto. Elles vous indiquent quand acheter, vendre ou attendre.
-            </p>
-            <div class="alert-types">
-              <div class="alert-type">
-                <span class="type-badge buy">BUY</span>
-                <span>Recommandation d'achat</span>
-              </div>
-              <div class="alert-type">
-                <span class="type-badge sell">SELL</span>
-                <span>Recommandation de vente</span>
-              </div>
-              <div class="alert-type">
-                <span class="type-badge hold">HOLD</span>
-                <span>Attendre et observer</span>
-              </div>
-            </div>
-          </div>
-          
-          <div class="recent-alerts" v-if="recentAlerts && recentAlerts.length > 0">
-            <!-- Debug info -->
-            <div style="background: #f0f0f0; padding: 10px; margin-bottom: 15px; border-radius: 5px; font-size: 12px;">
-              <strong>Debug:</strong> recentAlerts.length = {{ recentAlerts ? recentAlerts.length : 'undefined' }}
-            </div>
-            <h4>Alertes récentes</h4>
-            <div class="alert-list">
-              <div v-for="alert in recentAlerts" :key="alert.id" class="alert-item" :class="alert.alert_type.toLowerCase()">
-                <div class="alert-header">
-                  <span class="alert-type" :class="alert.alert_type.toLowerCase()">
-                    {{ alert.alert_type.toUpperCase() }}
-                  </span>
-                  <span class="crypto-symbol">{{ alert.crypto_symbol }}</span>
-                  <span class="confidence">{{ Math.round(alert.confidence_score * 100) }}%</span>
-                </div>
-                <div class="alert-meta">
-                  <span class="time">{{ formatTime(alert.created_at) }}</span>
-                  <span class="alert-id">ID: {{ alert.id.slice(0, 8) }}...</span>
-                </div>
-              </div>
-            </div>
-          </div>
-          
-          <div v-else class="no-alerts">
-            <!-- Debug info -->
-            <div style="background: #f0f0f0; padding: 10px; margin-bottom: 15px; border-radius: 5px; font-size: 12px;">
-              <strong>Debug:</strong> recentAlerts = {{ recentAlerts }}, length = {{ recentAlerts ? recentAlerts.length : 'undefined' }}
-            </div>
-            <p>Aucune alerte générée pour le moment</p>
-            <p class="hint">Les alertes apparaîtront automatiquement lors de l'analyse des news</p>
-          </div>
-        </div>
-
-        <!-- Historique des trades -->
-        <div class="trades-card card">
-          <h3>💼 Historique des trades</h3>
-          <div class="trades-info">
-            <p class="info-text">
-              <strong>Que sont les trades ?</strong> Ce sont les actions d'investissement exécutées automatiquement 
-              par l'IA basées sur les alertes générées. Chaque trade représente un achat ou une vente de cryptomonnaie.
-            </p>
-          </div>
-          
-          <div class="trades-list" v-if="tradeHistory && tradeHistory.length > 0">
-            <div v-for="trade in tradeHistory" :key="trade.id" class="trade-item">
-              <div class="trade-header">
-                <span :class="['action', trade.action.toLowerCase()]">{{ trade.action.toUpperCase() }}</span>
-                <span class="crypto">{{ trade.crypto_symbol }}</span>
-                <span class="amount">${{ trade.amount }}</span>
-              </div>
-              <div class="trade-details">
-                <span class="confidence">{{ Math.round(trade.confidence_score * 100) }}%</span>
-                <span class="status" :class="trade.status">{{ trade.status }}</span>
-                <span class="time">{{ formatTime(trade.executed_at) }}</span>
-              </div>
-              <div class="trade-reasoning" v-if="trade.reasoning">
-                <p>{{ trade.reasoning }}</p>
-              </div>
-            </div>
-          </div>
-          
-          <div v-else class="no-trades">
-            <p>Aucun trade effectué pour le moment</p>
-            <p class="hint">Les trades seront exécutés automatiquement lors de la génération d'alertes BUY/SELL</p>
-          </div>
-        </div>
-      </div>
     </div>
 
     <!-- Modals -->
@@ -494,13 +243,17 @@ import apiService from '../services/apiService'
 import Modal from './Modal.vue'
 import EditConfigForm from './EditConfigForm.vue'
 import AddChannelForm from './AddChannelForm.vue'
+import NewsAlertsDashboard from './NewsAlertsDashboard.vue'
+import FullPipelineDashboard from './FullPipelineDashboard.vue'
 
 export default {
   name: 'AutoWallet',
   components: {
     Modal,
     EditConfigForm,
-    AddChannelForm
+    AddChannelForm,
+    NewsAlertsDashboard,
+    FullPipelineDashboard
   },
   setup() {
     const autowalletConfig = ref(null)
@@ -532,6 +285,9 @@ export default {
       'BTC', 'ETH', 'ADA', 'DOT', 'SOL', 'MATIC', 'AVAX', 'UNI', 'LINK',
       'BNB', 'XRP', 'DOGE', 'SHIB', 'LTC', 'BCH', 'XLM', 'VET', 'TRX'
     ]
+
+    // Variables pour la navigation des sous-pages
+    const currentPage = ref('overview')
 
     // Charger la configuration existante
     const loadAutowalletConfig = async () => {
@@ -796,9 +552,17 @@ export default {
     // Charger les prédictions de la pipeline
     const loadPipelinePredictions = async () => {
       try {
-        const response = await apiService.request('/api/trading-pipeline/predictions')
-        if (response.success) {
-          pipelinePredictions.value = response.predictions || {}
+        // Les prédictions sont disponibles dans les données de marché
+        const response = await apiService.request('/api/trading-pipeline/test/market-data')
+        if (response.success && response.market_data) {
+          // Extraire les prédictions des données de marché
+          const predictions = {}
+          response.market_data.forEach(data => {
+            if (data.prediction) {
+              predictions[data.symbol] = data.prediction
+            }
+          })
+          pipelinePredictions.value = predictions
         }
       } catch (error) {
         console.error('Erreur lors du chargement des prédictions:', error)
@@ -808,9 +572,17 @@ export default {
     // Charger les signaux de la pipeline
     const loadPipelineSignals = async () => {
       try {
-        const response = await apiService.request('/api/trading-pipeline/signals')
-        if (response.success) {
-          pipelineSignals.value = response.signals || {}
+        // Les signaux sont disponibles dans les données de marché
+        const response = await apiService.request('/api/trading-pipeline/test/market-data')
+        if (response.success && response.market_data) {
+          // Extraire les signaux des données de marché
+          const signals = {}
+          response.market_data.forEach(data => {
+            if (data.strategy_signal) {
+              signals[data.symbol] = data.strategy_signal
+            }
+          })
+          pipelineSignals.value = signals
         }
       } catch (error) {
         console.error('Erreur lors du chargement des signaux:', error)
@@ -869,7 +641,8 @@ export default {
     const forcePipelinePrediction = async () => {
       isLoading.value = true
       try {
-        await apiService.request('/api/trading-pipeline/force-predict', { method: 'POST' })
+        // Démarrer la pipeline pour générer de nouvelles prédictions
+        await apiService.request('/api/trading-pipeline/test/start', { method: 'POST' })
         await loadPipelinePredictions()
       } catch (error) {
         console.error('Erreur lors de la génération forcée:', error)
@@ -881,7 +654,8 @@ export default {
     const forcePipelineSignals = async () => {
       isLoading.value = true
       try {
-        await apiService.request('/api/trading-pipeline/force-signals', { method: 'POST' })
+        // Démarrer la pipeline pour générer de nouveaux signaux
+        await apiService.request('/api/trading-pipeline/test/start', { method: 'POST' })
         await loadPipelineSignals()
       } catch (error) {
         console.error('Erreur lors de la génération forcée:', error)
@@ -893,7 +667,8 @@ export default {
     const forcePipelineExecution = async () => {
       isLoading.value = true
       try {
-        await apiService.request('/api/trading-pipeline/force-execute', { method: 'POST' })
+        // Démarrer la pipeline pour une exécution forcée
+        await apiService.request('/api/trading-pipeline/test/start', { method: 'POST' })
         // Recharger toutes les données de la pipeline
         await Promise.all([
           loadPipelineStatus(),
@@ -1038,6 +813,7 @@ export default {
       showAddChannel,
       newConfig,
       availableCryptos,
+      currentPage,
       createAutowallet,
       startMonitoring,
       stopMonitoring,
@@ -1076,7 +852,6 @@ export default {
 
 <style scoped>
 .autowallet-container {
-  max-width: 1200px;
   margin: 0 auto;
   padding: 20px;
 }
@@ -1087,27 +862,67 @@ export default {
 }
 
 .header h1 {
-  color: #2c3e50;
+  color: var(--text-primary);
   margin-bottom: 10px;
+  font-weight: 600;
+  text-shadow: 0 2px 4px rgba(0, 0, 0, 0.3);
+  letter-spacing: 1px;
 }
 
 .subtitle {
-  color: #7f8c8d;
+  color: var(--text-secondary);
   font-size: 1.1em;
 }
 
 .card {
-  background: white;
-  border-radius: 12px;
+  background: var(--glass-bg);
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
+  border: 1px solid var(--glass-border);
+  border-radius: 20px;
   padding: 24px;
   margin-bottom: 24px;
-  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
-  border: 1px solid #e1e8ed;
+  box-shadow: var(--card-shadow);
+  transition: all 0.2s ease;
+  position: relative;
+  overflow: hidden;
+  animation: fadeInUp 0.6s ease;
+}
+
+.card::before {
+  content: "";
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: linear-gradient(
+    135deg,
+    rgba(255, 255, 255, 0.15) 0%,
+    transparent 60%
+  );
+  pointer-events: none;
+  opacity: 0;
+  transition: opacity 0.3s ease;
+}
+
+.card:hover {
+  transform: scale(1.02);
+  background: rgba(255, 255, 255, 0.12);
+  border-color: rgba(255, 255, 255, 0.2);
+  box-shadow: var(--card-shadow-hover);
+}
+
+.card:hover::before {
+  opacity: 1;
 }
 
 .card h2, .card h3 {
-  color: #2c3e50;
+  color: var(--text-primary);
   margin-bottom: 16px;
+  font-weight: 600;
+  text-shadow: 0 2px 4px rgba(0, 0, 0, 0.3);
+  letter-spacing: 1px;
 }
 
 .config-form {
@@ -1200,56 +1015,85 @@ export default {
 .btn {
   padding: 12px 24px;
   border: none;
-  border-radius: 8px;
+  border-radius: 10px;
   font-size: 16px;
-  font-weight: 600;
+  font-weight: bold;
   cursor: pointer;
-  transition: all 0.2s;
+  transition: all 0.3s ease;
+  position: relative;
+  overflow: hidden;
+  color: white;
+}
+
+.btn::before {
+  content: "";
+  position: absolute;
+  top: 0;
+  left: -100%;
+  width: 100%;
+  height: 100%;
+  background: linear-gradient(
+    120deg,
+    rgba(255, 255, 255, 0.2) 0%,
+    rgba(255, 255, 255, 0.2) 50%,
+    rgba(255, 255, 255, 0) 80%
+  );
+  transition: left 0.5s ease;
+  z-index: -1;
+}
+
+.btn:hover::before {
+  left: 100%;
+}
+
+.btn:hover {
+  transform: translateY(-3px);
+  box-shadow: 0 6px 20px rgba(125, 82, 204, 0.4);
 }
 
 .btn-primary {
-  background: #3498db;
+  background: var(--primary-gradient);
   color: white;
 }
 
 .btn-primary:hover {
-  background: #2980b9;
+  background: var(--primary-gradient);
 }
 
 .btn-secondary {
-  background: #95a5a6;
+  background: linear-gradient(135deg, #6b7280 0%, #4b5563 100%);
   color: white;
 }
 
 .btn-secondary:hover {
-  background: #7f8c8d;
+  background: linear-gradient(135deg, #6b7280 0%, #4b5563 100%);
 }
 
 .btn-success {
-  background: #27ae60;
+  background: var(--success-gradient);
   color: white;
 }
 
 .btn-success:hover {
-  background: #229954;
+  background: var(--success-gradient);
 }
 
 .btn-warning {
-  background: #f39c12;
+  background: var(--warning-gradient);
   color: white;
 }
 
 .btn-warning:hover {
-  background: #e67e22;
+  background: var(--warning-gradient);
 }
 
 .btn-danger {
-  background: #e74c3c;
+  background: var(--error-gradient);
   color: white;
 }
 
 .btn-danger:hover {
-  background: #c0392b;
+  background: var(--error-gradient);
 }
 
 .btn-sm {
@@ -1962,6 +1806,314 @@ export default {
   .trade-details {
     flex-direction: column;
     gap: 8px;
+  }
+}
+
+/* Styles pour la navigation principale */
+.main-navigation {
+  margin-bottom: 30px;
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  color: white;
+}
+
+.main-navigation h3 {
+  margin-top: 0;
+  color: white;
+  margin-bottom: 10px;
+}
+
+.nav-description {
+  color: rgba(255, 255, 255, 0.9);
+  margin-bottom: 25px;
+  font-size: 1rem;
+}
+
+.nav-buttons {
+  display: flex;
+  gap: 20px;
+  flex-wrap: wrap;
+}
+
+.nav-btn {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 8px;
+  padding: 20px 25px;
+  border: 2px solid rgba(255, 255, 255, 0.3);
+  background: rgba(255, 255, 255, 0.1);
+  border-radius: 15px;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  font-weight: 500;
+  color: white;
+  min-width: 150px;
+  backdrop-filter: blur(10px);
+}
+
+.nav-btn:hover {
+  border-color: rgba(255, 255, 255, 0.6);
+  background: rgba(255, 255, 255, 0.2);
+  transform: translateY(-3px);
+  box-shadow: 0 8px 25px rgba(0, 0, 0, 0.2);
+}
+
+.nav-btn.active {
+  background: rgba(255, 255, 255, 0.9);
+  border-color: white;
+  color: #2c3e50;
+  transform: translateY(-3px);
+  box-shadow: 0 8px 25px rgba(0, 0, 0, 0.3);
+}
+
+.nav-icon {
+  font-size: 2rem;
+}
+
+.nav-label {
+  font-size: 0.9rem;
+  font-weight: 600;
+  text-align: center;
+}
+
+/* ===== VARIABLES CSS COHÉRENTES AVEC FULLPIPELINEDASHBOARD ===== */
+:root {
+  --primary-gradient: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  --secondary-gradient: linear-gradient(135deg, #8b5cf6 0%, #a855f7 100%);
+  --success-gradient: linear-gradient(135deg, #10b981 0%, #059669 100%);
+  --warning-gradient: linear-gradient(135deg, #f59e0b 0%, #d97706 100%);
+  --error-gradient: linear-gradient(135deg, #ef4444 0%, #dc2626 100%);
+  --glass-bg: rgba(255, 255, 255, 0.08);
+  --glass-border: rgba(255, 255, 255, 0.12);
+  --card-shadow: 0 8px 32px rgba(0, 0, 0, 0.12);
+  --card-shadow-hover: 0 10px 30px rgba(118, 75, 162, 0.4);
+  --main-bg: linear-gradient(135deg, #111421 0%, #111421 100%);
+  --text-primary: #f3e8ff;
+  --text-secondary: rgba(255, 255, 255, 0.8);
+}
+
+/* ===== ANIMATIONS COHÉRENTES ===== */
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+    transform: translateY(-10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes fadeInUp {
+  from {
+    opacity: 0;
+    transform: translateY(20px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+/* Background principal */
+.autowallet-container {
+  background: linear-gradient(135deg, #111421 0%, #111421 100%);
+  min-height: 100vh;
+  width: 100vw;
+  max-width: 100vw;
+  box-sizing: border-box;
+  font-family: "Roboto", sans-serif;
+  color: #f3e8ff;
+  animation: fadeIn 0.6s ease;
+  overflow-x: hidden;
+  position: relative;
+}
+
+/* Styles pour le contenu des pages */
+.page-content {
+  margin-bottom: 30px;
+  animation: fadeInUp 0.6s ease-out;
+}
+
+.overview-page,
+.news-alerts-page,
+.pipeline-page {
+  animation: fadeIn 0.3s ease-in-out;
+}
+
+/* Animations améliorées */
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+    transform: translateY(20px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes fadeInUp {
+  from {
+    opacity: 0;
+    transform: translateY(30px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+/* Amélioration des cartes */
+.card {
+  background: white;
+  box-shadow: var(--card-shadow);
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  border-radius: 1rem;
+  overflow: hidden;
+}
+
+.card:hover {
+  box-shadow: var(--card-shadow-hover);
+  transform: translateY(-2px);
+}
+
+/* Amélioration des boutons */
+.btn {
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  position: relative;
+  overflow: hidden;
+}
+
+.btn::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: -100%;
+  width: 100%;
+  height: 100%;
+  background: linear-gradient(90deg, transparent, rgba(255,255,255,0.2), transparent);
+  transition: left 0.5s;
+}
+
+.btn:hover::before {
+  left: 100%;
+}
+
+.btn:hover {
+  transform: translateY(-1px);
+  box-shadow: var(--card-shadow-hover);
+}
+
+/* Amélioration des sections */
+.section-header {
+  position: relative;
+  padding-bottom: 1rem;
+  margin-bottom: 2rem;
+}
+
+.section-header::after {
+  content: '';
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  width: 60px;
+  height: 3px;
+  background: var(--primary-gradient);
+  border-radius: 2px;
+}
+
+/* Effets de glassmorphism pour certaines sections */
+.glass-effect {
+  background: rgba(255, 255, 255, 0.25);
+  backdrop-filter: blur(10px);
+  border: 1px solid rgba(255, 255, 255, 0.18);
+}
+
+/* Amélioration des indicateurs de statut */
+.status-indicator {
+  position: relative;
+  box-shadow: 0 0 0 2px rgba(255, 255, 255, 0.2);
+}
+
+.status-indicator.running {
+  animation: pulse-green 2s infinite;
+}
+
+.status-indicator.processing {
+  animation: pulse-yellow 1s infinite;
+}
+
+.status-indicator.error {
+  animation: pulse-red 1s infinite;
+}
+
+@keyframes pulse-green {
+  0%, 100% { 
+    box-shadow: 0 0 0 0 rgba(16, 185, 129, 0.7);
+  }
+  50% { 
+    box-shadow: 0 0 0 10px rgba(16, 185, 129, 0);
+  }
+}
+
+@keyframes pulse-yellow {
+  0%, 100% { 
+    box-shadow: 0 0 0 0 rgba(245, 158, 11, 0.7);
+  }
+  50% { 
+    box-shadow: 0 0 0 10px rgba(245, 158, 11, 0);
+  }
+}
+
+@keyframes pulse-red {
+  0%, 100% { 
+    box-shadow: 0 0 0 0 rgba(239, 68, 68, 0.7);
+  }
+  50% { 
+    box-shadow: 0 0 0 10px rgba(239, 68, 68, 0);
+  }
+}
+
+/* Scrollbars personnalisées */
+.overflow-y-auto::-webkit-scrollbar {
+  width: 6px;
+}
+
+.overflow-y-auto::-webkit-scrollbar-track {
+  background: #f1f5f9;
+  border-radius: 3px;
+}
+
+.overflow-y-auto::-webkit-scrollbar-thumb {
+  background: #cbd5e1;
+  border-radius: 3px;
+}
+
+.overflow-y-auto::-webkit-scrollbar-thumb:hover {
+  background: #94a3b8;
+}
+
+@media (max-width: 768px) {
+  .nav-buttons {
+    flex-direction: column;
+    gap: 15px;
+  }
+  
+  .nav-btn {
+    min-width: auto;
+    width: 100%;
+    flex-direction: row;
+    justify-content: center;
+    padding: 15px 20px;
+  }
+  
+  .nav-icon {
+    font-size: 1.5rem;
+  }
+  
+  .nav-label {
+    font-size: 1rem;
   }
 }
 </style>

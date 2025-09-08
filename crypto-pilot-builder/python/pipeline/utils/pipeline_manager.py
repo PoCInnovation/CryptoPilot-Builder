@@ -621,10 +621,18 @@ class PipelineManager:
     
     def get_pipeline_status(self) -> Dict[str, Any]:
         """Retourne le statut complet du pipeline."""
+        # Convertir les agents en format sérialisable
+        agents_dict = {}
+        for name, status in self.agent_status.items():
+            agent_dict = asdict(status)
+            # Convertir l'enum AgentStatus en string
+            agent_dict['status'] = status.status.value
+            agents_dict[name] = agent_dict
+        
         return {
             "is_running": self.is_running,
             "execution_interval": self.execution_interval,
-            "agents": {name: asdict(status) for name, status in self.agent_status.items()},
+            "agents": agents_dict,
             "pipeline_data_count": len(self.pipeline_data),
             "last_execution": max([status.last_execution for status in self.agent_status.values() if status.last_execution], default=None)
         }
@@ -637,7 +645,10 @@ class PipelineManager:
     def get_agent_status(self, agent_name: str) -> Optional[Dict[str, Any]]:
         """Retourne le statut d'un agent spécifique."""
         if agent_name in self.agent_status:
-            return asdict(self.agent_status[agent_name])
+            agent_dict = asdict(self.agent_status[agent_name])
+            # Convertir l'enum AgentStatus en string
+            agent_dict['status'] = self.agent_status[agent_name].status.value
+            return agent_dict
         return None
 
 # Instance globale du pipeline manager

@@ -177,6 +177,96 @@ class ApiService {
       method: "DELETE",
     });
   }
+
+  // ===== AUTOWALLET =====
+
+  async getAutowalletConfig() {
+    return this.request("/api/autowallet/config");
+  }
+
+  async createAutowalletConfig(config) {
+    return this.request("/api/autowallet/config", {
+      method: "POST",
+      body: config,
+    });
+  }
+
+  async updateAutowalletConfig(config) {
+    return this.request("/api/autowallet/config", {
+      method: "PUT",
+      body: config,
+    });
+  }
+
+  async getAutowalletNews() {
+    return this.request("/api/autowallet/news");
+  }
+
+  async getAutowalletAlerts() {
+    return this.request("/api/autowallet/alerts");
+  }
+
+  async analyzeNews(newsIds, analysisType = "individual") {
+    return this.request("/api/autowallet/analyze", {
+      method: "POST",
+      body: {
+        news_ids: newsIds,
+        analysis_type: analysisType,
+      },
+    });
+  }
+
+  async startAutowalletMonitoring() {
+    return this.request("/api/autowallet/start", {
+      method: "POST",
+    });
+  }
+
+  async stopAutowalletMonitoring() {
+    return this.request("/api/autowallet/stop", {
+      method: "POST",
+    });
+  }
+
+  // ===== PIPELINE =====
+
+  async getPipelineStatus() {
+    return this.request("/api/trading-pipeline/test/status");
+  }
+
+  async getPipelineData() {
+    return this.request("/api/trading-pipeline/test/market-data");
+  }
+
+  async startPipeline() {
+    return this.request("/api/trading-pipeline/test/start", {
+      method: "POST",
+    });
+  }
+
+  async stopPipeline() {
+    return this.request("/api/trading-pipeline/test/stop", {
+      method: "POST",
+    });
+  }
+
+  async startAllAgents() {
+    return this.request("/api/trading-pipeline/test/start", {
+      method: "POST",
+    });
+  }
+
+  async stopAllAgents() {
+    return this.request("/api/trading-pipeline/test/stop", {
+      method: "POST",
+    });
+  }
+
+  async callLoggerAgent() {
+    return this.request("/api/trading-pipeline/test/logger", {
+      method: "POST",
+    });
+  }
 }
 
 // Instance singleton
@@ -205,4 +295,18 @@ export const {
   addUserMemory,
   renameSession,
   deleteUserMemory,
+  getAutowalletConfig,
+  createAutowalletConfig,
+  updateAutowalletConfig,
+  getAutowalletNews,
+  getAutowalletAlerts,
+  analyzeNews,
+  startAutowalletMonitoring,
+  stopAutowalletMonitoring,
+  getPipelineStatus,
+  getPipelineData,
+  startPipeline,
+  stopPipeline,
+  startAllAgents,
+  stopAllAgents,
 } = apiService;

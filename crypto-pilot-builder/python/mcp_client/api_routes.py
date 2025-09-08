@@ -8,7 +8,7 @@ import os
 import re
 import json
 import logging
-from datetime import timedelta
+from datetime import timedelta, datetime
 from flask import request, jsonify
 from flask_sqlalchemy import SQLAlchemy
 from flask_bcrypt import Bcrypt
@@ -903,3 +903,89 @@ def create_api_routes(app):
     # Importer et créer les routes de la pipeline de trading unifiée
     from .trading_pipeline_routes import create_trading_pipeline_routes
     create_trading_pipeline_routes(app)
+    
+    # ===== TRADING PIPELINE TEST ROUTES (SANS AUTHENTIFICATION) =====
+    
+    @app.route('/api/trading-pipeline/test/status', methods=['GET'])
+    def get_pipeline_status_test():
+        """Récupère le statut de la pipeline de trading (test sans auth)"""
+        try:
+            # Import du service
+            from services.trading_pipeline_service import trading_pipeline_service
+            status = trading_pipeline_service.get_pipeline_status()
+            
+            return jsonify({
+                "status": "success",
+                "pipeline_status": status,
+                "timestamp": datetime.utcnow().isoformat()
+            })
+        except Exception as e:
+            logger.error(f"Erreur lors de la récupération du statut: {str(e)}")
+            return jsonify({"error": str(e)}), 500
+    
+    @app.route('/api/trading-pipeline/test/start', methods=['POST'])
+    def start_pipeline_test():
+        """Démarre la pipeline de trading (test sans auth)"""
+        try:
+            from services.trading_pipeline_service import trading_pipeline_service
+            result = trading_pipeline_service.start_pipeline()
+            
+            return jsonify({
+                "status": "success",
+                "message": "Pipeline démarrée avec succès",
+                "result": result,
+                "timestamp": datetime.utcnow().isoformat()
+            })
+        except Exception as e:
+            logger.error(f"Erreur lors du démarrage: {str(e)}")
+            return jsonify({"error": str(e)}), 500
+    
+    @app.route('/api/trading-pipeline/test/stop', methods=['POST'])
+    def stop_pipeline_test():
+        """Arrête la pipeline de trading (test sans auth)"""
+        try:
+            from services.trading_pipeline_service import trading_pipeline_service
+            result = trading_pipeline_service.stop_pipeline()
+            
+            return jsonify({
+                "status": "success",
+                "message": "Pipeline arrêtée avec succès",
+                "result": result,
+                "timestamp": datetime.utcnow().isoformat()
+            })
+        except Exception as e:
+            logger.error(f"Erreur lors de l'arrêt: {str(e)}")
+            return jsonify({"error": str(e)}), 500
+    
+    @app.route('/api/trading-pipeline/test/market-data', methods=['GET'])
+    def get_market_data_test():
+        """Récupère les données de marché (test sans auth)"""
+        try:
+            from services.trading_pipeline_service import trading_pipeline_service
+            data = trading_pipeline_service.get_market_data()
+            
+            return jsonify({
+                "status": "success",
+                "market_data": data,
+                "timestamp": datetime.utcnow().isoformat()
+            })
+        except Exception as e:
+            logger.error(f"Erreur lors de la récupération des données: {str(e)}")
+            return jsonify({"error": str(e)}), 500
+    
+    @app.route('/api/trading-pipeline/test/logger', methods=['POST'])
+    def call_logger_agent_test():
+        """Appelle le Logger Agent (test sans auth)"""
+        try:
+            from services.trading_pipeline_service import trading_pipeline_service
+            result = trading_pipeline_service.call_logger_agent()
+            
+            return jsonify({
+                "status": "success",
+                "message": "Logger Agent appelé avec succès",
+                "result": result,
+                "timestamp": datetime.utcnow().isoformat()
+            })
+        except Exception as e:
+            logger.error(f"Erreur lors de l'appel au Logger Agent: {str(e)}")
+            return jsonify({"error": str(e)}), 500

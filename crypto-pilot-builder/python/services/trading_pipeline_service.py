@@ -13,11 +13,11 @@ from typing import List, Dict, Optional, Any
 from dataclasses import dataclass
 import json
 
-from .news_service import news_service
-from .ai_analyzer import ai_analyzer
-from .alert_service import alert_service
-from .autowallet_service import autowallet_service
-from config.trading_pipeline_config import PIPELINE_CONFIG
+# Import du vrai PipelineManager de la pipeline existante
+import sys
+import os
+sys.path.append(os.path.join(os.path.dirname(__file__), '../pipeline'))
+from pipeline.utils.pipeline_manager import pipeline_manager
 
 logger = logging.getLogger(__name__)
 
@@ -72,23 +72,10 @@ class TradingPipelineService:
     """Service unifié de pipeline de trading"""
     
     def __init__(self):
-        self.news_service = news_service
-        self.ai_analyzer = ai_analyzer
-        self.alert_service = alert_service
-        self.autowallet_service = autowallet_service
+        # Utiliser le vrai PipelineManager de la pipeline existante
+        self.pipeline_manager = pipeline_manager
         
-        # Configuration de la pipeline
-        self.pipeline_config = PIPELINE_CONFIG
-        
-        # État de la pipeline
-        self.is_running = False
-        self.pipeline_thread = None
-        self.stop_pipeline = False
-        
-        # Cache des données
-        self.market_data_cache: Dict[str, MarketData] = {}
-        self.predictions_cache: Dict[str, TradingPrediction] = {}
-        self.signals_cache: Dict[str, TradingSignal] = {}
+        logger.info("TradingPipelineService initialisé avec le vrai PipelineManager")
         self.trades_cache: Dict[str, TradeExecution] = {}
         
         # Statistiques
@@ -105,43 +92,22 @@ class TradingPipelineService:
     def start_pipeline(self) -> bool:
         """Démarre la pipeline de trading unifiée"""
         try:
-            if self.is_running:
-                logger.warning("Pipeline déjà en cours d'exécution")
-                return True
-            
-            self.stop_pipeline = False
-            self.is_running = True
-            
-            # Démarrer le thread principal de la pipeline
-            self.pipeline_thread = threading.Thread(
-                target=self._pipeline_main_loop,
-                daemon=True
-            )
-            self.pipeline_thread.start()
-            
-            logger.info("Pipeline de trading démarrée avec succès")
-            return True
+            # Utiliser le vrai pipeline manager
+            result = asyncio.run(self.pipeline_manager.start_pipeline())
+            logger.info("Pipeline de trading démarrée via PipelineManager")
+            return result
             
         except Exception as e:
             logger.error(f"Erreur lors du démarrage de la pipeline: {e}")
-            self.is_running = False
             return False
     
     def stop_pipeline(self) -> bool:
         """Arrête la pipeline de trading"""
         try:
-            if not self.is_running:
-                return True
-            
-            self.stop_pipeline = True
-            self.is_running = False
-            
-            # Attendre la fin du thread
-            if self.pipeline_thread and self.pipeline_thread.is_alive():
-                self.pipeline_thread.join(timeout=10)
-            
-            logger.info("Pipeline de trading arrêtée")
-            return True
+            # Utiliser le vrai pipeline manager
+            result = asyncio.run(self.pipeline_manager.stop_pipeline())
+            logger.info("Pipeline de trading arrêtée via PipelineManager")
+            return result
             
         except Exception as e:
             logger.error(f"Erreur lors de l'arrêt de la pipeline: {e}")
@@ -151,7 +117,7 @@ class TradingPipelineService:
         """Boucle principale de la pipeline"""
         logger.info("Démarrage de la boucle principale de la pipeline")
         
-        while not self.stop_pipeline and self.is_running:
+        while not self.should_stop and self.is_running:
             try:
                 # Étape 1: Collecte de données (DataCollector)
                 self._collect_market_data()
@@ -491,23 +457,216 @@ class TradingPipelineService:
     
     def get_pipeline_status(self) -> Dict[str, Any]:
         """Retourne le statut de la pipeline"""
+        # Utiliser le vrai pipeline manager
+        status = self.pipeline_manager.get_pipeline_status()
+        
+        # Adapter le format pour l'API
         return {
-            "is_running": self.is_running,
-            "config": self.pipeline_config,
-            "stats": self.stats,
-            "market_data_count": len(self.market_data_cache),
-            "predictions_count": len(self.predictions_cache),
-            "signals_count": len(self.signals_cache),
-            "trades_count": len(self.trades_cache)
+            "is_running": status.get("is_running", False),
+            "config": {
+                "execution_interval": status.get("execution_interval", 60),
+                "pipeline_version": "1.0.0"
+            },
+            "stats": {
+                "total_trades": 0,
+                "successful_trades": 0,
+                "total_pnl": 0.0,
+                "total_signals": 0,
+                "last_update": status.get("last_execution")
+            },
+            "agents": status.get("agents", {}),  # Inclure les données des agents
+            "last_execution": status.get("last_execution"),
+            "market_data_count": 0,  # Sera mis à jour par les agents
+            "predictions_count": 0,  # Sera mis à jour par les agents
+            "signals_count": 0,      # Sera mis à jour par les agents
+            "trades_count": 0        # Sera mis à jour par les agents
         }
     
     def get_market_data(self, symbol: str = None) -> Dict[str, Any]:
-        """Retourne les données de marché"""
-        if symbol:
-            data = self.market_data_cache.get(symbol)
-            return data.__dict__ if data else None
-        else:
-            return {s: d.__dict__ for s, d in self.market_data_cache.items()}
+        """Retourne les données de marché avec prédictions et signaux"""
+        # Utiliser les vraies données du pipeline manager
+        pipeline_data = self.pipeline_manager.get_pipeline_data(limit=10)
+        
+        # Extraire toutes les données des dernières exécutions
+        market_data = []
+        for data in pipeline_data:
+            if data.get("symbol") and data.get("price"):
+                market_data.append({
+                    "symbol": data["symbol"],
+                    "price": data["price"],
+                    "volume": data.get("volume", 0),
+                    "timestamp": data["timestamp"],
+                    "prediction": data.get("prediction"),
+                    "strategy_signal": data.get("strategy_signal"),
+                    "trade_execution": data.get("trade_execution")
+                })
+        
+        return market_data
+    
+    def call_logger_agent(self) -> Dict[str, Any]:
+        """Appelle le Logger Agent pour générer un rapport complet"""
+        try:
+            # Utiliser le pipeline manager pour appeler le logger agent
+            pipeline_data = self.pipeline_manager.get_pipeline_data(limit=50)
+            pipeline_status = self.pipeline_manager.get_pipeline_status()
+            
+            # Analyser les données pour extraire les informations importantes
+            total_executions = len(pipeline_data)
+            successful_executions = len([d for d in pipeline_data if d.get("prediction")])
+            failed_executions = total_executions - successful_executions
+            
+            # Analyser les signaux de trading
+            buy_signals = len([d for d in pipeline_data if d.get("strategy_signal", {}).get("action") == "BUY"])
+            sell_signals = len([d for d in pipeline_data if d.get("strategy_signal", {}).get("action") == "SELL"])
+            hold_signals = len([d for d in pipeline_data if d.get("strategy_signal", {}).get("action") == "HOLD"])
+            
+            # Analyser les prédictions
+            up_predictions = len([d for d in pipeline_data if d.get("prediction", {}).get("direction") == "UP"])
+            down_predictions = len([d for d in pipeline_data if d.get("prediction", {}).get("direction") == "DOWN"])
+            
+            # Analyser les trades
+            filled_trades = len([d for d in pipeline_data if d.get("trade_execution", {}).get("status") == "FILLED"])
+            pending_trades = len([d for d in pipeline_data if d.get("trade_execution", {}).get("status") == "PENDING"])
+            
+            # Générer une recommandation de trading
+            recommendation = self._generate_trading_recommendation(pipeline_data)
+            
+            # Simuler l'appel au logger agent avec des données détaillées
+            logger_result = {
+                "agent_name": "logger",
+                "timestamp": datetime.utcnow().isoformat(),
+                "action": "generate_report",
+                "pipeline_data_count": len(pipeline_data),
+                "report": {
+                    "summary": {
+                        "total_executions": total_executions,
+                        "successful_executions": successful_executions,
+                        "failed_executions": failed_executions,
+                        "last_execution": pipeline_data[-1]["timestamp"] if pipeline_data else None,
+                        "pipeline_running": pipeline_status.get("is_running", True),
+                        "recommendation": recommendation
+                    },
+                    "agents_info": pipeline_status.get("agents", {
+                        "data_collector": "running",
+                        "predictor": "running", 
+                        "strategy": "running",
+                        "trader": "running",
+                        "logger": "running"
+                    }),
+                    "trading_analysis": {
+                        "signals": {
+                            "buy_signals": buy_signals,
+                            "sell_signals": sell_signals,
+                            "hold_signals": hold_signals,
+                            "total_signals": buy_signals + sell_signals + hold_signals
+                        },
+                        "predictions": {
+                            "up_predictions": up_predictions,
+                            "down_predictions": down_predictions,
+                            "total_predictions": up_predictions + down_predictions
+                        },
+                        "trades": {
+                            "filled_trades": filled_trades,
+                            "pending_trades": pending_trades,
+                            "total_trades": filled_trades + pending_trades
+                        }
+                    },
+                    "recent_activities": [
+                        {
+                            "timestamp": data.get("timestamp"),
+                            "symbol": data.get("symbol"),
+                            "price": data.get("price"),
+                            "has_prediction": bool(data.get("prediction")),
+                            "has_signal": bool(data.get("strategy_signal")),
+                            "has_trade": bool(data.get("trade_execution")),
+                            "prediction": data.get("prediction"),
+                            "strategy_signal": data.get("strategy_signal"),
+                            "trade_execution": data.get("trade_execution")
+                        } for data in pipeline_data[-5:]
+                    ],
+                    "pipeline_info": {
+                        "execution_interval": pipeline_status.get("execution_interval", 60),
+                        "pipeline_data_count": len(pipeline_data),
+                        "last_execution": pipeline_data[-1]["timestamp"] if pipeline_data else None
+                    }
+                },
+                "status": "success"
+            }
+            
+            logger.info("Logger Agent appelé avec succès")
+            return logger_result
+            
+        except Exception as e:
+            logger.error(f"Erreur lors de l'appel au Logger Agent: {e}")
+            return {
+                "agent_name": "logger",
+                "timestamp": datetime.utcnow().isoformat(),
+                "action": "generate_report",
+                "status": "error",
+                "error": str(e)
+            }
+    
+    def _generate_trading_recommendation(self, pipeline_data: List[Dict]) -> Dict[str, Any]:
+        """Génère une recommandation de trading basée sur les données du pipeline"""
+        if not pipeline_data:
+            return {
+                "action": "HOLD",
+                "confidence": 0.0,
+                "reason": "Aucune donnée disponible",
+                "risk_level": "UNKNOWN"
+            }
+        
+        # Analyser les dernières données
+        recent_data = pipeline_data[-5:] if len(pipeline_data) >= 5 else pipeline_data
+        
+        # Compter les signaux
+        buy_count = sum(1 for d in recent_data if d.get("strategy_signal", {}).get("action") == "BUY")
+        sell_count = sum(1 for d in recent_data if d.get("strategy_signal", {}).get("action") == "SELL")
+        hold_count = sum(1 for d in recent_data if d.get("strategy_signal", {}).get("action") == "HOLD")
+        
+        # Analyser les prédictions
+        up_count = sum(1 for d in recent_data if d.get("prediction", {}).get("direction") == "UP")
+        down_count = sum(1 for d in recent_data if d.get("prediction", {}).get("direction") == "DOWN")
+        
+        # Calculer la confiance
+        total_signals = buy_count + sell_count + hold_count
+        confidence = 0.0
+        action = "HOLD"
+        reason = "Données insuffisantes"
+        risk_level = "MEDIUM"
+        
+        if total_signals > 0:
+            if buy_count > sell_count and buy_count > hold_count:
+                action = "BUY"
+                confidence = buy_count / total_signals
+                reason = f"Tendance haussière détectée ({buy_count}/{total_signals} signaux d'achat)"
+                risk_level = "LOW" if confidence > 0.7 else "MEDIUM"
+            elif sell_count > buy_count and sell_count > hold_count:
+                action = "SELL"
+                confidence = sell_count / total_signals
+                reason = f"Tendance baissière détectée ({sell_count}/{total_signals} signaux de vente)"
+                risk_level = "LOW" if confidence > 0.7 else "MEDIUM"
+            else:
+                action = "HOLD"
+                confidence = hold_count / total_signals
+                reason = f"Marché neutre ({hold_count}/{total_signals} signaux de maintien)"
+                risk_level = "LOW"
+        
+        # Ajuster selon les prédictions
+        if up_count > down_count and action == "BUY":
+            confidence = min(confidence + 0.1, 1.0)
+            reason += f" + Prédictions haussières ({up_count}/{up_count + down_count})"
+        elif down_count > up_count and action == "SELL":
+            confidence = min(confidence + 0.1, 1.0)
+            reason += f" + Prédictions baissières ({down_count}/{up_count + down_count})"
+        
+        return {
+            "action": action,
+            "confidence": round(confidence, 2),
+            "reason": reason,
+            "risk_level": risk_level,
+            "market_sentiment": "BULLISH" if up_count > down_count else "BEARISH" if down_count > up_count else "NEUTRAL"
+        }
     
     def get_predictions(self, symbol: str = None) -> Dict[str, Any]:
         """Retourne les prédictions"""
