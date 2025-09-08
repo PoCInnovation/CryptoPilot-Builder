@@ -7,10 +7,10 @@ const loadFromStorage = () => {
     const saved = localStorage.getItem("aiConfig");
     return saved
       ? JSON.parse(saved)
-      : { selectedModel: "", apiKey: "", prompt: "", modules: {} };
+      : { provider: "", selectedModel: "", apiKey: "", prompt: "", modules: {} };
   } catch (error) {
     console.error("Erreur lors du chargement des données:", error);
-    return { selectedModel: "", apiKey: "", prompt: "", modules: {} };
+    return { provider: "", selectedModel: "", apiKey: "", prompt: "", modules: {} };
   }
 };
 
@@ -177,6 +177,11 @@ export default createStore({
       saveToStorage(state.aiConfig);
     },
 
+    SET_PROVIDER(state, provider) {
+      state.aiConfig.provider = provider;
+      saveToStorage(state.aiConfig);
+    },
+
     SET_MODEL(state, model) {
       state.aiConfig.selectedModel = model;
       saveToStorage(state.aiConfig);
@@ -199,6 +204,7 @@ export default createStore({
     },
     CLEAR_CONFIG(state) {
       state.aiConfig = {
+        provider: "",
         selectedModel: "",
         apiKey: "",
         prompt: "",
@@ -211,8 +217,8 @@ export default createStore({
     SET_CHATS(state, chats) {
       state.chats = chats;
       // Mettre à jour nextChatId basé sur les IDs existants
-      state.nextChatId = chats.length > 0 
-        ? Math.max(...chats.map(c => c.id)) + 1 
+      state.nextChatId = chats.length > 0
+        ? Math.max(...chats.map(c => c.id)) + 1
         : 1;
     },
 
@@ -249,6 +255,7 @@ export default createStore({
 
         const response = await apiService.getAgentConfig();
         commit("SET_AI_CONFIG", {
+          provider: response.config.provider,
           selectedModel: response.config.selectedModel,
           apiKey: response.config.apiKey,
           prompt: response.config.prompt,
@@ -272,19 +279,19 @@ export default createStore({
         commit("SET_LOADING", true);
         const response = await apiService.listSessions();
         const sessions = response.sessions || [];
-        
+
         // Convertir les sessions en format compatible avec l'UI
         const chats = sessions.map(session => ({
           id: session.session_id,
           name: session.session_name || `Chat ${session.session_id}`
         }));
-        
+
         commit("SET_CHATS", chats);
       } catch (error) {
         console.error("Erreur lors du chargement des chats:", error);
         // Fallback avec un chat par défaut
-        commit("SET_CHATS", [{ 
-          id: 1, 
+        commit("SET_CHATS", [{
+          id: 1,
           name: "Chat par défaut"
         }]);
       } finally {
@@ -297,12 +304,12 @@ export default createStore({
       try {
         commit("SET_LOADING", true);
         const sessionData = await apiService.createNewSession(chatName);
-        
+
         const newChat = {
           id: sessionData.session_id,
           name: chatName
         };
-        
+
         commit("ADD_CHAT", newChat);
         return newChat;
       } catch (error) {
@@ -347,6 +354,7 @@ export default createStore({
 
         const response = await apiService.saveAgentConfig(config);
         commit("SET_AI_CONFIG", {
+          provider: response.config.provider,
           selectedModel: response.config.selectedModel,
           apiKey: response.config.apiKey,
           prompt: response.config.prompt,
@@ -382,6 +390,21 @@ export default createStore({
           error.message
         );
         // Pas de throw - la mise à jour locale est déjà faite
+      }
+    },
+
+    async setProvider({ commit, rootState }, provider) {
+      commit("SET_PROVIDER", provider);
+
+      if (rootState.auth.isAuthenticated) {
+        try {
+          await apiService.updatePartialConfig({ provider });
+        } catch (error) {
+          console.error(
+            "Erreur lors de la sauvegarde du provider:",
+            error.message
+          );
+        }
       }
     },
 

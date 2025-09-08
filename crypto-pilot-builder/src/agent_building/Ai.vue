@@ -10,6 +10,36 @@
       </div>
       <div class="form-section">
         <div class="form-group">
+          <label for="provider-select" class="form-label">
+            <i class="icon">🌐</i>
+            Fournisseur d'IA
+          </label>
+          <div class="select-wrapper">
+            <select
+              id="provider-select"
+              v-model="selectedProvider"
+              class="form-select"
+              @change="onProviderChange"
+            >
+              <option value="">Choisir un fournisseur</option>
+              <option value="openai">OpenAI (GPT-4, GPT-3.5)</option>
+              <option value="libertai">LibertAI (Gemma 3 27B)</option>
+            </select>
+            <div class="select-arrow">
+              <svg width="20" height="20" viewBox="0 0 24 24" fill="none">
+                <path
+                  d="M5 7.5L10 12.5L15 7.5"
+                  stroke="currentColor"
+                  stroke-width="2"
+                  stroke-linecap="round"
+                  stroke-linejoin="round"
+                />
+              </svg>
+            </div>
+          </div>
+        </div>
+
+        <div class="form-group">
           <label for="model-select" class="form-label">
             <i class="icon">🤖</i>
             Modèle d'IA
@@ -21,12 +51,15 @@
               class="form-select"
             >
               <option value="">Choisir un modèle</option>
-              <option value="gpt-4o-mini">GPT-4o Mini</option>
-              <option value="gpt-4">GPT-4</option>
-              <option value="gpt-3.5-turbo">GPT-3.5 Turbo</option>
+              <!-- OpenAI Models -->
+              <option v-if="selectedProvider === 'openai'" value="gpt-4o-mini">GPT-4o Mini</option>
+              <option v-if="selectedProvider === 'openai'" value="gpt-4">GPT-4</option>
+              <option v-if="selectedProvider === 'openai'" value="gpt-3.5-turbo">GPT-3.5 Turbo</option>
+              <!-- LibertAI Models -->
+              <option v-if="selectedProvider === 'libertai'" value="gemma-3-27b">Gemma 3 27B</option>
             </select>
             <div class="select-arrow">
-              <svg width="20" height="20" viewBox="0 0 20 20" fill="none">
+              <svg width="20" height="20" viewBox="0 0 24 24" fill="none">
                 <path
                   d="M5 7.5L10 12.5L15 7.5"
                   stroke="currentColor"
@@ -128,6 +161,7 @@ export default {
   },
   data() {
     return {
+      selectedProvider: "",
       selectedModel: "",
       apiKey: "",
     };
@@ -135,22 +169,33 @@ export default {
   computed: {
     ...mapGetters(["aiConfig", "isAuthenticated"]),
     isFormValid() {
-      return this.selectedModel && this.apiKey.trim();
+      return this.selectedProvider && this.selectedModel && this.apiKey.trim();
     },
     isConfigured() {
-      return this.selectedModel && this.apiKey;
+      return this.selectedProvider && this.selectedModel && this.apiKey;
     },
   },
   methods: {
-    ...mapActions(["updateAIConfig", "setApiKey", "setModel"]),
+    ...mapActions(["updateAIConfig", "setProvider", "setApiKey", "setModel"]),
     saveConfig() {
       this.updateAIConfig({
+        provider: this.selectedProvider,
         selectedModel: this.selectedModel,
         apiKey: this.apiKey,
       });
     },
+
+    onProviderChange() {
+      // Réinitialiser le modèle quand le provider change
+      this.selectedModel = "";
+    },
   },
   watch: {
+    selectedProvider(newVal) {
+      if (newVal) {
+        this.setProvider(newVal);
+      }
+    },
     selectedModel(newVal) {
       if (newVal) {
         this.setModel(newVal);
@@ -163,6 +208,7 @@ export default {
     },
   },
   mounted() {
+    this.selectedProvider = this.aiConfig.provider || "";
     this.selectedModel = this.aiConfig.selectedModel || "";
     this.apiKey = this.aiConfig.apiKey || "";
   },
