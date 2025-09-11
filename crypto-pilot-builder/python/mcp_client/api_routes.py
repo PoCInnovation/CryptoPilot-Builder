@@ -67,6 +67,7 @@ def create_api_routes(app):
         user_id = db.Column(UUID(as_uuid=True), db.ForeignKey('users.id'), nullable=False)
 
         # Configuration IA
+        provider = db.Column(db.String(50), nullable=False, default='openai')
         selected_model = db.Column(db.String(100), nullable=False)
         api_key = db.Column(db.Text, nullable=False)  # Chiffré en production
 
@@ -155,6 +156,28 @@ def create_api_routes(app):
             return False
 
         return True
+
+    def validate_libertai_api_key(api_key):
+        """LibertAI API key validation"""
+        if not api_key or not isinstance(api_key, str):
+            return False
+
+        if len(api_key) < 10 or len(api_key) > 200:
+            return False
+        allowed_pattern = r'^[A-Za-z0-9._-]+$'
+        if not re.match(allowed_pattern, api_key):
+            return False
+
+        return True
+
+    def validate_api_key(api_key, provider):
+        """Validate API key based on provider"""
+        if provider.lower() == "openai":
+            return validate_openai_api_key(api_key)
+        elif provider.lower() == "libertai":
+            return validate_libertai_api_key(api_key)
+        else:
+            return False
 
     with app.app_context():
         try:
@@ -321,6 +344,7 @@ def create_api_routes(app):
                 'message': 'Configuration sauvegardée avec succès',
                 'config': {
                     'id': config.id,
+                    'provider': config.provider,
                     'selectedModel': config.selected_model,
                     'apiKey': config.api_key[-4:] + '...' if config.api_key else '',  # Masquer la clé
                     'modules': config.modules_config,
@@ -350,6 +374,7 @@ def create_api_routes(app):
             return jsonify({
                 'config': {
                     'id': config.id,
+                    'provider': config.provider,
                     'selectedModel': config.selected_model,
                     'apiKey': config.api_key,  # Retourner la clé complète pour l'utilisation
                     'modules': config.modules_config,
@@ -389,12 +414,20 @@ def create_api_routes(app):
                 db.session.add(config)
 
             # Mettre à jour les champs fournis
+            if 'provider' in data:
+                config.provider = data['provider']
             if 'selectedModel' in data:
                 config.selected_model = data['selectedModel']
             if 'apiKey' in data:
-                # Validation du format de l'API key si elle est fournie
-                # if not validate_openai_api_key(data['apiKey']):
-                #     return jsonify({'error': 'Format de clé API OpenAI invalide. La clé doit commencer par "sk-" et contenir uniquement des caractères alphanumériques, tirets et underscores.'}), 400
+                # Validate API key based on provider
+                provider = data.get('provider', config.provider or 'openai')
+                if not validate_api_key(data['apiKey'], provider):
+                    if provider.lower() == 'openai':
+                        return jsonify({'error': 'Format de clé API OpenAI invalide. La clé doit commencer par "sk-" et contenir uniquement des caractères alphanumériques, tirets et underscores.'}), 400
+                    elif provider.lower() == 'libertai':
+                        return jsonify({'error': 'Format de clé API LibertAI invalide. Vérifiez que votre clé est correcte.'}), 400
+                    else:
+                        return jsonify({'error': f'Format de clé API invalide pour le provider {provider}.'}), 400
                 config.api_key = data['apiKey']
             if 'modules' in data:
                 config.modules_config = data['modules']
@@ -496,6 +529,25 @@ def create_api_routes(app):
         except Exception as e:
             return jsonify({"error": str(e)}), 500
 
+    @app.route('/mcp/providers', methods=['GET'])
+    def list_available_providers():
+        """List available AI providers"""
+        try:
+            # Import here to avoid circular imports
+            import sys
+            import os
+            sys.path.append(os.path.join(os.path.dirname(__file__), '..', 'mcp_serveur'))
+            from agent_factory import AgentFactory
+
+            providers = AgentFactory.get_available_providers()
+            return jsonify({
+                "providers": providers,
+                "current": "openai",
+                "note": "Currently only OpenAI is fully implemented"
+            })
+        except Exception as e:
+            return jsonify({"error": f"Failed to get providers: {str(e)}"}), 500
+
     @app.route('/crypto/price', methods=['POST'])
     def get_crypto_price():
         """Get cryptocurrency price via MCP tool"""
@@ -573,18 +625,23 @@ def create_api_routes(app):
             message_id = session_manager.add_message(session_id, "user", user_input)
 
             # NOUVELLE FONCTIONNALITÉ: Extraction automatique d'informations importantes
-            try:
-                memory_extractions = user_memory_manager.process_user_message(
-                    user_id=user_id,
-                    message=user_input,
-                    openai_api_key=config.api_key,
-                    message_id=message_id
-                )
+            # IMPORTANT NOTE NOA: Only usable with OpenAI for now
+            memory_extractions = 0
+            if config.provider == 'openai':
+                try:
+                    memory_extractions = user_memory_manager.process_user_message(
+                        user_id=user_id,
+                        message=user_input,
+                        openai_api_key=config.api_key,
+                        message_id=message_id
+                    )
 
-                if memory_extractions > 0:
-                    logger.info(f"💾 {memory_extractions} information(s) extraite(s) et stockée(s) pour l'utilisateur {user_id}")
-            except Exception as e:
-                logger.warning(f"⚠️ Erreur lors de l'extraction de mémoire (continuer sans): {e}")
+                    if memory_extractions > 0:
+                        logger.info(f"💾 {memory_extractions} information(s) extraite(s) et stockée(s) pour l'utilisateur {user_id}")
+                except Exception as e:
+                    logger.warning(f"⚠️ Erreur lors de l'extraction de mémoire (continuer sans): {e}")
+            else:
+                logger.info(f"📝 Extraction de mémoire désactivée pour le provider {config.provider} (uniquement OpenAI supporté)")
 
             # Build conversation context with user config ET mémoire utilisateur
             conversation_history = session_manager.get_context(session_id)
@@ -601,6 +658,7 @@ def create_api_routes(app):
                 'user_memory': user_memory_summary,  # Nouvelle clé pour la mémoire utilisateur
                 'wallet_address': wallet_address,  # Adresse du wallet pour les swaps
                 'agent_config': {
+                    'provider': config.provider,
                     'model': config.selected_model,
                     'prompt': config.prompt,
                     'modules': config.modules_config
@@ -892,25 +950,16 @@ def create_api_routes(app):
         except Exception as e:
             return jsonify({'error': f'Failed to get wallet address: {str(e)}'}), 500
 
-    # ===== AUTOWALLET ROUTES =====
-    
-    # Importer et créer les routes d'autowallet
     from .autowallet_routes import create_autowallet_routes
     create_autowallet_routes(app)
     
-    # ===== TRADING PIPELINE ROUTES =====
-    
-    # Importer et créer les routes de la pipeline de trading unifiée
     from .trading_pipeline_routes import create_trading_pipeline_routes
     create_trading_pipeline_routes(app)
-    
-    # ===== TRADING PIPELINE TEST ROUTES (SANS AUTHENTIFICATION) =====
-    
+        
     @app.route('/api/trading-pipeline/test/status', methods=['GET'])
     def get_pipeline_status_test():
         """Récupère le statut de la pipeline de trading (test sans auth)"""
         try:
-            # Import du service
             from services.trading_pipeline_service import trading_pipeline_service
             status = trading_pipeline_service.get_pipeline_status()
             
