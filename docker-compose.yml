@@ -25,6 +25,7 @@ services:
       - FLASK_ENV=${FLASK_ENV}
       - DATABASE_URL=postgresql://${POSTGRES_USER}:${POSTGRES_PASSWORD}@database:5432/${POSTGRES_DB}
       - OPENAI_API_KEY=${OPENAI_API_KEY}
+      - ASI_ONE_API_KEY=${ASI_ONE_API_KEY}
     ports:
       - "5000:5000"
     depends_on:

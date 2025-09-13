@@ -1047,16 +1047,35 @@ def create_api_routes(app):
         try:
             from pipeline.utils.pipeline_manager import pipeline_manager
             
-            # Simuler le statut des agents
+            # Vérifier le statut réel des agents
+            overall_status = "running" if hasattr(pipeline_manager, 'is_running') and pipeline_manager.is_running else "stopped"
+            
+            # Récupérer le statut réel des agents depuis le pipeline manager
+            agent_status = {}
+            if hasattr(pipeline_manager, 'agent_status') and pipeline_manager.agent_status:
+                for name, status_info in pipeline_manager.agent_status.items():
+                    agent_status[name] = status_info.status.value if hasattr(status_info.status, 'value') else str(status_info.status)
+            else:
+                # Fallback si pas de statut disponible
+                agent_status = {
+                    "data_collector": "stopped",
+                    "news_collector": "stopped",
+                    "data_aggregator": "stopped",
+                    "predictor": "stopped",
+                    "strategy": "stopped",
+                    "trader": "stopped",
+                    "logger": "stopped"
+                }
+            
             status = {
-                "overall": "running" if hasattr(pipeline_manager, 'is_running') and pipeline_manager.is_running else "stopped",
-                "dataCollector": "running",
-                "newsCollector": "running", 
-                "dataAggregator": "running",
-                "predictor": "running",
-                "strategy": "running",
-                "trader": "running",
-                "logger": "running"
+                "overall": overall_status,
+                "dataCollector": agent_status.get("data_collector", "stopped"),
+                "newsCollector": agent_status.get("news_collector", "stopped"),
+                "dataAggregator": agent_status.get("data_aggregator", "stopped"),
+                "predictor": agent_status.get("predictor", "stopped"),
+                "strategy": agent_status.get("strategy", "stopped"),
+                "trader": agent_status.get("trader", "stopped"),
+                "logger": agent_status.get("logger", "stopped")
             }
             
             return jsonify(status)
@@ -1069,8 +1088,24 @@ def create_api_routes(app):
         """Démarre la pipeline avec intégration des news"""
         try:
             from pipeline.utils.pipeline_manager import pipeline_manager
-            # Simulation du démarrage pour le test
-            pipeline_manager.is_running = True
+            import asyncio
+            import threading
+            
+            # Démarrer la pipeline de manière asynchrone dans un thread séparé
+            def run_pipeline():
+                loop = asyncio.new_event_loop()
+                asyncio.set_event_loop(loop)
+                try:
+                    loop.run_until_complete(pipeline_manager.start_pipeline())
+                except Exception as e:
+                    logger.error(f"Erreur dans le thread pipeline: {str(e)}")
+                finally:
+                    loop.close()
+            
+            # Lancer le pipeline dans un thread séparé
+            pipeline_thread = threading.Thread(target=run_pipeline, daemon=True)
+            pipeline_thread.start()
+            
             return jsonify({"success": True, "message": "Pipeline démarrée avec succès"})
         except Exception as e:
             logger.error(f"Erreur démarrage pipeline: {str(e)}")
@@ -1081,11 +1116,126 @@ def create_api_routes(app):
         """Arrête la pipeline avec intégration des news"""
         try:
             from pipeline.utils.pipeline_manager import pipeline_manager
-            # Simulation de l'arrêt pour le test
-            pipeline_manager.is_running = False
+            import asyncio
+            import threading
+            
+            # Arrêter la pipeline de manière asynchrone dans un thread séparé
+            def stop_pipeline():
+                loop = asyncio.new_event_loop()
+                asyncio.set_event_loop(loop)
+                try:
+                    loop.run_until_complete(pipeline_manager.stop_pipeline())
+                except Exception as e:
+                    logger.error(f"Erreur dans le thread pipeline: {str(e)}")
+                finally:
+                    loop.close()
+            
+            # Lancer l'arrêt dans un thread séparé
+            stop_thread = threading.Thread(target=stop_pipeline, daemon=True)
+            stop_thread.start()
+            
             return jsonify({"success": True, "message": "Pipeline arrêtée avec succès"})
         except Exception as e:
             logger.error(f"Erreur arrêt pipeline: {str(e)}")
+            return jsonify({"success": False, "error": str(e)}), 500
+
+    @app.route('/api/pipeline/metrics', methods=['GET'])
+    def get_pipeline_metrics():
+        """Récupère les métriques du pipeline"""
+        try:
+            from pipeline.utils.pipeline_manager import pipeline_manager
+            
+            # Récupérer les métriques des agents de manière sécurisée
+            try:
+                total_executions = sum(agent.execution_count for agent in pipeline_manager.agent_status.values())
+                total_errors = sum(agent.error_count for agent in pipeline_manager.agent_status.values())
+                success_rate = ((total_executions - total_errors) / total_executions * 100) if total_executions > 0 else 0
+                
+                metrics = {
+                    "total_executions": total_executions,
+                    "total_errors": total_errors,
+                    "success_rate": success_rate,
+                    "predictions_count": len(pipeline_manager.pipeline_data),
+                    "signals_count": len(pipeline_manager.pipeline_data)
+                }
+            except Exception as e:
+                logger.error(f"Erreur calcul métriques: {str(e)}")
+                metrics = {
+                    "total_executions": 0,
+                    "total_errors": 0,
+                    "success_rate": 0,
+                    "predictions_count": 0,
+                    "signals_count": 0
+                }
+            
+            # Récupérer les vraies données du pipeline
+            serialized_data = []
+            try:
+                pipeline_data = pipeline_manager.pipeline_data[-10:] if hasattr(pipeline_manager, 'pipeline_data') else []
+                
+                for data in pipeline_data:
+                    try:
+                        # Sérialiser les vraies données du pipeline
+                        if hasattr(data, 'timestamp'):
+                            # C'est un objet PipelineData
+                            serialized_data.append({
+                                "timestamp": data.timestamp.isoformat() if hasattr(data.timestamp, 'isoformat') else str(data.timestamp),
+                                "symbol": data.symbol,
+                                "price": float(data.price),
+                                "volume": float(data.volume),
+                                "prediction": data.prediction,
+                                "strategy_signal": data.strategy_signal
+                            })
+                        else:
+                            # C'est un dictionnaire (fallback)
+                            serialized_data.append({
+                                "timestamp": data.get("timestamp", ""),
+                                "symbol": data.get("symbol", "BTC/USD"),
+                                "price": float(data.get("price", 0)),
+                                "volume": float(data.get("volume", 0)),
+                                "prediction": data.get("prediction", {}),
+                                "strategy_signal": data.get("strategy_signal", {})
+                            })
+                    except Exception as e:
+                        logger.error(f"Erreur sérialisation donnée individuelle: {str(e)}")
+                        continue
+            except Exception as e:
+                logger.error(f"Erreur sérialisation données: {str(e)}")
+                serialized_data = []
+            
+            return jsonify({
+                "success": True,
+                "metrics": metrics,
+                "pipeline_data": serialized_data
+            })
+        except Exception as e:
+            logger.error(f"Erreur récupération métriques pipeline: {str(e)}")
+            return jsonify({"success": False, "error": str(e)}), 500
+
+    @app.route('/api/pipeline/debug', methods=['GET'])
+    def debug_pipeline():
+        """Debug des données du pipeline"""
+        try:
+            from pipeline.utils.pipeline_manager import pipeline_manager
+            
+            # Informations de base
+            debug_info = {
+                "is_running": getattr(pipeline_manager, 'is_running', False),
+                "pipeline_data_count": len(pipeline_manager.pipeline_data) if hasattr(pipeline_manager, 'pipeline_data') else 0,
+                "pipeline_data_type": str(type(pipeline_manager.pipeline_data)) if hasattr(pipeline_manager, 'pipeline_data') else "None",
+                "agent_status_count": len(pipeline_manager.agent_status) if hasattr(pipeline_manager, 'agent_status') else 0
+            }
+            
+            # Examiner les premières données
+            if hasattr(pipeline_manager, 'pipeline_data') and pipeline_manager.pipeline_data:
+                first_data = pipeline_manager.pipeline_data[0]
+                debug_info["first_data_type"] = str(type(first_data))
+                debug_info["first_data_attrs"] = dir(first_data) if hasattr(first_data, '__dict__') else list(first_data.keys()) if isinstance(first_data, dict) else "unknown"
+                debug_info["first_data_sample"] = str(first_data)[:200]
+            
+            return jsonify({"success": True, "debug": debug_info})
+        except Exception as e:
+            logger.error(f"Erreur debug pipeline: {str(e)}")
             return jsonify({"success": False, "error": str(e)}), 500
 
     @app.route('/api/pipeline/test/news-collection', methods=['POST'])
