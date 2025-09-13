@@ -3,8 +3,17 @@
 
     <!-- Recent News Section -->
     <div class="news-section">
-      <h3>📰 News Récentes</h3>
-      <div class="news-filters">
+      <div class="news-section-header" @click="toggleNewsAccordion">
+        <h3>📰 News Récentes</h3>
+        <div class="news-count" v-if="filteredNews.length > 0">
+          ({{ filteredNews.length }})
+        </div>
+        <div class="accordion-toggle">
+          <span class="toggle-icon" :class="{ 'expanded': isNewsAccordionOpen }">▼</span>
+        </div>
+      </div>
+      
+      <div class="news-filters" v-if="isNewsAccordionOpen">
         <button 
           v-for="filter in newsFilters" 
           :key="filter.value"
@@ -16,72 +25,87 @@
         </button>
       </div>
       
-      <div class="news-list" v-if="filteredNews.length > 0">
-        <div 
-          v-for="news in filteredNews" 
-          :key="news.id" 
-          class="news-item"
-          :class="getNewsImpactClass(news.impact_level)"
-        >
-          <div class="news-header">
-            <h4 class="news-title">{{ news.title }}</h4>
-            <div class="news-meta">
-              <span class="news-source">{{ news.source }}</span>
-              <span class="news-time">{{ formatTime(news.published_at) }}</span>
+      <div class="news-accordion-content" v-if="isNewsAccordionOpen" :style="{ height: accordionHeight + 'px' }">
+        <div class="news-list" v-if="filteredNews.length > 0">
+          <div 
+            v-for="news in filteredNews" 
+            :key="news.id" 
+            class="news-item"
+            :class="getNewsImpactClass(news.impact_level)"
+          >
+            <div class="news-header">
+              <h4 class="news-title">{{ news.title }}</h4>
+              <div class="news-meta">
+                <span class="news-source">{{ news.source }}</span>
+                <span class="news-time">{{ formatTime(news.published_at) }}</span>
+              </div>
             </div>
-          </div>
-          
-          <p class="news-content">{{ news.content }}</p>
-          
-          <div class="news-analysis">
-            <div class="analysis-item">
-              <span class="label">Sentiment:</span>
-              <span class="sentiment" :class="getSentimentClass(news.sentiment_score)">
-                {{ formatSentiment(news.sentiment_score) }}
-              </span>
-            </div>
-            <div class="analysis-item">
-              <span class="label">Pertinence:</span>
-              <span class="relevance">{{ Math.round(news.relevance_score * 100) }}%</span>
-            </div>
-            <div class="analysis-item">
-              <span class="label">Impact:</span>
-              <span class="impact" :class="getImpactClass(news.impact_level)">
-                {{ getImpactLabel(news.impact_level) }}
-              </span>
-            </div>
-            <div class="analysis-item" v-if="news.crypto_mentions && news.crypto_mentions.length > 0">
-              <span class="label">Cryptos:</span>
-              <span class="crypto-mentions">
-                <span 
-                  v-for="crypto in news.crypto_mentions" 
-                  :key="crypto" 
-                  class="crypto-tag"
-                >
-                  {{ crypto }}
+            
+            <p class="news-content">{{ news.content }}</p>
+            
+            <div class="news-analysis">
+              <div class="analysis-item">
+                <span class="label">Sentiment:</span>
+                <span class="sentiment" :class="getSentimentClass(news.sentiment_score)">
+                  {{ formatSentiment(news.sentiment_score) }}
                 </span>
-              </span>
+              </div>
+              <div class="analysis-item">
+                <span class="label">Pertinence:</span>
+                <span class="relevance">{{ Math.round(news.relevance_score * 100) }}%</span>
+              </div>
+              <div class="analysis-item">
+                <span class="label">Impact:</span>
+                <span class="impact" :class="getImpactClass(news.impact_level)">
+                  {{ getImpactLabel(news.impact_level) }}
+                </span>
+              </div>
+              <div class="analysis-item" v-if="news.crypto_mentions && news.crypto_mentions.length > 0">
+                <span class="label">Cryptos:</span>
+                <span class="crypto-mentions">
+                  <span 
+                    v-for="crypto in news.crypto_mentions" 
+                    :key="crypto" 
+                    class="crypto-tag"
+                  >
+                    {{ crypto }}
+                  </span>
+                </span>
+              </div>
             </div>
-          </div>
-          
-          <div class="news-actions">
-            <a :href="news.url" target="_blank" class="btn btn-sm btn-outline">
-              Lire l'article
-            </a>
-            <button 
-              @click="analyzeNews(news.id)" 
-              class="btn btn-sm btn-primary"
-              :disabled="isAnalyzing"
-            >
-              Analyser
-            </button>
+            
+            <div class="news-actions">
+              <a :href="news.url" target="_blank" class="btn btn-sm btn-outline">
+                Lire l'article
+              </a>
+              <button 
+                @click="analyzeNews(news.id)" 
+                class="btn btn-sm btn-primary"
+                :disabled="isAnalyzing"
+              >
+                Analyser
+              </button>
+            </div>
           </div>
         </div>
-      </div>
-      
-      <div v-else class="no-news">
-        <p>📰 Aucune news récente</p>
-        <p class="no-news-hint">Les news crypto apparaîtront ici une fois récupérées</p>
+        
+        <div v-else class="no-news">
+          <p>📰 Aucune news récente</p>
+          <p class="no-news-hint">Les news crypto apparaîtront ici une fois récupérées</p>
+        </div>
+        
+        <!-- Poignée de redimensionnement -->
+        <div 
+          class="resize-handle"
+          @mousedown="startResize"
+          @touchstart="startResize"
+        >
+          <div class="resize-grip">
+            <span class="grip-line"></span>
+            <span class="grip-line"></span>
+            <span class="grip-line"></span>
+          </div>
+        </div>
       </div>
     </div>
 
@@ -165,6 +189,11 @@ export default {
     const isAnalyzing = ref(false)
     const lastUpdated = ref(new Date())
     const selectedNewsFilter = ref('all')
+    const isNewsAccordionOpen = ref(false)
+    const accordionHeight = ref(400)
+    const isResizing = ref(false)
+    const startY = ref(0)
+    const startHeight = ref(0)
 
     const newsFilters = [
       { value: 'all', label: 'Toutes' },
@@ -218,6 +247,42 @@ export default {
       } finally {
         isRefreshing.value = false
       }
+    }
+
+    const toggleNewsAccordion = () => {
+      isNewsAccordionOpen.value = !isNewsAccordionOpen.value
+    }
+
+    const startResize = (e) => {
+      e.preventDefault()
+      isResizing.value = true
+      startY.value = e.clientY || e.touches[0].clientY
+      startHeight.value = accordionHeight.value
+      
+      document.addEventListener('mousemove', handleResize)
+      document.addEventListener('mouseup', stopResize)
+      document.addEventListener('touchmove', handleResize)
+      document.addEventListener('touchend', stopResize)
+    }
+
+    const handleResize = (e) => {
+      if (!isResizing.value) return
+      
+      e.preventDefault()
+      const currentY = e.clientY || e.touches[0].clientY
+      const deltaY = currentY - startY.value
+      const newHeight = startHeight.value + deltaY
+      
+      // Limiter la hauteur entre 200px et 800px
+      accordionHeight.value = Math.max(200, Math.min(800, newHeight))
+    }
+
+    const stopResize = () => {
+      isResizing.value = false
+      document.removeEventListener('mousemove', handleResize)
+      document.removeEventListener('mouseup', stopResize)
+      document.removeEventListener('touchmove', handleResize)
+      document.removeEventListener('touchend', stopResize)
     }
 
     const analyzeNews = async (newsId) => {
@@ -322,8 +387,13 @@ export default {
       selectedNewsFilter,
       newsFilters,
       filteredNews,
+      isNewsAccordionOpen,
+      accordionHeight,
+      isResizing,
       loadData,
       refreshData,
+      toggleNewsAccordion,
+      startResize,
       analyzeNews,
       formatTime,
       formatSentiment,
@@ -415,6 +485,127 @@ export default {
   color: #2c3e50;
   margin-bottom: 20px;
   font-size: 1.4rem;
+}
+
+.news-section-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  cursor: pointer;
+  padding: 15px 20px;
+  background: #f8f9fa;
+  border-radius: 8px;
+  border: 1px solid #e9ecef;
+  transition: all 0.3s ease;
+  margin-bottom: 0;
+}
+
+.news-section-header:hover {
+  background: #e9ecef;
+  border-color: #dee2e6;
+}
+
+.news-section-header h3 {
+  margin: 0;
+  color: #2c3e50;
+  font-size: 1.4rem;
+}
+
+.news-count {
+  background: #3498db;
+  color: white;
+  padding: 4px 8px;
+  border-radius: 12px;
+  font-size: 0.8rem;
+  font-weight: bold;
+  margin-left: 10px;
+}
+
+.accordion-toggle {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 30px;
+  height: 30px;
+  border-radius: 50%;
+  background: #3498db;
+  color: white;
+  transition: all 0.3s ease;
+}
+
+.accordion-toggle:hover {
+  background: #2980b9;
+  transform: scale(1.1);
+}
+
+.toggle-icon {
+  font-size: 12px;
+  transition: transform 0.3s ease;
+}
+
+.toggle-icon.expanded {
+  transform: rotate(180deg);
+}
+
+.news-accordion-content {
+  margin-top: 15px;
+  animation: slideDown 0.3s ease-out;
+  position: relative;
+  border: 1px solid #e9ecef;
+  border-radius: 8px;
+  overflow: hidden;
+}
+
+.resize-handle {
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  height: 12px;
+  background: #f8f9fa;
+  border-top: 1px solid #dee2e6;
+  cursor: ns-resize;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: background-color 0.2s ease;
+  z-index: 10;
+}
+
+.resize-handle:hover {
+  background: #e9ecef;
+}
+
+.resize-grip {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  opacity: 0.6;
+  transition: opacity 0.2s ease;
+}
+
+.resize-handle:hover .resize-grip {
+  opacity: 1;
+}
+
+.grip-line {
+  width: 30px;
+  height: 2px;
+  background: #6c757d;
+  border-radius: 1px;
+}
+
+@keyframes slideDown {
+  from {
+    opacity: 0;
+    max-height: 0;
+    transform: translateY(-10px);
+  }
+  to {
+    opacity: 1;
+    max-height: 1000px;
+    transform: translateY(0);
+  }
 }
 
 .alerts-grid {
@@ -577,6 +768,30 @@ export default {
   display: flex;
   flex-direction: column;
   gap: 20px;
+  overflow-y: auto;
+  padding: 20px;
+  padding-bottom: 32px; /* Espace pour la poignée de redimensionnement */
+  height: 100%;
+  scrollbar-width: thin;
+  scrollbar-color: #3498db #f1f1f1;
+}
+
+.news-list::-webkit-scrollbar {
+  width: 8px;
+}
+
+.news-list::-webkit-scrollbar-track {
+  background: #f1f1f1;
+  border-radius: 4px;
+}
+
+.news-list::-webkit-scrollbar-thumb {
+  background: #3498db;
+  border-radius: 4px;
+}
+
+.news-list::-webkit-scrollbar-thumb:hover {
+  background: #2980b9;
 }
 
 .news-item {
@@ -989,6 +1204,14 @@ export default {
     flex-direction: column;
     align-items: flex-start;
     gap: 4px;
+  }
+  
+  .resize-handle {
+    height: 16px; /* Plus facile à utiliser sur mobile */
+  }
+  
+  .grip-line {
+    width: 40px; /* Plus visible sur mobile */
   }
 }
 </style>
