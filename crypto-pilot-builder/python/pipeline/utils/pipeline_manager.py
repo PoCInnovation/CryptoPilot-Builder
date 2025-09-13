@@ -13,6 +13,8 @@ from dataclasses import dataclass, asdict
 from enum import Enum
 
 from ..agents.trading.data_collector import DataCollectorAgent
+from ..agents.trading.news_collector import NewsCollectorAgent
+from ..agents.trading.data_aggregator import DataAggregatorAgent
 from ..agents.trading.predictor import PredictorAgent
 from ..agents.trading.strategy import StrategyAgent
 from ..agents.trading.trader import TraderAgent
@@ -74,6 +76,8 @@ class PipelineManager:
             # Création des agents dans l'ordre du pipeline
             self.agents = {
                 "data_collector": DataCollectorAgent(),
+                "news_collector": NewsCollectorAgent(),
+                "data_aggregator": DataAggregatorAgent(),
                 "predictor": PredictorAgent(),
                 "strategy": StrategyAgent(),
                 "trader": TraderAgent(),

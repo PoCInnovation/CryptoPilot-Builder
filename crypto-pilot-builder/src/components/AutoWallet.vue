@@ -3,6 +3,11 @@
     <div class="header">
       <h1>🤖 CryptoPilot AutoWallet</h1>
       <p class="subtitle">IA d'investissement automatique basée sur l'analyse des news crypto</p>
+      <div class="header-actions">
+        <router-link to="/pipeline-test" class="btn btn-outline">
+          🧪 Tester la Pipeline
+        </router-link>
+      </div>
     </div>
 
     <!-- Configuration de l'autowallet -->

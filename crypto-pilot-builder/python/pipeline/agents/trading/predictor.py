@@ -59,10 +59,11 @@ class PredictorAgent(Agent):
     async def handle_market_data(self, ctx: Context, sender: str, msg: MarketData):
         """Traite les données de marché et génère des prédictions."""
         try:
-            logger.info("📊 Données reçues du DataCollector", 
+            logger.info("📊 Données reçues du DataAggregator", 
                        symbol=msg.symbol,
                        timeframe=msg.timeframe,
-                       ohlcv_count=len(msg.ohlcv))
+                       ohlcv_count=len(msg.ohlcv),
+                       news_integrated=msg.news_count > 0 if msg.news_count else False)
             
             # Extraction des prix de clôture
             prices = [candle.close for candle in msg.ohlcv]
@@ -78,25 +79,37 @@ class PredictorAgent(Agent):
             if len(self.price_history[symbol]) > self.max_history_length:
                 self.price_history[symbol] = self.price_history[symbol][-self.max_history_length:]
             
-            # Génération de la prédiction
-            prediction = await self._generate_prediction(symbol, prices, msg.features)
+            # Extraire les données de news si disponibles
+            news_data = None
+            if msg.news_count and msg.news_count > 0:
+                news_data = {
+                    "news_sentiment_aggregated": msg.news_sentiment_aggregated,
+                    "news_confidence_aggregated": msg.news_confidence_aggregated,
+                    "news_count": msg.news_count,
+                    "dominant_action": self._determine_dominant_action_from_recommendations(msg.news_recommendations),
+                    "recommendations": msg.news_recommendations
+                }
+            
+            # Génération de la prédiction avec intégration des news
+            prediction = await self._generate_prediction(symbol, prices, msg.features, news_data)
             
             if prediction:
                 # Envoi au Strategy
                 await self._send_to_strategy(ctx, prediction)
                 
-                logger.info("🔮 Prédiction générée", 
+                logger.info("🔮 Prédiction générée avec news", 
                            symbol=prediction.symbol,
                            direction_prob=prediction.direction_prob,
-                           confidence=prediction.confidence)
+                           confidence=prediction.confidence,
+                           news_integrated=news_data is not None)
             
         except Exception as e:
             logger.error("❌ Erreur traitement données marché", 
                         symbol=msg.symbol,
                         error=str(e))
     
-    async def _generate_prediction(self, symbol: str, prices: List[float], features: Dict[str, Any]) -> Optional[Prediction]:
-        """Génère une prédiction basée sur les données historiques avec ASI:One."""
+    async def _generate_prediction(self, symbol: str, prices: List[float], features: Dict[str, Any], news_data: Optional[Dict[str, Any]] = None) -> Optional[Prediction]:
+        """Génère une prédiction basée sur les données historiques avec ASI:One et les news."""
         try:
             if len(prices) < 20:
                 logger.warning("Données insuffisantes pour prédiction ASI:One", 
@@ -118,23 +131,42 @@ class PredictorAgent(Agent):
                 symbol=symbol
             )
             
-            # Créer l'objet Prediction
+            # Ajuster la confiance selon les données de news
+            base_confidence = prediction_result["confidence"]
+            adjusted_confidence = await self._adjust_confidence_with_news(
+                base_confidence, news_data, symbol
+            )
+            
+            # Ajuster la probabilité de direction selon les news
+            base_direction_prob = prediction_result["direction_probability"]
+            adjusted_direction_prob = await self._adjust_direction_with_news(
+                base_direction_prob, news_data, symbol
+            )
+            
+            # Créer l'objet Prediction avec les données ajustées
             prediction = Prediction(
                 symbol=symbol,
                 horizon=self.prediction_horizon,
-                direction_prob=prediction_result["direction_probability"],
+                direction_prob=adjusted_direction_prob,
                 volatility=technical_indicators.get("volatility", 0.01),
-                confidence=prediction_result["confidence"],
-                model_name=prediction_result["model_name"],
-                features_used=prediction_result["features_used"],
+                confidence=adjusted_confidence,
+                model_name=f"{prediction_result['model_name']}-NEWS-ENHANCED",
+                features_used={
+                    **prediction_result["features_used"],
+                    "news_integrated": news_data is not None,
+                    "news_confidence": news_data.get("news_confidence_aggregated", 0.0) if news_data else 0.0,
+                    "news_sentiment": news_data.get("news_sentiment_aggregated", 0.0) if news_data else 0.0,
+                    "news_count": news_data.get("news_count", 0) if news_data else 0
+                },
                 timestamp=datetime.utcnow()
             )
             
-            logger.info("🔮 Prédiction ASI:One générée", 
+            logger.info("🔮 Prédiction ASI:One générée avec intégration news", 
                        symbol=symbol,
-                       direction_prob=prediction_result["direction_probability"],
-                       confidence=prediction_result["confidence"],
-                       model=prediction_result["model_name"])
+                       direction_prob=adjusted_direction_prob,
+                       confidence=adjusted_confidence,
+                       model=prediction_result["model_name"],
+                       news_integrated=news_data is not None)
             
             return prediction
             
@@ -143,9 +175,110 @@ class PredictorAgent(Agent):
                         symbol=symbol,
                         error=str(e))
             # Fallback vers simulation
-            return await self._generate_simulation_prediction(symbol, prices, features)
+            return await self._generate_simulation_prediction(symbol, prices, features, news_data)
     
-    async def _generate_simulation_prediction(self, symbol: str, prices: List[float], features: Dict[str, Any]) -> Optional[Prediction]:
+    async def _adjust_confidence_with_news(self, base_confidence: float, news_data: Optional[Dict[str, Any]], symbol: str) -> float:
+        """Ajuste la confiance de la prédiction selon les données de news."""
+        try:
+            if not news_data:
+                return base_confidence
+            
+            news_confidence = news_data.get("news_confidence_aggregated", 0.0)
+            news_count = news_data.get("news_count", 0)
+            
+            # Si pas de news, retourner la confiance de base
+            if news_count == 0 or news_confidence == 0.0:
+                return base_confidence
+            
+            # Facteur d'ajustement basé sur la confiance des news
+            news_factor = min(1.2, max(0.8, news_confidence))
+            
+            # Facteur d'ajustement basé sur le nombre de news
+            count_factor = min(1.1, max(0.9, 1.0 + (news_count - 1) * 0.02))
+            
+            # Ajustement final
+            adjusted_confidence = base_confidence * news_factor * count_factor
+            
+            # Limiter entre 0.1 et 0.95
+            adjusted_confidence = max(0.1, min(0.95, adjusted_confidence))
+            
+            logger.debug("Confiance ajustée avec news", 
+                        symbol=symbol,
+                        base_confidence=base_confidence,
+                        news_confidence=news_confidence,
+                        news_count=news_count,
+                        adjusted_confidence=adjusted_confidence)
+            
+            return adjusted_confidence
+            
+        except Exception as e:
+            logger.error("Erreur ajustement confiance news", symbol=symbol, error=str(e))
+            return base_confidence
+    
+    async def _adjust_direction_with_news(self, base_direction_prob: float, news_data: Optional[Dict[str, Any]], symbol: str) -> float:
+        """Ajuste la probabilité de direction selon les données de news."""
+        try:
+            if not news_data:
+                return base_direction_prob
+            
+            news_sentiment = news_data.get("news_sentiment_aggregated", 0.0)
+            news_confidence = news_data.get("news_confidence_aggregated", 0.0)
+            dominant_action = news_data.get("dominant_action", "hold")
+            
+            # Si pas de sentiment ou confiance faible, retourner la probabilité de base
+            if news_confidence < 0.3:
+                return base_direction_prob
+            
+            # Ajustement basé sur le sentiment des news
+            sentiment_adjustment = news_sentiment * news_confidence * 0.1  # 10% d'influence max
+            
+            # Ajustement basé sur l'action dominante
+            action_adjustment = 0.0
+            if dominant_action == "buy" and news_confidence > 0.5:
+                action_adjustment = 0.05
+            elif dominant_action == "sell" and news_confidence > 0.5:
+                action_adjustment = -0.05
+            
+            # Ajustement final
+            adjusted_prob = base_direction_prob + sentiment_adjustment + action_adjustment
+            
+            # Limiter entre 0.0 et 1.0
+            adjusted_prob = max(0.0, min(1.0, adjusted_prob))
+            
+            logger.debug("Direction ajustée avec news", 
+                        symbol=symbol,
+                        base_prob=base_direction_prob,
+                        news_sentiment=news_sentiment,
+                        dominant_action=dominant_action,
+                        adjusted_prob=adjusted_prob)
+            
+            return adjusted_prob
+            
+        except Exception as e:
+            logger.error("Erreur ajustement direction news", symbol=symbol, error=str(e))
+            return base_direction_prob
+    
+    def _determine_dominant_action_from_recommendations(self, recommendations) -> str:
+        """Détermine l'action dominante basée sur les recommandations de news."""
+        try:
+            if not recommendations:
+                return "hold"
+            
+            # Compter les actions pondérées par la confiance
+            action_scores = {"buy": 0.0, "sell": 0.0, "hold": 0.0}
+            
+            for rec in recommendations:
+                if hasattr(rec, 'action') and hasattr(rec, 'confidence'):
+                    action_scores[rec.action] += rec.confidence
+            
+            # Retourner l'action avec le score le plus élevé
+            return max(action_scores, key=action_scores.get)
+            
+        except Exception as e:
+            logger.error("Erreur détermination action dominante", error=str(e))
+            return "hold"
+
+    async def _generate_simulation_prediction(self, symbol: str, prices: List[float], features: Dict[str, Any], news_data: Optional[Dict[str, Any]] = None) -> Optional[Prediction]:
         """Génère une prédiction de simulation en cas d'échec ASI:One."""
         try:
             # Calculer les indicateurs techniques
