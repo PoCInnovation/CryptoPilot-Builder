@@ -6,7 +6,6 @@ import Prompte from "../agent_building/Prompte.vue";
 import ChatPage from "../acceuil/Chat_Page.vue";
 import UserMemory from "../components/UserMemory.vue";
 import AutoWallet from "../components/AutoWallet.vue";
-import PipelineTestDashboard from "../components/PipelineTestDashboard.vue";
 import store from "../store";
 
 const routes = [
@@ -53,12 +52,6 @@ const routes = [
     path: "/autowallet",
     name: "AutoWallet",
     component: AutoWallet,
-    meta: { requiresAuth: true },
-  },
-  {
-    path: "/pipeline-test",
-    name: "PipelineTest",
-    component: PipelineTestDashboard,
     meta: { requiresAuth: true },
   },
 ];
