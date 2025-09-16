@@ -1,12 +1,22 @@
 <template>
   <div class="autowallet-container">
     <div class="header">
-      <h1>🤖 CryptoPilot AutoWallet</h1>
-      <p class="subtitle">IA d'investissement automatique basée sur l'analyse des news crypto</p>
-      <div class="header-actions">
-        <router-link to="/pipeline-test" class="btn btn-outline">
-          🧪 Tester la Pipeline
-        </router-link>
+      <div class="title-row">
+        <div class="title-chip">🤖</div>
+        <div class="title-text">
+          <h1>CryptoPilot AutoWallet</h1>
+          <p class="subtitle">IA d'investissement automatique basée sur l'analyse des news crypto</p>
+        </div>
+        <div class="header-kpis" v-if="autowalletConfig">
+          <div class="kpi">
+            <span class="kpi-label">Trades</span>
+            <span class="kpi-value">{{ autowalletConfig.total_trades }}</span>
+          </div>
+          <div class="kpi">
+            <span class="kpi-label">Aujourd'hui</span>
+            <span class="kpi-value">{{ autowalletConfig.today_trades }}/{{ autowalletConfig.max_daily_trades }}</span>
+          </div>
+        </div>
       </div>
     </div>
 
@@ -15,7 +25,7 @@
       <div class="card">
         <h2>🚀 Configuration initiale</h2>
         <p>Configurez votre autowallet pour commencer l'investissement automatique</p>
-        
+
         <!-- Bouton de configuration rapide -->
         <div class="quick-setup">
           <button @click="createDefaultConfig" class="btn btn-success" :disabled="isLoading">
@@ -23,17 +33,17 @@
           </button>
           <p class="quick-hint">Utilise les paramètres par défaut optimisés pour commencer rapidement</p>
         </div>
-        
+
         <div class="separator">
           <span>ou</span>
         </div>
-        
+
         <form @submit.prevent="createAutowallet" class="config-form">
           <div class="form-group">
             <label>Activer l'autowallet</label>
             <input type="checkbox" v-model="newConfig.is_active" />
           </div>
-          
+
           <div class="form-group">
             <label>Intervalle d'analyse (minutes)</label>
             <select v-model="newConfig.analysis_interval">
@@ -43,12 +53,12 @@
               <option value="60">1 heure</option>
             </select>
           </div>
-          
+
           <div class="form-group">
             <label>Montant maximum par trade (USD)</label>
             <input type="number" v-model="newConfig.max_investment_per_trade" min="10" step="10" />
           </div>
-          
+
           <div class="form-group">
             <label>Tolérance au risque</label>
             <select v-model="newConfig.risk_tolerance">
@@ -57,7 +67,7 @@
               <option value="high">Élevée</option>
             </select>
           </div>
-          
+
           <div class="form-group">
             <label>Stratégie d'investissement</label>
             <select v-model="newConfig.investment_strategy">
@@ -66,12 +76,12 @@
               <option value="aggressive">Agressive</option>
             </select>
           </div>
-          
+
           <div class="form-group">
             <label>Seuil de confiance minimum (%)</label>
             <input type="number" v-model="newConfig.min_confidence_threshold" min="50" max="95" step="5" />
           </div>
-          
+
           <div class="form-group">
             <label>Cryptomonnaies autorisées</label>
             <div class="crypto-list">
@@ -81,7 +91,7 @@
               </label>
             </div>
           </div>
-          
+
           <button type="submit" class="btn btn-primary" :disabled="isLoading">
             {{ isLoading ? 'Création...' : 'Créer l\'autowallet' }}
           </button>
@@ -96,13 +106,13 @@
         <div class="status-grid">
           <div class="status-item">
             <span class="label">Statut:</span>
-            <span :class="['status', autowalletConfig.is_active ? 'active' : 'inactive']">
+            <span :class="['status-pill', autowalletConfig.is_active ? 'on' : 'off']">
               {{ autowalletConfig.is_active ? 'Actif' : 'Inactif' }}
             </span>
           </div>
           <div class="status-item">
             <span class="label">Monitoring:</span>
-            <span :class="['status', autowalletConfig.is_monitoring ? 'active' : 'inactive']">
+            <span :class="['status-pill', autowalletConfig.is_monitoring ? 'on' : 'off']">
               {{ autowalletConfig.is_monitoring ? 'En cours' : 'Arrêté' }}
             </span>
           </div>
@@ -115,21 +125,21 @@
             <span class="value">{{ autowalletConfig.total_trades }}</span>
           </div>
         </div>
-        
+
         <div class="actions">
-          <button 
-            @click="startMonitoring" 
-            class="btn btn-success" 
+          <button
+            @click="startMonitoring"
+            class="btn btn-success"
             :disabled="autowalletConfig.is_monitoring || !autowalletConfig.is_active"
           >
-            Démarrer le monitoring
+            ▶️ Démarrer
           </button>
-          <button 
-            @click="stopMonitoring" 
-            class="btn btn-warning" 
+          <button
+            @click="stopMonitoring"
+            class="btn btn-warning"
             :disabled="!autowalletConfig.is_monitoring"
           >
-            Arrêter le monitoring
+            ⏸️ Arrêter
           </button>
         </div>
       </div>
@@ -138,9 +148,9 @@
       <div class="main-navigation card">
         <h3>🎛️ Navigation du Dashboard</h3>
         <p class="nav-description">Sélectionnez la section que vous souhaitez consulter</p>
-        
+
         <div class="nav-buttons">
-          <button 
+          <button
             @click="currentPage = 'overview'"
             class="nav-btn"
             :class="{ active: currentPage === 'overview' }"
@@ -148,8 +158,8 @@
             <span class="nav-icon">📊</span>
             <span class="nav-label">Vue d'ensemble</span>
           </button>
-          
-          <button 
+
+          <button
             @click="currentPage = 'news-alerts'"
             class="nav-btn"
             :class="{ active: currentPage === 'news-alerts' }"
@@ -157,8 +167,8 @@
             <span class="nav-icon">📰🚨</span>
             <span class="nav-label">News + Alertes</span>
           </button>
-          
-          <button 
+
+          <button
             @click="currentPage = 'pipeline'"
             class="nav-btn"
             :class="{ active: currentPage === 'pipeline' }"
@@ -171,7 +181,7 @@
 
       <!-- Contenu des sous-pages -->
       <div class="page-content">
-        
+
         <!-- Vue d'ensemble -->
         <div v-if="currentPage === 'overview'" class="overview-page">
       <!-- Configuration actuelle -->
@@ -199,23 +209,25 @@
             <span class="value">{{ autowalletConfig.min_confidence_threshold }}%</span>
           </div>
         </div>
-        
-        <button @click="showEditConfig = true" class="btn btn-secondary">
-          Modifier la configuration
-        </button>
+
+        <div class="overview-actions">
+          <button @click="showEditConfig = true" class="btn btn-secondary">
+            ✏️ Modifier la configuration
+          </button>
+        </div>
           </div>
         </div>
-        
+
         <!-- Sous-page 1: News + Alertes -->
         <div v-if="currentPage === 'news-alerts'" class="news-alerts-page">
           <NewsAlertsDashboard />
         </div>
-        
+
         <!-- Sous-page 2: Pipeline d'exécution -->
         <div v-if="currentPage === 'pipeline'" class="pipeline-page">
           <FullPipelineDashboard />
         </div>
-        
+
       </div>
 
 
@@ -225,10 +237,10 @@
     <Modal v-if="showEditConfig" @close="showEditConfig = false">
       <template #header>Modifier la configuration</template>
       <template #body>
-        <EditConfigForm 
-          :config="autowalletConfig" 
-          @save="updateConfig" 
-          @cancel="showEditConfig = false" 
+        <EditConfigForm
+          :config="autowalletConfig"
+          @save="updateConfig"
+          @cancel="showEditConfig = false"
         />
       </template>
     </Modal>
@@ -269,7 +281,7 @@ export default {
     const isLoading = ref(false)
     const showEditConfig = ref(false)
     const showAddChannel = ref(false)
-    
+
     // Variables pour la pipeline de trading
     const pipelineStatus = ref({})
     const pipelineMarketData = ref({})
@@ -282,8 +294,10 @@ export default {
       max_investment_per_trade: 100,
       risk_tolerance: 'medium',
       investment_strategy: 'balanced',
-      min_confidence_threshold: 30,  // 30% au lieu de 70%
-      crypto_whitelist: ['BTC', 'ETH', 'ADA', 'DOT', 'SOL']
+      min_confidence_threshold: 0.3,  // Utiliser le nom attendu par le backend
+      max_daily_trades: 10,
+      stop_loss_percentage: 5.0,
+      take_profit_percentage: 15.0
     })
 
     const availableCryptos = [
@@ -314,7 +328,7 @@ export default {
           await createDefaultConfig()
         }
       }
-      
+
       // Toujours charger les alertes, même si la config n'existe pas
       await loadRecentAlerts()
       await loadPipelineStatus()
@@ -334,12 +348,12 @@ export default {
           stop_loss_percentage: 5.0,
           take_profit_percentage: 15.0
         }
-        
+
         const response = await apiService.request('/api/autowallet/config', {
           method: 'POST',
           body: defaultConfig
         })
-        
+
         if (response.success) {
           console.log('Configuration par défaut créée avec succès')
           autowalletConfig.value = defaultConfig
@@ -347,7 +361,7 @@ export default {
           await loadRecentNews()
           await loadTradeHistory()
           await loadRecentAlerts()
-          
+
           // Démarrer l'analyse automatique
           await startAutoAnalysis()
         }
@@ -422,7 +436,7 @@ export default {
           method: 'POST',
           body: newConfig.value
         })
-        
+
         if (response.success) {
           await loadAutowalletConfig()
         }
@@ -439,7 +453,7 @@ export default {
         const response = await apiService.request('/api/autowallet/start', {
           method: 'POST'
         })
-        
+
         if (response.success) {
           await loadAutowalletConfig()
         }
@@ -454,7 +468,7 @@ export default {
         const response = await apiService.request('/api/autowallet/stop', {
           method: 'POST'
         })
-        
+
         if (response.success) {
           await loadAutowalletConfig()
         }
@@ -469,7 +483,7 @@ export default {
         const response = await apiService.request('/api/autowallet/start', {
           method: 'POST'
         })
-        
+
         if (response.success) {
           console.log('✅ Analyse automatique démarrée')
           await loadAutowalletConfig()
@@ -483,19 +497,19 @@ export default {
     const analyzeNews = async (newsIds) => {
       try {
         console.log('🔍 Analyse des news:', newsIds)
-        
+
         const response = await apiService.request('/api/autowallet/analyze', {
           method: 'POST',
           body: { news_ids: newsIds }
         })
-        
+
         if (response.success) {
           console.log('✅ Alertes générées:', response.alerts)
           console.log(`📊 ${response.count} alertes créées`)
-          
+
           // Recharger les alertes récentes
           await loadRecentAlerts()
-          
+
           // Afficher un message de succès à l'utilisateur
           if (response.count > 0) {
             alert(`✅ ${response.count} alerte(s) générée(s) avec succès !`)
@@ -505,10 +519,10 @@ export default {
         }
       } catch (error) {
         console.error('❌ Erreur lors de l\'analyse:', error)
-        
+
         // Afficher un message d'erreur à l'utilisateur
         let errorMessage = 'Erreur lors de l\'analyse des news'
-        
+
         if (error.message.includes('401')) {
           errorMessage = 'Erreur d\'authentification. Veuillez vous reconnecter.'
         } else if (error.message.includes('404')) {
@@ -518,7 +532,7 @@ export default {
         } else if (error.message.includes('500')) {
           errorMessage = 'Erreur serveur. Veuillez réessayer plus tard.'
         }
-        
+
         alert(`❌ ${errorMessage}`)
       }
     }
@@ -529,7 +543,7 @@ export default {
     }
 
     // ===== MÉTHODES DE LA PIPELINE DE TRADING =====
-    
+
     // Charger le statut de la pipeline
     const loadPipelineStatus = async () => {
       try {
@@ -601,7 +615,7 @@ export default {
         const response = await apiService.request('/api/trading-pipeline/start', {
           method: 'POST'
         })
-        
+
         if (response.success) {
           await loadPipelineStatus()
         }
@@ -619,7 +633,7 @@ export default {
         const response = await apiService.request('/api/trading-pipeline/stop', {
           method: 'POST'
         })
-        
+
         if (response.success) {
           await loadPipelineStatus()
         }
@@ -695,7 +709,7 @@ export default {
           method: 'POST',
           body: channelData
         })
-        
+
         if (response.success) {
           await loadAlertChannels()
           showAddChannel.value = false
@@ -711,7 +725,7 @@ export default {
         const response = await apiService.request(`/api/autowallet/alerts/channels/${channelId}`, {
           method: 'DELETE'
         })
-        
+
         if (response.success) {
           await loadAlertChannels()
         }
@@ -728,7 +742,7 @@ export default {
           method: 'PUT',
           body: { is_active: !channel.is_active }
         })
-        
+
         if (response.success) {
           await loadAlertChannels()
         }
@@ -744,7 +758,7 @@ export default {
           method: 'PUT',
           body: updatedConfig
         })
-        
+
         if (response.success) {
           await loadAutowalletConfig()
           showEditConfig.value = false
@@ -865,6 +879,46 @@ export default {
   text-align: center;
   margin-bottom: 30px;
 }
+
+.title-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+}
+
+.title-chip {
+  width: 56px;
+  height: 56px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 16px;
+  background: var(--primary-gradient);
+  box-shadow: var(--card-shadow);
+  font-size: 28px;
+}
+
+.title-text h1 {
+  margin: 0 0 4px 0;
+}
+
+.header-kpis {
+  display: flex;
+  gap: 12px;
+}
+
+.kpi {
+  background: rgba(255, 255, 255, 0.1);
+  border: 1px solid var(--glass-border);
+  border-radius: 12px;
+  padding: 10px 14px;
+  text-align: left;
+  min-width: 120px;
+}
+
+.kpi-label { color: var(--text-secondary); font-size: 12px; display: block; }
+.kpi-value { font-weight: 700; font-size: 18px; }
 
 .header h1 {
   color: var(--text-primary);
@@ -1124,36 +1178,35 @@ export default {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  padding: 12px;
-  background: #f8f9fa;
-  border-radius: 8px;
+  padding: 12px 14px;
+  background: rgba(255, 255, 255, 0.1);
+  border: 1px solid var(--glass-border);
+  border-radius: 12px;
+  box-shadow: var(--card-shadow);
 }
 
 .label {
-  font-weight: 600;
-  color: #34495e;
+  font-weight: 700;
+  color: var(--text-secondary);
 }
 
 .value {
-  color: #2c3e50;
+  color: #f8fafc;
+  background: rgba(255, 255, 255, 0.15);
+  padding: 6px 12px;
+  border-radius: 999px;
+  font-weight: 700;
 }
 
-.status {
-  padding: 4px 12px;
-  border-radius: 20px;
-  font-size: 14px;
-  font-weight: 600;
+.status-pill {
+  padding: 6px 14px;
+  border-radius: 999px;
+  font-size: 13px;
+  font-weight: 700;
+  letter-spacing: .2px;
 }
-
-.status.active {
-  background: #d4edda;
-  color: #155724;
-}
-
-.status.inactive {
-  background: #f8d7da;
-  color: #721c24;
-}
+.status-pill.on { background: #16a34a1a; color: #22c55e; border: 1px solid #16a34a66; }
+.status-pill.off { background: #ef44441a; color: #f87171; border: 1px solid #ef444466; }
 
 .actions {
   display: flex;
@@ -1771,20 +1824,25 @@ export default {
     color: #7f8c8d;
   }
 
+  .overview-actions {
+    display: flex;
+    justify-content: flex-start;
+  }
+
 @media (max-width: 768px) {
   .autowallet-container {
     padding: 16px;
   }
-  
+
   .card {
     padding: 16px;
   }
-  
+
   .status-grid,
   .config-grid {
     grid-template-columns: 1fr;
   }
-  
+
   .news-analysis {
     flex-direction: column;
     gap: 8px;
@@ -1801,13 +1859,13 @@ export default {
   .pipeline-status-grid {
     grid-template-columns: repeat(2, 1fr);
   }
-  
+
   .trade-item {
     flex-direction: column;
     align-items: flex-start;
     gap: 12px;
   }
-  
+
   .trade-details {
     flex-direction: column;
     gap: 8px;
@@ -1817,8 +1875,9 @@ export default {
 /* Styles pour la navigation principale */
 .main-navigation {
   margin-bottom: 30px;
-  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  background: linear-gradient(135deg, rgba(102,126,234,.25) 0%, rgba(118,75,162,.25) 100%);
   color: white;
+  border: 1px solid var(--glass-border);
 }
 
 .main-navigation h3 {
@@ -1843,42 +1902,44 @@ export default {
   display: flex;
   flex-direction: column;
   align-items: center;
-  gap: 8px;
-  padding: 20px 25px;
-  border: 2px solid rgba(255, 255, 255, 0.3);
-  background: rgba(255, 255, 255, 0.1);
-  border-radius: 15px;
+  gap: 10px;
+  padding: 18px 24px;
+  border: 1px solid var(--glass-border);
+  background: rgba(255, 255, 255, 0.08);
+  border-radius: 16px;
   cursor: pointer;
   transition: all 0.3s ease;
-  font-weight: 500;
+  font-weight: 600;
   color: white;
-  min-width: 150px;
-  backdrop-filter: blur(10px);
+  min-width: 170px;
+  backdrop-filter: blur(12px);
+  box-shadow: var(--card-shadow);
 }
 
 .nav-btn:hover {
-  border-color: rgba(255, 255, 255, 0.6);
-  background: rgba(255, 255, 255, 0.2);
-  transform: translateY(-3px);
-  box-shadow: 0 8px 25px rgba(0, 0, 0, 0.2);
+  border-color: rgba(255, 255, 255, 0.35);
+  background: rgba(255, 255, 255, 0.16);
+  transform: translateY(-4px);
+  box-shadow: var(--card-shadow-hover);
 }
 
 .nav-btn.active {
-  background: rgba(255, 255, 255, 0.9);
-  border-color: white;
-  color: #2c3e50;
-  transform: translateY(-3px);
-  box-shadow: 0 8px 25px rgba(0, 0, 0, 0.3);
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  border-color: transparent;
+  color: #ffffff;
+  transform: translateY(-4px);
+  box-shadow: var(--card-shadow-hover);
 }
 
 .nav-icon {
-  font-size: 2rem;
+  font-size: 2.1rem;
 }
 
 .nav-label {
-  font-size: 0.9rem;
-  font-weight: 600;
+  font-size: 0.95rem;
+  font-weight: 700;
   text-align: center;
+  letter-spacing: .2px;
 }
 
 /* ===== VARIABLES CSS COHÉRENTES AVEC FULLPIPELINEDASHBOARD ===== */
@@ -1971,7 +2032,10 @@ export default {
 
 /* Amélioration des cartes */
 .card {
-  background: white;
+  background: var(--glass-bg);
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
+  border: 1px solid var(--glass-border);
   box-shadow: var(--card-shadow);
   transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
   border-radius: 1rem;
@@ -2054,28 +2118,28 @@ export default {
 }
 
 @keyframes pulse-green {
-  0%, 100% { 
+  0%, 100% {
     box-shadow: 0 0 0 0 rgba(16, 185, 129, 0.7);
   }
-  50% { 
+  50% {
     box-shadow: 0 0 0 10px rgba(16, 185, 129, 0);
   }
 }
 
 @keyframes pulse-yellow {
-  0%, 100% { 
+  0%, 100% {
     box-shadow: 0 0 0 0 rgba(245, 158, 11, 0.7);
   }
-  50% { 
+  50% {
     box-shadow: 0 0 0 10px rgba(245, 158, 11, 0);
   }
 }
 
 @keyframes pulse-red {
-  0%, 100% { 
+  0%, 100% {
     box-shadow: 0 0 0 0 rgba(239, 68, 68, 0.7);
   }
-  50% { 
+  50% {
     box-shadow: 0 0 0 10px rgba(239, 68, 68, 0);
   }
 }
@@ -2104,7 +2168,7 @@ export default {
     flex-direction: column;
     gap: 15px;
   }
-  
+
   .nav-btn {
     min-width: auto;
     width: 100%;
@@ -2112,11 +2176,11 @@ export default {
     justify-content: center;
     padding: 15px 20px;
   }
-  
+
   .nav-icon {
     font-size: 1.5rem;
   }
-  
+
   .nav-label {
     font-size: 1rem;
   }

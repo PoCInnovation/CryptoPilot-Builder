@@ -10,7 +10,7 @@
       <div class="card">
         <h2>🚀 Configuration initiale</h2>
         <p>Configurez votre autowallet pour commencer l'investissement automatique</p>
-        
+
         <!-- Bouton de configuration rapide -->
         <div class="quick-setup">
           <button @click="createDefaultConfig" class="btn btn-success" :disabled="isLoading">
@@ -18,17 +18,17 @@
           </button>
           <p class="quick-hint">Utilise les paramètres par défaut optimisés pour commencer rapidement</p>
         </div>
-        
+
         <div class="separator">
           <span>ou</span>
         </div>
-        
+
         <form @submit.prevent="createAutowallet" class="config-form">
           <div class="form-group">
             <label>Activer l'autowallet</label>
             <input type="checkbox" v-model="newConfig.is_active" />
           </div>
-          
+
           <div class="form-group">
             <label>Intervalle d'analyse (minutes)</label>
             <select v-model="newConfig.analysis_interval">
@@ -38,12 +38,12 @@
               <option value="60">1 heure</option>
             </select>
           </div>
-          
+
           <div class="form-group">
             <label>Montant maximum par trade (USD)</label>
             <input type="number" v-model="newConfig.max_investment_per_trade" min="10" step="10" />
           </div>
-          
+
           <div class="form-group">
             <label>Tolérance au risque</label>
             <select v-model="newConfig.risk_tolerance">
@@ -52,7 +52,7 @@
               <option value="high">Élevée</option>
             </select>
           </div>
-          
+
           <div class="form-group">
             <label>Stratégie d'investissement</label>
             <select v-model="newConfig.investment_strategy">
@@ -61,12 +61,12 @@
               <option value="aggressive">Agressive</option>
             </select>
           </div>
-          
+
           <div class="form-group">
             <label>Seuil de confiance minimum (%)</label>
             <input type="number" v-model="newConfig.min_confidence_threshold" min="50" max="95" step="5" />
           </div>
-          
+
           <div class="form-group">
             <label>Cryptomonnaies autorisées</label>
             <div class="crypto-list">
@@ -76,7 +76,7 @@
               </label>
             </div>
           </div>
-          
+
           <button type="submit" class="btn btn-primary" :disabled="isLoading">
             {{ isLoading ? 'Création...' : 'Créer l\'autowallet' }}
           </button>
@@ -110,18 +110,18 @@
             <span class="value">{{ autowalletConfig.total_trades }}</span>
           </div>
         </div>
-        
+
         <div class="actions">
-          <button 
-            @click="startMonitoring" 
-            class="btn btn-success" 
+          <button
+            @click="startMonitoring"
+            class="btn btn-success"
             :disabled="autowalletConfig.is_monitoring || !autowalletConfig.is_active"
           >
             Démarrer le monitoring
           </button>
-          <button 
-            @click="stopMonitoring" 
-            class="btn btn-warning" 
+          <button
+            @click="stopMonitoring"
+            class="btn btn-warning"
             :disabled="!autowalletConfig.is_monitoring"
           >
             Arrêter le monitoring
@@ -154,7 +154,7 @@
             <span class="value">{{ autowalletConfig.min_confidence_threshold }}%</span>
           </div>
         </div>
-        
+
         <button @click="showEditConfig = true" class="btn btn-secondary">
           Modifier la configuration
         </button>
@@ -163,7 +163,7 @@
       <!-- News récentes -->
       <div class="news-card card">
         <h3>📰 News récentes</h3>
-        
+
         <!-- Statut de l'analyse automatique -->
         <div class="auto-analysis-status" v-if="autowalletConfig">
           <div class="status-indicator">
@@ -177,7 +177,7 @@
             <span>News analysées: {{ autowalletConfig.total_trades || 0 }}</span>
           </div>
         </div>
-        
+
         <div class="news-list" v-if="recentNews.length > 0">
           <div v-for="news in recentNews" :key="news.id" class="news-item">
             <div class="news-header">
@@ -209,11 +209,11 @@
             </div>
           </div>
         </div>
-        
+
         <div v-else class="loading">
           <p>Chargement des news...</p>
         </div>
-        
+
         <button @click="refreshNews" class="btn btn-secondary">
           Actualiser les news
         </button>
@@ -221,14 +221,14 @@
 
           <!-- Onglets de navigation -->
     <div class="tabs-navigation">
-      <button 
-        @click="activeTab = 'autowallet'" 
+      <button
+        @click="activeTab = 'autowallet'"
         :class="['tab-button', { active: activeTab === 'autowallet' }]"
       >
         🤖 AutoWallet
       </button>
-      <button 
-        @click="activeTab = 'pipeline'" 
+      <button
+        @click="activeTab = 'pipeline'"
         :class="['tab-button', { active: activeTab === 'pipeline' }]"
       >
         🚀 Pipeline de Trading
@@ -249,7 +249,7 @@
           </div>
           <div class="alerts-info">
             <p class="info-text">
-              <strong>Que sont les alertes ?</strong> Ce sont des recommandations d'investissement générées par l'IA 
+              <strong>Que sont les alertes ?</strong> Ce sont des recommandations d'investissement générées par l'IA
               basées sur l'analyse des news crypto. Elles vous indiquent quand acheter, vendre ou attendre.
             </p>
             <div class="alert-types">
@@ -267,7 +267,7 @@
               </div>
             </div>
           </div>
-          
+
           <div class="recent-alerts" v-if="recentAlerts && recentAlerts.length > 0">
             <!-- Debug info -->
             <div style="background: #f0f0f0; padding: 10px; margin-bottom: 15px; border-radius: 5px; font-size: 12px;">
@@ -290,7 +290,7 @@
               </div>
             </div>
           </div>
-          
+
           <div v-else class="no-alerts">
             <!-- Debug info -->
             <div style="background: #f0f0f0; padding: 10px; margin-bottom: 15px; border-radius: 5px; font-size: 12px;">
@@ -306,11 +306,11 @@
           <h3>💼 Historique des trades</h3>
           <div class="trades-info">
             <p class="info-text">
-              <strong>Que sont les trades ?</strong> Ce sont les actions d'investissement exécutées automatiquement 
+              <strong>Que sont les trades ?</strong> Ce sont les actions d'investissement exécutées automatiquement
               par l'IA basées sur les alertes générées. Chaque trade représente un achat ou une vente de cryptomonnaie.
             </p>
           </div>
-          
+
           <div class="trades-list" v-if="tradeHistory && tradeHistory.length > 0">
             <div v-for="trade in tradeHistory" :key="trade.id" class="trade-item">
               <div class="trade-header">
@@ -328,7 +328,7 @@
               </div>
             </div>
           </div>
-          
+
           <div v-else class="no-trades">
             <p>Aucun trade effectué pour le moment</p>
             <p class="hint">Les trades seront exécutés automatiquement lors de la génération d'alertes BUY/SELL</p>
@@ -347,10 +347,10 @@
     <Modal v-if="showEditConfig" @close="showEditConfig = false">
       <template #header>Modifier la configuration</template>
       <template #body>
-        <EditConfigForm 
-          :config="autowalletConfig" 
-          @save="updateConfig" 
-          @cancel="showEditConfig = false" 
+        <EditConfigForm
+          :config="autowalletConfig"
+          @save="updateConfig"
+          @cancel="showEditConfig = false"
         />
       </template>
     </Modal>
@@ -425,7 +425,7 @@ export default {
           await createDefaultConfig()
         }
       }
-      
+
       // Toujours charger les alertes, même si la config n'existe pas
       await loadRecentAlerts()
     }
@@ -444,12 +444,12 @@ export default {
           stop_loss_percentage: 5.0,
           take_profit_percentage: 15.0
         }
-        
+
         const response = await apiService.request('/api/autowallet/config', {
           method: 'POST',
           body: defaultConfig
         })
-        
+
         if (response.success) {
           console.log('Configuration par défaut créée avec succès')
           autowalletConfig.value = defaultConfig
@@ -457,7 +457,7 @@ export default {
           await loadRecentNews()
           await loadTradeHistory()
           await loadRecentAlerts()
-          
+
           // Démarrer l'analyse automatique
           await startAutoAnalysis()
         }
@@ -532,7 +532,7 @@ export default {
           method: 'POST',
           body: newConfig.value
         })
-        
+
         if (response.success) {
           await loadAutowalletConfig()
         }
@@ -549,7 +549,7 @@ export default {
         const response = await apiService.request('/api/autowallet/start', {
           method: 'POST'
         })
-        
+
         if (response.success) {
           await loadAutowalletConfig()
         }
@@ -564,7 +564,7 @@ export default {
         const response = await apiService.request('/api/autowallet/stop', {
           method: 'POST'
         })
-        
+
         if (response.success) {
           await loadAutowalletConfig()
         }
@@ -579,7 +579,7 @@ export default {
         const response = await apiService.request('/api/autowallet/start', {
           method: 'POST'
         })
-        
+
         if (response.success) {
           console.log('✅ Analyse automatique démarrée')
           await loadAutowalletConfig()
@@ -593,19 +593,19 @@ export default {
     const analyzeNews = async (newsIds) => {
       try {
         console.log('🔍 Analyse des news:', newsIds)
-        
+
         const response = await apiService.request('/api/autowallet/analyze', {
           method: 'POST',
           body: { news_ids: newsIds }
         })
-        
+
         if (response.success) {
           console.log('✅ Alertes générées:', response.alerts)
           console.log(`📊 ${response.count} alertes créées`)
-          
+
           // Recharger les alertes récentes
           await loadRecentAlerts()
-          
+
           // Afficher un message de succès à l'utilisateur
           if (response.count > 0) {
             alert(`✅ ${response.count} alerte(s) générée(s) avec succès !`)
@@ -615,10 +615,10 @@ export default {
         }
       } catch (error) {
         console.error('❌ Erreur lors de l\'analyse:', error)
-        
+
         // Afficher un message d'erreur à l'utilisateur
         let errorMessage = 'Erreur lors de l\'analyse des news'
-        
+
         if (error.message.includes('401')) {
           errorMessage = 'Erreur d\'authentification. Veuillez vous reconnecter.'
         } else if (error.message.includes('404')) {
@@ -628,7 +628,7 @@ export default {
         } else if (error.message.includes('500')) {
           errorMessage = 'Erreur serveur. Veuillez réessayer plus tard.'
         }
-        
+
         alert(`❌ ${errorMessage}`)
       }
     }
@@ -645,7 +645,7 @@ export default {
           method: 'POST',
           body: channelData
         })
-        
+
         if (response.success) {
           await loadAlertChannels()
           showAddChannel.value = false
@@ -661,7 +661,7 @@ export default {
         const response = await apiService.request(`/api/autowallet/alerts/channels/${channelId}`, {
           method: 'DELETE'
         })
-        
+
         if (response.success) {
           await loadAlertChannels()
         }
@@ -678,7 +678,7 @@ export default {
           method: 'PUT',
           body: { is_active: !channel.is_active }
         })
-        
+
         if (response.success) {
           await loadAlertChannels()
         }
@@ -694,7 +694,7 @@ export default {
           method: 'PUT',
           body: updatedConfig
         })
-        
+
         if (response.success) {
           await loadAutowalletConfig()
           showEditConfig.value = false
@@ -1504,30 +1504,107 @@ export default {
   .autowallet-container {
     padding: 16px;
   }
-  
+
   .card {
     padding: 16px;
   }
-  
+
   .status-grid,
   .config-grid {
     grid-template-columns: 1fr;
   }
-  
+
   .news-analysis {
     flex-direction: column;
     gap: 8px;
   }
-  
+
   .trade-item {
     flex-direction: column;
     align-items: flex-start;
     gap: 12px;
   }
-  
+
   .trade-details {
     flex-direction: column;
     gap: 8px;
   }
 }
+
+/* === Harmonisation avec l'AutoWallet principal (thème sombre + glass) === */
+:root {
+  --primary-gradient: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  --secondary-gradient: linear-gradient(135deg, #8b5cf6 0%, #a855f7 100%);
+  --success-gradient: linear-gradient(135deg, #10b981 0%, #059669 100%);
+  --warning-gradient: linear-gradient(135deg, #f59e0b 0%, #d97706 100%);
+  --error-gradient: linear-gradient(135deg, #ef4444 0%, #dc2626 100%);
+  --glass-bg: rgba(255, 255, 255, 0.08);
+  --glass-border: rgba(255, 255, 255, 0.12);
+  --card-shadow: 0 8px 32px rgba(0, 0, 0, 0.12);
+  --card-shadow-hover: 0 10px 30px rgba(118, 75, 162, 0.4);
+  --main-bg: linear-gradient(135deg, #111421 0%, #111421 100%);
+  --text-primary: #f3e8ff;
+  --text-secondary: rgba(255, 255, 255, 0.8);
+}
+
+.autowallet-container {
+  background: var(--main-bg);
+  min-height: 100vh;
+  width: 100vw;
+  max-width: 100vw;
+  color: var(--text-primary);
+}
+
+.header h1 { color: var(--text-primary); text-shadow: 0 2px 4px rgba(0,0,0,.3); }
+.subtitle { color: var(--text-secondary); }
+
+.card {
+  background: var(--glass-bg);
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
+  border: 1px solid var(--glass-border);
+  border-radius: 20px;
+  box-shadow: var(--card-shadow);
+}
+
+.card h2, .card h3 { color: var(--text-primary); text-shadow: 0 2px 4px rgba(0,0,0,.3); }
+
+.btn {
+  border-radius: 10px;
+  font-weight: 700;
+  color: #fff;
+  transition: all .3s ease;
+  position: relative;
+  overflow: hidden;
+}
+.btn::before {
+  content: "";
+  position: absolute;
+  top: 0; left: -100%; width: 100%; height: 100%;
+  background: linear-gradient(120deg, rgba(255,255,255,.2) 0%, rgba(255,255,255,.2) 50%, rgba(255,255,255,0) 80%);
+  transition: left .5s ease; z-index: -1;
+}
+.btn:hover { transform: translateY(-3px); box-shadow: 0 6px 20px rgba(125,82,204,.4); }
+.btn:hover::before { left: 100%; }
+
+.btn-primary { background: var(--primary-gradient); }
+.btn-secondary { background: linear-gradient(135deg, #6b7280 0%, #4b5563 100%); }
+.btn-success { background: var(--success-gradient); }
+.btn-warning { background: var(--warning-gradient); }
+.btn-danger { background: var(--error-gradient); }
+
+.status-item, .config-item, .channel-item, .news-item, .trade-item, .alert-item {
+  background: rgba(255, 255, 255, 0.1);
+  border-radius: 12px;
+}
+
+.label { color: #e2e8f0; }
+.value, .crypto-symbol, .news-header h4 { color: #f8fafc; }
+.news-content, .alert-reasoning { color: #cbd5e1; }
+.alert-meta, .time { color: #94a3b8; }
+
+.tabs-navigation { border-bottom: 2px solid rgba(255,255,255,.12); }
+.tab-button { color: #cbd5e1; }
+.tab-button:hover { color: #ffffff; }
+.tab-button.active { color: #ffffff; border-bottom-color: #ffffff; }
 </style>

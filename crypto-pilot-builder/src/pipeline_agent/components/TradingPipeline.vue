@@ -1,8 +1,66 @@
 <template>
   <div class="trading-pipeline-container">
-    <div class="header">
-      <h2>🚀 Pipeline de Trading Unifiée</h2>
-      <p class="subtitle">Pipeline d'agents intégrée avec l'autowallet existant</p>
+    <div class="header hero">
+      <div class="hero-left">
+        <div class="hero-icon">🚀</div>
+        <div class="hero-title">
+          <h2>Trading Pipeline</h2>
+          <p class="subtitle">Exécutez, suivez et inspectez chaque agent en temps réel</p>
+        </div>
+      </div>
+      <div class="hero-actions">
+        <button @click="startPipeline" class="btn btn-success" :disabled="pipelineStatus.is_running || isLoading">Lancer</button>
+        <button @click="stopPipeline" class="btn btn-warning" :disabled="!pipelineStatus.is_running || isLoading">Arrêter</button>
+      </div>
+    </div>
+
+    <!-- Tableau des agents (exécution rapide) -->
+    <div class="agents-board card">
+      <h3>🧩 Agents</h3>
+      <div class="agents-grid">
+        <div class="agent-tile">
+          <div class="agent-header">
+            <span class="agent-icon">📊</span>
+            <span class="agent-name">DataCollector</span>
+          </div>
+          <button class="tile-btn" @click="forceDataCollection" :disabled="isLoading">Exécuter</button>
+        </div>
+        <div class="agent-tile">
+          <div class="agent-header">
+            <span class="agent-icon">📰</span>
+            <span class="agent-name">NewsCollector</span>
+          </div>
+          <button class="tile-btn" @click="forceDataCollection" :disabled="isLoading">Exécuter</button>
+        </div>
+        <div class="agent-tile">
+          <div class="agent-header">
+            <span class="agent-icon">🔄</span>
+            <span class="agent-name">DataAggregator</span>
+          </div>
+          <button class="tile-btn" @click="forceDataCollection" :disabled="isLoading">Exécuter</button>
+        </div>
+        <div class="agent-tile">
+          <div class="agent-header">
+            <span class="agent-icon">🔮</span>
+            <span class="agent-name">Predictor</span>
+          </div>
+          <button class="tile-btn" @click="forcePredictionGeneration" :disabled="isLoading">Exécuter</button>
+        </div>
+        <div class="agent-tile">
+          <div class="agent-header">
+            <span class="agent-icon">📈</span>
+            <span class="agent-name">Strategy</span>
+          </div>
+          <button class="tile-btn" @click="forceSignalGeneration" :disabled="isLoading">Exécuter</button>
+        </div>
+        <div class="agent-tile">
+          <div class="agent-header">
+            <span class="agent-icon">💼</span>
+            <span class="agent-name">Trader</span>
+          </div>
+          <button class="tile-btn" @click="forceTradeExecution" :disabled="isLoading">Exécuter</button>
+        </div>
+      </div>
     </div>
 
     <!-- Statut de la pipeline -->
@@ -36,18 +94,18 @@
           <span class="value">{{ formatTime(pipelineStatus.last_update) }}</span>
         </div>
       </div>
-      
+
       <div class="actions">
-        <button 
-          @click="startPipeline" 
-          class="btn btn-success" 
+        <button
+          @click="startPipeline"
+          class="btn btn-success"
           :disabled="pipelineStatus.is_running || isLoading"
         >
           🚀 Démarrer la Pipeline
         </button>
-        <button 
-          @click="stopPipeline" 
-          class="btn btn-warning" 
+        <button
+          @click="stopPipeline"
+          class="btn btn-warning"
           :disabled="!pipelineStatus.is_running || isLoading"
         >
           ⏹️ Arrêter la Pipeline
@@ -84,7 +142,7 @@
           <span class="value">{{ Math.round(pipelineConfig.min_confidence_threshold * 100) }}%</span>
         </div>
       </div>
-      
+
       <div class="risk-management">
         <h4>🎯 Gestion des Risques</h4>
         <div class="risk-grid">
@@ -111,26 +169,12 @@
     <!-- Actions manuelles -->
     <div class="actions-card card">
       <h3>🔧 Actions Manuelles</h3>
-      <p class="info-text">
-        Ces actions permettent de forcer l'exécution des étapes de la pipeline pour des tests ou des ajustements.
-      </p>
-      
-      <div class="actions-grid">
-        <button @click="forceDataCollection" class="btn btn-secondary" :disabled="isLoading">
-          📊 Collecter les Données
-        </button>
-        <button @click="forcePredictionGeneration" class="btn btn-secondary" :disabled="isLoading">
-          🔮 Générer Prédictions
-        </button>
-        <button @click="forceSignalGeneration" class="btn btn-secondary" :disabled="isLoading">
-          📈 Générer Signaux
-        </button>
-        <button @click="forceTradeExecution" class="btn btn-secondary" :disabled="isLoading">
-          💼 Exécuter Trades
-        </button>
-        <button @click="clearPipelineCache" class="btn btn-warning" :disabled="isLoading">
-          🗑️ Vider le Cache
-        </button>
+      <div class="agent-actions">
+        <button @click="forceDataCollection" class="chip chip-blue" :disabled="isLoading">📊 DataCollector</button>
+        <button @click="forcePredictionGeneration" class="chip chip-purple" :disabled="isLoading">🔮 Predictor</button>
+        <button @click="forceSignalGeneration" class="chip chip-green" :disabled="isLoading">📈 Strategy</button>
+        <button @click="forceTradeExecution" class="chip chip-amber" :disabled="isLoading">💼 Trader</button>
+        <button @click="clearPipelineCache" class="chip chip-slate" :disabled="isLoading">🗑️ Clear Cache</button>
       </div>
     </div>
 
@@ -349,7 +393,7 @@ export default {
         const response = await apiService.request('/api/trading-pipeline/start', {
           method: 'POST'
         })
-        
+
         if (response.success) {
           await loadPipelineStatus()
         }
@@ -367,7 +411,7 @@ export default {
         const response = await apiService.request('/api/trading-pipeline/stop', {
           method: 'POST'
         })
-        
+
         if (response.success) {
           await loadPipelineStatus()
         }
@@ -499,7 +543,7 @@ export default {
     // Charger les données au montage
     onMounted(async () => {
       await loadAllData()
-      
+
       // Actualiser les données toutes les 30 secondes
       setInterval(loadAllData, 30000)
     })
@@ -533,10 +577,28 @@ export default {
 </script>
 
 <style scoped>
+:root {
+  --primary-gradient: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  --secondary-gradient: linear-gradient(135deg, #8b5cf6 0%, #a855f7 100%);
+  --success-gradient: linear-gradient(135deg, #10b981 0%, #059669 100%);
+  --warning-gradient: linear-gradient(135deg, #f59e0b 0%, #d97706 100%);
+  --error-gradient: linear-gradient(135deg, #ef4444 0%, #dc2626 100%);
+  --glass-bg: rgba(255, 255, 255, 0.08);
+  --glass-border: rgba(255, 255, 255, 0.12);
+  --card-shadow: 0 8px 32px rgba(0, 0, 0, 0.12);
+  --card-shadow-hover: 0 10px 30px rgba(118, 75, 162, 0.4);
+  --main-bg: linear-gradient(135deg, #111421 0%, #111421 100%);
+  --text-primary: #f3e8ff;
+  --text-secondary: rgba(255, 255, 255, 0.8);
+}
+
 .trading-pipeline-container {
   max-width: 1400px;
   margin: 0 auto;
   padding: 20px;
+  background: var(--main-bg);
+  min-height: 100vh;
+  color: var(--text-primary);
 }
 
 .header {
@@ -544,28 +606,42 @@ export default {
   margin-bottom: 30px;
 }
 
+.hero {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+.hero-left { display: flex; align-items: center; gap: 14px; }
+.hero-icon { font-size: 28px; padding: 10px; border-radius: 12px; background: rgba(255,255,255,.1); border: 1px solid var(--glass-border); }
+.hero-title h2 { margin: 0 0 6px 0; }
+.hero-actions { display: flex; gap: 10px; }
+
 .header h2 {
-  color: #2c3e50;
+  color: var(--text-primary);
   margin-bottom: 10px;
+  text-shadow: 0 2px 4px rgba(0, 0, 0, 0.3);
 }
 
 .subtitle {
-  color: #7f8c8d;
+  color: var(--text-secondary);
   font-size: 1.1em;
 }
 
 .card {
-  background: white;
-  border-radius: 12px;
+  background: var(--glass-bg);
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
+  border: 1px solid var(--glass-border);
+  border-radius: 16px;
   padding: 24px;
   margin-bottom: 24px;
-  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
-  border: 1px solid #e1e8ed;
+  box-shadow: var(--card-shadow);
 }
 
 .card h3, .card h4 {
-  color: #2c3e50;
+  color: var(--text-primary);
   margin-bottom: 16px;
+  text-shadow: 0 2px 4px rgba(0, 0, 0, 0.3);
 }
 
 .status-grid,
@@ -586,18 +662,12 @@ export default {
   justify-content: space-between;
   align-items: center;
   padding: 12px;
-  background: #f8f9fa;
-  border-radius: 8px;
+  background: rgba(255, 255, 255, 0.1);
+  border-radius: 12px;
 }
 
-.label {
-  font-weight: 600;
-  color: #34495e;
-}
-
-.value {
-  color: #2c3e50;
-}
+.label { font-weight: 600; color: #e2e8f0; }
+.value { color: #f8fafc; }
 
 .status {
   padding: 4px 12px;
@@ -605,16 +675,8 @@ export default {
   font-size: 14px;
   font-weight: 600;
 }
-
-.status.active {
-  background: #d4edda;
-  color: #155724;
-}
-
-.status.inactive {
-  background: #f8d7da;
-  color: #721c24;
-}
+.status.active { background: #d4edda; color: #155724; }
+.status.inactive { background: #f8d7da; color: #721c24; }
 
 .actions {
   display: flex;
@@ -625,58 +687,33 @@ export default {
 .btn {
   padding: 12px 24px;
   border: none;
-  border-radius: 8px;
+  border-radius: 12px;
   font-size: 16px;
-  font-weight: 600;
+  font-weight: 700;
   cursor: pointer;
-  transition: all 0.2s;
+  transition: all 0.3s ease;
+  color: #fff;
+  position: relative;
+  overflow: hidden;
 }
+.btn::before {
+  content: "";
+  position: absolute; top: 0; left: -100%; width: 100%; height: 100%;
+  background: linear-gradient(120deg, rgba(255,255,255,.2) 0%, rgba(255,255,255,.2) 50%, rgba(255,255,255,0) 80%);
+  transition: left .5s ease; z-index: -1;
+}
+.btn:hover { transform: translateY(-3px); box-shadow: 0 6px 20px rgba(125,82,204,.4); }
+.btn:hover::before { left: 100%; }
 
-.btn-primary {
-  background: #3498db;
-  color: white;
-}
-
-.btn-primary:hover {
-  background: #2980b9;
-}
-
-.btn-secondary {
-  background: #95a5a6;
-  color: white;
-}
-
-.btn-secondary:hover {
-  background: #7f8c8d;
-}
-
-.btn-success {
-  background: #27ae60;
-  color: white;
-}
-
-.btn-success:hover {
-  background: #229954;
-}
-
-.btn-warning {
-  background: #f39c12;
-  color: white;
-}
-
-.btn-warning:hover {
-  background: #e67e22;
-}
-
-.btn:disabled {
-  opacity: 0.6;
-  cursor: not-allowed;
-}
+.btn-primary { background: var(--primary-gradient); }
+.btn-secondary { background: linear-gradient(135deg, #6b7280 0%, #4b5563 100%); }
+.btn-success { background: var(--success-gradient); }
+.btn-warning { background: var(--warning-gradient); }
 
 .risk-management {
   margin-top: 20px;
   padding-top: 20px;
-  border-top: 1px solid #e1e8ed;
+  border-top: 1px solid rgba(255, 255, 255, 0.12);
 }
 
 .actions-grid {
@@ -685,32 +722,59 @@ export default {
   gap: 12px;
 }
 
-.info-text {
-  color: #7f8c8d;
-  margin-bottom: 20px;
-  line-height: 1.6;
-}
+.agent-actions { display: flex; flex-wrap: wrap; gap: 10px; }
+.chip { border: 1px solid var(--glass-border); padding: 10px 14px; border-radius: 999px; background: rgba(255,255,255,.08); color: #fff; font-weight: 700; }
+.chip-blue { background: linear-gradient(135deg, #3b82f6 0%, #1d4ed8 100%); }
+.chip-purple { background: linear-gradient(135deg, #8b5cf6 0%, #7c3aed 100%); }
+.chip-green { background: linear-gradient(135deg, #10b981 0%, #059669 100%); }
+.chip-amber { background: linear-gradient(135deg, #f59e0b 0%, #d97706 100%); }
+.chip-slate { background: linear-gradient(135deg, #64748b 0%, #475569 100%); }
+
+.info-text { color: #94a3b8; margin-bottom: 20px; line-height: 1.6; }
 
 .data-section {
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(400px, 1fr));
+  grid-template-columns: repeat(3, 1fr);
   gap: 24px;
   margin-bottom: 24px;
 }
 
-.data-card {
-  min-height: 300px;
+.agents-board h3 { margin-bottom: 12px; }
+.agents-grid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(220px, 1fr));
+  gap: 16px;
+}
+.agent-tile {
+  background: var(--glass-bg);
+  border: 1px solid var(--glass-border);
+  border-radius: 16px;
+  padding: 16px;
+  box-shadow: var(--card-shadow);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+.agent-header { display: flex; align-items: center; gap: 10px; }
+.agent-icon { font-size: 20px; padding: 6px; background: rgba(255,255,255,.1); border: 1px solid var(--glass-border); border-radius: 10px; }
+.agent-name { font-weight: 700; }
+.tile-btn { border: 1px solid var(--glass-border); padding: 8px 12px; border-radius: 12px; color: #fff; background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); font-weight: 700; }
+
+@media (max-width: 1200px) {
+  .agents-grid { grid-template-columns: repeat(2, minmax(220px, 1fr)); }
+}
+@media (max-width: 768px) {
+  .agents-grid { grid-template-columns: 1fr; }
 }
 
-.data-list {
-  max-height: 400px;
-  overflow-y: auto;
-}
+.data-card { min-height: 300px; }
+
+.data-list { max-height: 400px; overflow-y: auto; }
 
 .data-item {
   padding: 16px;
-  background: #f8f9fa;
-  border-radius: 8px;
+  background: rgba(255, 255, 255, 0.1);
+  border-radius: 12px;
   margin-bottom: 12px;
   border-left: 4px solid #3498db;
 }
@@ -722,15 +786,8 @@ export default {
   margin-bottom: 8px;
 }
 
-.symbol {
-  font-weight: 600;
-  color: #2c3e50;
-}
-
-.price {
-  font-weight: 600;
-  color: #27ae60;
-}
+.symbol { font-weight: 600; color: #e2e8f0; }
+.price { font-weight: 600; color: #27ae60; }
 
 .direction,
 .signal-type,
@@ -741,24 +798,15 @@ export default {
   font-weight: 600;
   color: white;
 }
-
 .direction.bullish,
 .signal-type.buy,
-.trade-type.buy {
-  background: #27ae60;
-}
-
+.trade-type.buy { background: #27ae60; }
 .direction.bearish,
 .signal-type.sell,
-.trade-type.sell {
-  background: #e74c3c;
-}
-
+.trade-type.sell { background: #e74c3c; }
 .direction.neutral,
 .signal-type.hold,
-.trade-type.hold {
-  background: #f39c12;
-}
+.trade-type.hold { background: #f39c12; }
 
 .data-details {
   display: flex;
@@ -778,108 +826,53 @@ export default {
 .status {
   padding: 2px 8px;
   border-radius: 12px;
-  background: #e1e8ed;
-  color: #34495e;
+  background: rgba(255, 255, 255, 0.15);
+  color: #e2e8f0;
 }
 
-.sentiment.positive {
-  background: #d4edda;
-  color: #155724;
-}
+.sentiment.positive { background: #d4edda; color: #155724; }
+.sentiment.negative { background: #f8d7da; color: #721c24; }
+.sentiment.neutral { background: #fff3cd; color: #856404; }
 
-.sentiment.negative {
-  background: #f8d7da;
-  color: #721c24;
-}
-
-.sentiment.neutral {
-  background: #fff3cd;
-  color: #856404;
-}
-
-.status.executed {
-  background: #d4edda;
-  color: #155724;
-}
-
-.status.pending {
-  background: #fff3cd;
-  color: #856404;
-}
-
-.status.failed {
-  background: #f8d7da;
-  color: #721c24;
-}
+.status.executed { background: #d4edda; color: #155724; }
+.status.pending { background: #fff3cd; color: #856404; }
+.status.failed { background: #f8d7da; color: #721c24; }
 
 .signal-reasoning,
 .trade-reasoning {
   margin-top: 8px;
   padding-top: 8px;
-  border-top: 1px solid #e1e8ed;
+  border-top: 1px solid rgba(255, 255, 255, 0.12);
 }
 
 .signal-reasoning p,
 .trade-reasoning p {
   margin: 0;
   font-size: 14px;
-  color: #34495e;
+  color: #cbd5e1;
   line-height: 1.4;
 }
 
-.trade-pnl {
-  margin-top: 8px;
-}
+.trade-pnl { margin-top: 8px; }
 
-.pnl {
-  font-weight: 600;
-  padding: 4px 8px;
-  border-radius: 12px;
-}
+.pnl { font-weight: 600; padding: 4px 8px; border-radius: 12px; }
+.pnl.positive { background: #d4edda; color: #155724; }
+.pnl.negative { background: #f8d7da; color: #721c24; }
 
-.pnl.positive {
-  background: #d4edda;
-  color: #155724;
-}
+.no-data { text-align: center; padding: 40px; color: #94a3b8; }
 
-.pnl.negative {
-  background: #f8d7da;
-  color: #721c24;
+@media (max-width: 1200px) {
+  .data-section { grid-template-columns: repeat(2, 1fr); }
 }
-
-.no-data {
-  text-align: center;
-  padding: 40px;
-  color: #7f8c8d;
-}
-
 @media (max-width: 768px) {
-  .trading-pipeline-container {
-    padding: 16px;
-  }
-  
-  .card {
-    padding: 16px;
-  }
-  
+  .trading-pipeline-container { padding: 16px; }
+  .card { padding: 16px; }
   .status-grid,
   .config-grid,
   .risk-grid,
-  .stats-grid {
-    grid-template-columns: 1fr;
-  }
-  
-  .data-section {
-    grid-template-columns: 1fr;
-  }
-  
-  .actions-grid {
-    grid-template-columns: 1fr;
-  }
-  
-  .data-details {
-    flex-direction: column;
-    gap: 8px;
-  }
+  .stats-grid { grid-template-columns: 1fr; }
+  .data-section { grid-template-columns: 1fr; }
+  .actions-grid { grid-template-columns: 1fr; }
+  .data-details { flex-direction: column; gap: 8px; }
 }
 </style>
