@@ -109,27 +109,7 @@
       </div>
     </div>
 
-    <!-- Pipeline Flow Visualization -->
-    <div class="card-dark rounded-xl p-8 mb-8">
-      <h3 class="text-2xl font-bold section-title mb-6 text-center">🔄 Flux du Pipeline</h3>
-      <div class="flex items-center justify-center space-x-4 mb-8 overflow-x-auto">
-        <div
-          v-for="agent in agentFlow"
-          :key="agent.name"
-          :class="[
-            'agent-card',
-            getAgentStatusClass(agent.name)
-          ]"
-        >
-          <div class="text-2xl mb-2">{{ agent.icon }}</div>
-          <div class="font-semibold text-slate-100">{{ agent.displayName }}</div>
-          <div class="text-sm text-slate-300">{{ agent.description }}</div>
-          <div class="text-xs mt-1">
-            <span class="px-2 py-0.5 rounded-full bg-slate-800/60 border border-slate-700 text-slate-200">{{ getAgentExecutionCount(agent.name) }} exécutions</span>
-          </div>
-        </div>
-      </div>
-    </div>
+
 
     <!-- Real-time Data -->
     <div class="two-col-grid mb-8">
