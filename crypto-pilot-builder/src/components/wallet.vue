@@ -358,7 +358,7 @@ async function connectWallet() {
   try {
     const [account] = await window.ethereum.request({ method: 'eth_requestAccounts' })
     address.value = account
-    status.value = "✅ Wallet connecté automatiquement"
+    status.value = "Wallet connecté automatiquement"
     showManualInput.value = false
     // Synchroniser avec le backend
     await syncWalletAddressWithBackend()
@@ -384,7 +384,7 @@ async function validateManualAddress() {
     return
   }
   address.value = manualAddress.value
-  status.value = "✅ Adresse configurée manuellement"
+  status.value = "Adresse configurée manuellement"
   showManualInput.value = false
   // Synchroniser avec le backend
   await syncWalletAddressWithBackend()
@@ -412,7 +412,7 @@ async function syncWalletAddressWithBackend() {
         wallet_address: address.value
       }
     })
-    console.log('✅ Adresse wallet synchronisée avec le backend')
+    console.log('Adresse wallet synchronisée avec le backend')
   } catch (error) {
     console.error('❌ Erreur synchronisation wallet:', error)
   }
@@ -424,8 +424,8 @@ async function loadWalletAddressFromBackend() {
     const response = await apiService.request('/wallet-address')
     if (response.wallet_address) {
       address.value = response.wallet_address
-      status.value = "✅ Adresse chargée depuis le serveur"
-      console.log('✅ Adresse wallet chargée depuis le backend')
+      status.value = " Adresse chargée depuis le serveur"
+      console.log('Adresse wallet chargée depuis le backend')
     }
   } catch (error) {
     console.log('ℹ️ Aucune adresse wallet configurée sur le serveur')
@@ -770,175 +770,341 @@ defineExpose({
 
 <template>
   <div class="wallet-connect">
-    <div class="top-bar">
-      <div class="actions">
-        <button
-          v-if="!address && !showManualInput"
-          @click="connectWallet"
-          class="connect-button"
-        >
-          🔗 Connecter
+    <!-- État connecté avec adresse -->
+    <div v-if="address" class="wallet-connected">
+      <div class="wallet-actions">
+        <button @click="changeWallet" class="change-button">
+          <span class="button-icon">🔄</span>
+          <span class="button-text">Changer</span>
         </button>
-        <button
-          v-if="!address && !showManualInput"
-          @click="showManualSetup"
-          class="manual-button"
-        >
-          ✏️ Manuel
-        </button>
-        <button
-          v-if="showManualInput && !address"
-          @click="validateManualAddress"
-          class="validate-button"
-        >
-          ✅ Valider
-        </button>
-        <button
-          v-if="address"
-          @click="changeWallet"
-          class="change-button"
-        >
-          🔄 Changer
-        </button>
+      </div>
+      
+      <div class="wallet-address">
+        <span class="address-label">Adresse</span>
+        <span class="address-value">{{ shortenAddress(address) }}</span>
+      </div>
+      
+      <div v-if="status" class="status-message">
+        <span class="status-icon">✅</span>
+        <span class="status-text">{{ status }}</span>
       </div>
     </div>
 
-    <div v-if="address" class="wallet-info">
-      {{ shortenAddress(address) }}
-    </div>
+    <!-- État non connecté -->
+    <div v-else class="wallet-disconnected">
+      <div class="connection-actions">
+        <button @click="connectWallet" class="connect-button">
+          <span class="button-icon">🔗</span>
+          <span class="button-text">Connecter</span>
+        </button>
+        <button @click="showManualSetup" class="manual-button">
+          <span class="button-icon">✏️</span>
+          <span class="button-text">Manuel</span>
+        </button>
+      </div>
 
-    <div v-if="showManualInput && !address" class="manual-input">
-      <input
-        v-model="manualAddress"
-        placeholder="0x1234567890abcdef..."
-        class="address-input-manual"
-        @keyup.enter="validateManualAddress"
-      />
-      <small class="hint">Saisissez l'adresse du wallet (format 0x...)</small>
-    </div>
+      <!-- Saisie manuelle -->
+      <div v-if="showManualInput" class="manual-input">
+        <div class="input-group">
+          <input
+            v-model="manualAddress"
+            placeholder="0x1234567890abcdef..."
+            class="address-input-manual"
+            @keyup.enter="validateManualAddress"
+          />
+          <button @click="validateManualAddress" class="validate-button">
+            <span class="button-icon">✅</span>
+            <span class="button-text">Valider</span>
+          </button>
+        </div>
+        <small class="hint">Saisissez l'adresse du wallet (format 0x...)</small>
+      </div>
 
-    <p v-if="status" class="status">{{ status }}</p>
+      <div v-if="status" class="status-message">
+        <span class="status-icon">ℹ️</span>
+        <span class="status-text">{{ status }}</span>
+      </div>
+    </div>
   </div>
 </template>
 
 <style scoped>
 .wallet-connect {
-  padding: 1rem;
+  padding: 1.5rem;
   box-sizing: border-box;
-  font-family: sans-serif;
+  font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
   width: 100%;
 }
 
-.top-bar {
+/* État connecté */
+.wallet-connected {
   display: flex;
-  justify-content: flex-end;
   align-items: center;
-  width: 100%;
+  gap: 1rem;
+  flex-wrap: wrap;
 }
 
-.actions {
+.wallet-actions {
   display: flex;
   gap: 0.5rem;
-  align-items: center;
 }
 
+.wallet-address {
+  display: flex;
+  flex-direction: column;
+  background: rgba(255, 255, 255, 0.15);
+  padding: 12px 16px;
+  border-radius: 12px;
+  backdrop-filter: blur(10px);
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  min-width: 120px;
+}
+
+.address-label {
+  font-size: 0.75rem;
+  color: rgba(255, 255, 255, 0.8);
+  font-weight: 500;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  margin-bottom: 4px;
+}
+
+.address-value {
+  font-family: 'JetBrains Mono', 'Fira Code', monospace;
+  font-size: 0.9rem;
+  color: #ffffff;
+  font-weight: 600;
+  background: rgba(255, 255, 255, 0.1);
+  padding: 4px 8px;
+  border-radius: 6px;
+  text-align: center;
+}
+
+/* État non connecté */
+.wallet-disconnected {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+}
+
+.connection-actions {
+  display: flex;
+  gap: 0.75rem;
+  justify-content: center;
+  flex-wrap: wrap;
+}
+
+/* Boutons communs */
 .connect-button,
 .manual-button,
 .validate-button,
 .change-button {
-  color: white;
-  padding: 8px 12px;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 12px 20px;
   border: none;
-  border-radius: 6px;
+  border-radius: 12px;
   cursor: pointer;
   font-size: 0.9rem;
-  font-weight: 500;
-  transition: background-color 0.2s;
+  font-weight: 600;
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  text-transform: none;
+  letter-spacing: 0.25px;
+  position: relative;
+  overflow: hidden;
 }
 
 .connect-button {
-  background-color: #4caf50;
+  background: linear-gradient(135deg, #4CAF50 0%, #45a049 100%);
+  color: white;
+  box-shadow: 0 4px 15px rgba(76, 175, 80, 0.3);
 }
 
 .connect-button:hover {
-  background-color: #45a049;
+  transform: translateY(-2px);
+  box-shadow: 0 6px 20px rgba(76, 175, 80, 0.4);
 }
 
 .manual-button {
-  background-color: #2196f3;
+  background: linear-gradient(135deg, #2196F3 0%, #1976D2 100%);
+  color: white;
+  box-shadow: 0 4px 15px rgba(33, 150, 243, 0.3);
 }
 
 .manual-button:hover {
-  background-color: #1976d2;
+  transform: translateY(-2px);
+  box-shadow: 0 6px 20px rgba(33, 150, 243, 0.4);
 }
 
 .validate-button {
-  background-color: #ff9800;
+  background: linear-gradient(135deg, #FF9800 0%, #F57C00 100%);
+  color: white;
+  box-shadow: 0 4px 15px rgba(255, 152, 0, 0.3);
 }
 
 .validate-button:hover {
-  background-color: #f57c00;
+  transform: translateY(-2px);
+  box-shadow: 0 6px 20px rgba(255, 152, 0, 0.4);
 }
 
 .change-button {
-  background-color: #9c27b0;
+  background: linear-gradient(135deg, #9C27B0 0%, #7B1FA2 100%);
+  color: white;
+  box-shadow: 0 4px 15px rgba(156, 39, 176, 0.3);
 }
 
 .change-button:hover {
-  background-color: #7b1fa2;
+  transform: translateY(-2px);
+  box-shadow: 0 6px 20px rgba(156, 39, 176, 0.4);
 }
 
-.wallet-info {
-  font-family: monospace;
-  font-size: 0.9rem;
-  background: #e8f5e8;
-  padding: 8px 12px;
-  border-radius: 6px;
-  color: #2e7d32;
-  border: 1px solid #c8e6c9;
-  margin-top: 1rem;
-  text-align: center;
-  width: 5%;
-  margin-right: 0;
-  margin-left: auto;
+.button-icon {
+  font-size: 1rem;
+  display: flex;
+  align-items: center;
 }
 
+.button-text {
+  font-weight: 600;
+}
+
+/* Saisie manuelle */
 .manual-input {
-  margin-top: 1rem;
   display: flex;
   flex-direction: column;
-  gap: 0.5rem;
+  gap: 0.75rem;
+  background: rgba(255, 255, 255, 0.1);
+  padding: 1.5rem;
+  border-radius: 12px;
+  backdrop-filter: blur(10px);
+  border: 1px solid rgba(255, 255, 255, 0.2);
+}
+
+.input-group {
+  display: flex;
+  gap: 0.75rem;
+  align-items: stretch;
 }
 
 .address-input-manual {
-  padding: 10px;
-  border: 2px solid #2196f3;
-  border-radius: 6px;
+  flex: 1;
+  padding: 12px 16px;
+  border: 2px solid rgba(255, 255, 255, 0.3);
+  border-radius: 10px;
   font-size: 0.9rem;
-  font-family: monospace;
-  width: 100%;
-  box-sizing: border-box;
+  font-family: 'JetBrains Mono', 'Fira Code', monospace;
+  background: rgba(255, 255, 255, 0.1);
+  color: white;
+  backdrop-filter: blur(10px);
+  transition: all 0.3s ease;
+}
+
+.address-input-manual::placeholder {
+  color: rgba(255, 255, 255, 0.6);
 }
 
 .address-input-manual:focus {
   outline: none;
-  border-color: #1976d2;
-  box-shadow: 0 0 0 2px rgba(33, 150, 243, 0.2);
+  border-color: #2196F3;
+  box-shadow: 0 0 0 3px rgba(33, 150, 243, 0.2);
+  background: rgba(255, 255, 255, 0.15);
 }
 
 .hint {
-  color: #666;
+  color: rgba(255, 255, 255, 0.7);
   font-size: 0.8rem;
-  margin-left: 4px;
+  text-align: center;
+  font-style: italic;
 }
 
-.status {
-  margin-top: 0.75rem;
+/* Messages de statut */
+.status-message {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  background: rgba(255, 255, 255, 0.95);
+  padding: 12px 16px;
+  border-radius: 10px;
+  box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
+  border: 1px solid rgba(0, 0, 0, 0.05);
+  color: #2e7d32;
+  font-weight: 500;
+  margin-top: 0.5rem;
+}
+
+.status-icon {
+  font-size: 1rem;
+  display: flex;
+  align-items: center;
+}
+
+.status-text {
   font-size: 0.9rem;
   color: #555;
-  text-align: center;
-  padding: 8px;
-  background: #f5f5f5;
-  border-radius: 4px;
+}
+
+/* Responsive */
+@media (max-width: 768px) {
+  .wallet-connect {
+    padding: 1rem;
+  }
+  
+  .wallet-connected {
+    flex-direction: column;
+    align-items: stretch;
+    gap: 0.75rem;
+  }
+  
+  .connection-actions {
+    flex-direction: column;
+  }
+  
+  .input-group {
+    flex-direction: column;
+  }
+  
+  .wallet-address {
+    text-align: center;
+  }
+}
+
+/* Animations */
+@keyframes fadeInUp {
+  from {
+    opacity: 0;
+    transform: translateY(20px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.wallet-connected,
+.wallet-disconnected {
+  animation: fadeInUp 0.5s ease-out;
+}
+
+/* Effet de brillance sur les boutons */
+.connect-button::before,
+.manual-button::before,
+.validate-button::before,
+.change-button::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: -100%;
+  width: 100%;
+  height: 100%;
+  background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.2), transparent);
+  transition: left 0.5s;
+}
+
+.connect-button:hover::before,
+.manual-button:hover::before,
+.validate-button:hover::before,
+.change-button:hover::before {
+  left: 100%;
 }
 </style>
