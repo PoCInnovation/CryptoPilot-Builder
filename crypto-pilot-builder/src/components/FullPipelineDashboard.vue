@@ -1,5 +1,6 @@
 <template>
   <div class="pipeline-dashboard">
+    <div class="page-container">
     <!-- Header -->
     <header class="gradient-bg text-white shadow-lg rounded-lg mb-8">
       <div class="px-6 py-4">
@@ -10,7 +11,7 @@
           </div>
           <div class="flex items-center space-x-4">
             <div class="flex items-center space-x-2">
-              <div 
+              <div
                 :class="[
                   'status-indicator',
                   pipelineStatus.is_running ? 'running' : 'stopped'
@@ -29,76 +30,76 @@
     </header>
 
     <!-- Pipeline Control -->
-    <div class="bg-white rounded-xl shadow-lg p-8 mb-8">
+    <div class="card-dark rounded-xl p-8 mb-8">
       <div class="text-center mb-8">
-        <h2 class="text-3xl font-bold text-gradient mb-2">🎮 Contrôle du Pipeline</h2>
-        <p class="text-gray-600">Lancez le pipeline complet ou exécutez les agents individuellement</p>
+        <h2 class="text-3xl font-bold section-title mb-2 ">🎮 Contrôle du Pipeline</h2>
+        <p class="lede">Lancez le pipeline complet ou exécutez les agents individuellement</p>
       </div>
-      
+
       <div class="flex justify-center space-x-6 mb-8">
-        <button 
+        <button
           @click="startPipeline"
           :disabled="isLoading || pipelineStatus.is_running"
-          class="px-8 py-4 bg-gradient-to-r from-green-500 to-emerald-500 text-white rounded-xl font-bold text-lg hover:from-green-600 hover:to-emerald-600 transition-all transform hover:scale-105 shadow-lg disabled:opacity-50 disabled:cursor-not-allowed"
+          class="cta-btn cta-start"
         >
           <span v-if="isLoading">🚀 Démarrage...</span>
           <span v-else-if="pipelineStatus.is_running">✅ Pipeline Actif</span>
           <span v-else>🚀 Lancer Pipeline</span>
         </button>
-        <button 
+        <button
           @click="stopPipeline"
           :disabled="isLoading || !pipelineStatus.is_running"
-          class="px-8 py-4 bg-gradient-to-r from-red-500 to-rose-500 text-white rounded-xl font-bold text-lg hover:from-red-600 hover:to-rose-600 transition-all transform hover:scale-105 shadow-lg disabled:opacity-50 disabled:cursor-not-allowed"
+          class="cta-btn cta-stop"
         >
           <span v-if="isLoading">🛑 Arrêt...</span>
           <span v-else>🛑 Arrêter Pipeline</span>
         </button>
       </div>
-      
-      <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-        <button 
+
+      <div class="agent-controls-grid">
+        <button
           @click="executeSingleAgent('data_collector')"
           :disabled="isLoading"
           class="agent-control-btn bg-blue-500 hover:bg-blue-600 disabled:opacity-50"
         >
           📊 DataCollector
         </button>
-        <button 
+        <button
           @click="executeSingleAgent('news_collector')"
           :disabled="isLoading"
           class="agent-control-btn bg-cyan-500 hover:bg-cyan-600 disabled:opacity-50"
         >
           📰 NewsCollector
         </button>
-        <button 
+        <button
           @click="executeSingleAgent('data_aggregator')"
           :disabled="isLoading"
           class="agent-control-btn bg-indigo-500 hover:bg-indigo-600 disabled:opacity-50"
         >
           🔄 DataAggregator
         </button>
-        <button 
+        <button
           @click="executeSingleAgent('predictor')"
           :disabled="isLoading"
           class="agent-control-btn bg-purple-500 hover:bg-purple-600 disabled:opacity-50"
         >
           🔮 Predictor
         </button>
-        <button 
+        <button
           @click="executeSingleAgent('strategy')"
           :disabled="isLoading"
           class="agent-control-btn bg-emerald-500 hover:bg-emerald-600 disabled:opacity-50"
         >
           📈 Strategy
         </button>
-        <button 
+        <button
           @click="executeSingleAgent('trader')"
           :disabled="isLoading"
           class="agent-control-btn bg-amber-500 hover:bg-amber-600 disabled:opacity-50"
         >
           💰 Trader
         </button>
-        <button 
+        <button
           @click="executeSingleAgent('logger')"
           :disabled="isLoading"
           class="agent-control-btn bg-gray-500 hover:bg-gray-600 disabled:opacity-50"
@@ -108,76 +109,54 @@
       </div>
     </div>
 
-    <!-- Pipeline Flow Visualization -->
-    <div class="bg-white rounded-xl shadow-lg p-8 mb-8">
-      <h3 class="text-2xl font-bold text-gradient-secondary mb-6 text-center">🔄 Flux du Pipeline</h3>
-      <div class="flex items-center justify-center space-x-4 mb-8 overflow-x-auto">
-        <div 
-          v-for="agent in agentFlow"
-          :key="agent.name"
-          :class="[
-            'agent-card',
-            getAgentStatusClass(agent.name)
-          ]"
-        >
-          <div class="text-2xl mb-2">{{ agent.icon }}</div>
-          <div class="font-semibold">{{ agent.displayName }}</div>
-          <div class="text-sm text-gray-600">{{ agent.description }}</div>
-          <div class="text-xs mt-1">
-            {{ getAgentExecutionCount(agent.name) }} exécutions
-          </div>
-        </div>
-      </div>
-    </div>
+
 
     <!-- Real-time Data -->
-    <div class="grid grid-cols-1 lg:grid-cols-2 gap-8 mb-8">
+    <div class="two-col-grid mb-8">
       <!-- Historique des Prix -->
-      <div class="bg-white rounded-xl shadow-lg p-6">
-        <h3 class="text-xl font-bold text-gray-900 mb-4">📊 Historique des Prix Bitcoin</h3>
-        <div class="space-y-2 max-h-64 overflow-y-auto">
-          <div 
+      <div class="card-dark rounded-xl p-6">
+        <h3 class="card-title mb-4">📊 Historique des Prix Bitcoin</h3>
+        <div class="history-list text-slate-200">
+          <div
             v-for="(price, index) in priceHistory"
             :key="index"
-            class="flex items-center justify-between p-3 bg-gray-50 rounded-lg mb-2"
+            class="history-row"
           >
-            <div class="flex items-center space-x-3">
-              <div class="text-sm text-gray-500">{{ formatTime(price.timestamp) }}</div>
-              <div class="font-medium">${{ price.price?.toLocaleString() }}</div>
+            <div class="history-left">
+              <div class="time">{{ formatTime(price.timestamp) }}</div>
+              <div class="price">${{ price.price?.toLocaleString() }}</div>
             </div>
-            <div class="text-right">
-              <div v-if="price.prediction" class="text-sm" :class="getPredictionClass(price.prediction.direction)">
-                {{ price.prediction.direction }} ({{ Math.round(price.prediction.confidence * 100) }}%)
-              </div>
-              <div v-if="price.strategy_signal" class="text-xs" :class="getSignalClass(price.strategy_signal.action)">
+            <div class="history-right">
+              <span v-if="price.prediction" :class="getPredictionClass(price.prediction.direction)">
+                {{ price.prediction.direction }} {{ Math.round(price.prediction.confidence * 100) }}%
+              </span>
+              <span v-if="price.strategy_signal" :class="getSignalClass(price.strategy_signal.action)">
                 {{ price.strategy_signal.action }}
-              </div>
+              </span>
             </div>
           </div>
-          <div v-if="priceHistory.length === 0" class="text-gray-500 text-center py-8">
+          <div v-if="priceHistory.length === 0" class="text-slate-400 text-center py-8">
             Chargement des données...
           </div>
         </div>
       </div>
 
       <!-- Agent Status -->
-      <div class="bg-white rounded-xl shadow-lg p-6">
-        <h3 class="text-xl font-bold text-gray-900 mb-4">🤖 Statut des Agents</h3>
-        <div class="space-y-3">
-          <div 
+      <div class="card-dark rounded-xl p-6">
+        <h3 class="card-title mb-4">🤖 Statut des Agents</h3>
+        <div class="agent-list">
+          <div
             v-for="(agent, name) in pipelineStatus.agents"
             :key="name"
-            class="flex items-center justify-between p-3 bg-gray-50 rounded-lg"
+            class="stat-row"
           >
-            <div class="flex items-center">
+            <div class="stat-left">
               <div :class="['status-indicator', agent.status]"></div>
-              <span class="font-medium capitalize">{{ formatAgentName(name) }}</span>
+              <span class="name">{{ formatAgentName(name) }}</span>
             </div>
-            <div class="text-right">
-              <div class="text-sm font-medium">{{ agent.execution_count }} exécutions</div>
-              <div class="text-xs text-gray-500">
-                {{ formatTime(agent.last_execution) }}
-              </div>
+            <div class="stat-right">
+              <span class="badge">{{ agent.execution_count }} exec</span>
+              <span class="meta">{{ formatTime(agent.last_execution) }}</span>
             </div>
           </div>
         </div>
@@ -185,27 +164,27 @@
     </div>
 
     <!-- Market Data -->
-    <div class="bg-white rounded-xl shadow-lg p-6 mb-8">
-      <h3 class="text-xl font-bold text-gray-900 mb-4">💹 Données de Marché</h3>
-      <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
-        <div class="text-center p-4 bg-gray-50 rounded-lg">
+    <div class="card-dark rounded-xl p-6 mb-8">
+      <h3 class="card-title mb-4">💹 Données de Marché</h3>
+      <div class="metrics-grid">
+        <div class="text-center p-4 bg-slate-800/40 border border-slate-700 rounded-lg">
           <div class="text-2xl mb-2">₿</div>
-          <div class="text-sm text-gray-600">Bitcoin</div>
-          <div class="text-xl font-bold text-gray-900">
+          <div class="text-sm text-slate-300">Bitcoin</div>
+          <div class="text-xl font-bold text-slate-100">
             ${{ getLatestPrice()?.toLocaleString() || '--' }}
           </div>
         </div>
-        <div class="text-center p-4 bg-gray-50 rounded-lg">
+        <div class="text-center p-4 bg-slate-800/40 border border-slate-700 rounded-lg">
           <div class="text-2xl mb-2">📈</div>
-          <div class="text-sm text-gray-600">Volume 24h</div>
-          <div class="text-xl font-bold text-gray-900">
+          <div class="text-sm text-slate-300">Volume 24h</div>
+          <div class="text-xl font-bold text-slate-100">
             {{ getLatestVolume() ? (getLatestVolume() / 1000000).toFixed(1) + 'M' : '--' }}
           </div>
         </div>
-        <div class="text-center p-4 bg-gray-50 rounded-lg">
+        <div class="text-center p-4 bg-slate-800/40 border border-slate-700 rounded-lg">
           <div class="text-2xl mb-2">🔄</div>
-          <div class="text-sm text-gray-600">Dernière Mise à jour</div>
-          <div class="text-sm font-medium text-gray-600">
+          <div class="text-sm text-slate-300">Dernière Mise à jour</div>
+          <div class="text-sm font-medium text-slate-300">
             {{ formatTime(pipelineStatus.last_execution) }}
           </div>
         </div>
@@ -213,250 +192,237 @@
     </div>
 
     <!-- Pipeline Logs -->
-    <div class="bg-white rounded-xl shadow-lg p-6 mb-8">
-      <h3 class="text-xl font-bold text-gray-900 mb-4">📝 Logs du Pipeline</h3>
-      <div class="space-y-2 max-h-64 overflow-y-auto bg-gray-50 p-4 rounded-lg">
-        <div 
+    <div class="card-dark rounded-xl p-6 mb-8">
+      <h3 class="card-title mb-4">📝 Logs du Pipeline</h3>
+      <div class="log-list">
+        <div
           v-for="(log, index) in pipelineLogs"
           :key="index"
-          class="flex items-center space-x-3 p-2 bg-white rounded border-l-4 border-blue-500"
+          class="log-row"
         >
-          <div class="text-xs text-gray-500">{{ formatTime(log.timestamp) }}</div>
-          <div class="flex-1">
-            <div class="text-sm font-medium">{{ log.symbol }}</div>
-            <div class="text-xs text-gray-600">
-              Prix: ${{ log.price?.toLocaleString() || 'N/A' }} | 
-              Signal: {{ log.strategy_signal?.action || 'N/A' }}
-            </div>
-          </div>
+          <span class="time">{{ formatTime(log.timestamp) }}</span>
+          <span class="symbol-chip">{{ log.symbol || '—' }}</span>
+          <span class="price">${{ log.price?.toLocaleString() || 'N/A' }}</span>
+          <span
+            class="signal-badge"
+            :class="(log.strategy_signal?.action || 'hold').toLowerCase()"
+          >
+            {{ log.strategy_signal?.action || 'HOLD' }}
+          </span>
         </div>
-        <div v-if="pipelineLogs.length === 0" class="text-gray-500 text-center py-8">
-          Aucun log disponible
-        </div>
+        <div v-if="pipelineLogs.length === 0" class="empty">Aucun log disponible</div>
       </div>
     </div>
 
     <!-- Logger Agent - Monitoring du Pipeline -->
-    <div class="bg-white rounded-xl shadow-lg p-6 mb-8">
-      <h3 class="text-xl font-bold text-gray-900 mb-4">🔍 Logger Agent - Monitoring du Pipeline</h3>
-      
+    <div class="card-dark rounded-xl p-6 mb-8">
+      <h3 class="card-title mb-4">🔍 Logger Agent - Monitoring du Pipeline</h3>
+
       <!-- Boutons d'action -->
-      <div class="flex flex-wrap gap-4 mb-6">
-        <button 
-          @click="callLoggerAgent"
-          :disabled="isLoading"
-          class="bg-green-500 hover:bg-green-600 text-white px-4 py-2 rounded-lg transition-colors flex items-center disabled:opacity-50"
-        >
-          <span class="mr-2">🧪</span>
-          Tester le Logger Agent
+      <div class="logger-actions">
+        <button @click="callLoggerAgent" :disabled="isLoading" class="chip-btn chip-success">
+          🧪 Tester le Logger Agent
         </button>
-        <button 
-          @click="clearLoggerData"
-          class="bg-gray-500 hover:bg-gray-600 text-white px-4 py-2 rounded-lg transition-colors flex items-center"
-        >
-          <span class="mr-2">🗑️</span>
-          Effacer les Données
+        <button @click="clearLoggerData" class="chip-btn chip-slate">
+          🗑️ Effacer les Données
         </button>
       </div>
 
-      <!-- Statut du pipeline -->
-      <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 mb-6">
-        <div class="bg-blue-50 p-4 rounded-lg border border-blue-200">
-          <h4 class="font-semibold text-blue-800 text-sm mb-2">Statut du Pipeline</h4>
-          <p class="text-blue-600 font-medium">
-            {{ pipelineStatus.is_running ? 'Actif' : 'Arrêté' }}
-          </p>
+      <!-- Statut du pipeline - KPIs -->
+      <div class="kpi-grid mb-6">
+        <div class="kpi-card">
+          <div class="kpi-icon">🟢</div>
+          <div class="kpi-content">
+            <div class="kpi-value" :class="pipelineStatus.is_running ? 'text-emerald' : 'text-rose'">
+              {{ pipelineStatus.is_running ? 'Actif' : 'Arrêté' }}
+            </div>
+            <div class="kpi-label">Statut du Pipeline</div>
+          </div>
         </div>
-        <div class="bg-green-50 p-4 rounded-lg border border-green-200">
-          <h4 class="font-semibold text-green-800 text-sm mb-2">Agents Actifs</h4>
-          <p class="text-green-600 font-medium">
-            {{ getActiveAgentsCount() }}/{{ Object.keys(pipelineStatus.agents || {}).length }}
-          </p>
+        <div class="kpi-card">
+          <div class="kpi-icon">👥</div>
+          <div class="kpi-content">
+            <div class="kpi-value">{{ getActiveAgentsCount() }}</div>
+            <div class="kpi-label">Agents Actifs</div>
+          </div>
         </div>
-        <div class="bg-purple-50 p-4 rounded-lg border border-purple-200">
-          <h4 class="font-semibold text-purple-800 text-sm mb-2">Exécutions Totales</h4>
-          <p class="text-purple-600 font-medium">
-            {{ getTotalExecutions() }}
-          </p>
+        <div class="kpi-card">
+          <div class="kpi-icon">⚙️</div>
+          <div class="kpi-content">
+            <div class="kpi-value">{{ getTotalExecutions() }}</div>
+            <div class="kpi-label">Exécutions Totales</div>
+          </div>
+        </div>
+        <div class="kpi-card">
+          <div class="kpi-icon">🔮</div>
+          <div class="kpi-content">
+            <div class="kpi-value">{{ pipelineStatus.predictions_count || 0 }}</div>
+            <div class="kpi-label">Prédictions</div>
+          </div>
+        </div>
+        <div class="kpi-card">
+          <div class="kpi-icon">📈</div>
+          <div class="kpi-content">
+            <div class="kpi-value">{{ pipelineStatus.signals_count || 0 }}</div>
+            <div class="kpi-label">Signaux</div>
+          </div>
         </div>
       </div>
 
       <!-- Métriques détaillées -->
-      <div class="bg-gray-50 p-4 rounded-lg mb-6 border border-gray-200">
-        <h4 class="font-semibold text-gray-800 mb-3">📈 Métriques du Pipeline</h4>
-        <div class="grid grid-cols-2 md:grid-cols-4 gap-4">
-          <div>
-            <span class="text-sm text-gray-600">Exécutions Totales:</span>
-            <p class="font-semibold text-lg">{{ getTotalExecutions() }}</p>
+      <div class="bg-slate-800/40 p-4 rounded-lg mb-6 border border-slate-700">
+        <h4 class="font-semibold text-slate-200 mb-3">📈 Métriques du Pipeline</h4>
+        <div class="stat-list">
+          <div class="stat-line">
+            <span class="label">Exécutions Totales</span>
+            <span class="badge">{{ getTotalExecutions() }}</span>
           </div>
-          <div>
-            <span class="text-sm text-gray-600">Taux de Succès:</span>
-            <p class="font-semibold text-lg">{{ getSuccessRate() }}%</p>
+          <div class="stat-line">
+            <span class="label">Taux de Succès</span>
+            <span class="badge">{{ getSuccessRate() }}%</span>
           </div>
-          <div>
-            <span class="text-sm text-gray-600">Prédictions:</span>
-            <p class="font-semibold text-lg">{{ pipelineStatus.predictions_count || 0 }}</p>
+          <div class="stat-line">
+            <span class="label">Prédictions</span>
+            <span class="badge">{{ pipelineStatus.predictions_count || 0 }}</span>
           </div>
-          <div>
-            <span class="text-sm text-gray-600">Signaux:</span>
-            <p class="font-semibold text-lg">{{ pipelineStatus.signals_count || 0 }}</p>
+          <div class="stat-line">
+            <span class="label">Signaux</span>
+            <span class="badge">{{ pipelineStatus.signals_count || 0 }}</span>
           </div>
         </div>
       </div>
 
       <!-- Résultats du Logger Agent -->
-      <div class="bg-gray-50 p-4 rounded-lg mb-6 border border-gray-200">
-        <h4 class="font-semibold text-gray-800 mb-3">🧪 Résultats du Logger Agent</h4>
+      <div class="bg-slate-800/40 p-4 rounded-lg mb-6 border border-slate-700">
+        <h4 class="font-semibold text-slate-200 mb-3">🧪 Résultats du Logger Agent</h4>
         <div v-if="loggerResponse" class="space-y-4">
           <!-- Rapport du Pipeline -->
-          <div class="bg-white p-4 rounded-lg border border-gray-200">
-            <h5 class="font-semibold text-gray-800 mb-3">📊 Rapport du Pipeline</h5>
-            <div class="grid grid-cols-2 gap-4 text-sm">
-              <div>
-                <span class="text-gray-600">Données collectées:</span>
-                <p class="font-semibold">{{ loggerResponse.result?.pipeline_data_count || 0 }}</p>
+          <div class="bg-slate-900/40 p-4 rounded-lg border border-slate-700">
+            <h5 class="font-semibold text-slate-200 mb-3">📊 Rapport du Pipeline</h5>
+            <div class="stat-list">
+              <div class="stat-line">
+                <span class="label">Données collectées</span>
+                <span class="badge">{{ loggerResponse.result?.pipeline_data_count || 0 }}</span>
               </div>
-              <div>
-                <span class="text-gray-600">Dernière exécution:</span>
-                <p class="font-semibold">{{ formatTime(loggerResponse.result?.report?.pipeline_info?.last_execution) }}</p>
+              <div class="stat-line">
+                <span class="label">Dernière exécution</span>
+                <span class="badge badge-neutral">{{ formatTime(loggerResponse.result?.report?.pipeline_info?.last_execution) }}</span>
               </div>
             </div>
-            
+
             <div v-if="loggerResponse.result?.report?.summary" class="mt-4">
-              <h6 class="font-semibold text-gray-800 mb-2">📈 Résumé</h6>
-              <div class="grid grid-cols-3 gap-4 text-sm">
-                <div>
-                  <span class="text-gray-600">Exécutions réussies:</span>
-                  <p class="font-semibold text-green-600">{{ loggerResponse.result.report.summary.successful_executions }}</p>
+              <h6 class="font-semibold text-slate-200 mb-2">📈 Résumé</h6>
+              <div class="stat-list">
+                <div class="stat-line">
+                  <span class="label">Exécutions réussies</span>
+                  <span class="badge badge-success">{{ loggerResponse.result.report.summary.successful_executions }}</span>
                 </div>
-                <div>
-                  <span class="text-gray-600">Exécutions échouées:</span>
-                  <p class="font-semibold text-red-600">{{ loggerResponse.result.report.summary.failed_executions }}</p>
+                <div class="stat-line">
+                  <span class="label">Exécutions échouées</span>
+                  <span class="badge badge-danger">{{ loggerResponse.result.report.summary.failed_executions }}</span>
                 </div>
-                <div>
-                  <span class="text-gray-600">Total:</span>
-                  <p class="font-semibold">{{ loggerResponse.result.report.summary.total_executions }}</p>
+                <div class="stat-line">
+                  <span class="label">Total</span>
+                  <span class="badge">{{ loggerResponse.result.report.summary.total_executions }}</span>
                 </div>
               </div>
             </div>
           </div>
 
           <!-- Recommandation de Trading -->
-          <div v-if="loggerResponse.result?.report?.summary?.recommendation" class="bg-white p-4 rounded-lg border border-gray-200">
-            <h5 class="font-semibold text-gray-800 mb-3">🎯 Recommandation de Trading</h5>
+          <div v-if="loggerResponse.result?.report?.summary?.recommendation" class="bg-slate-900/40 p-4 rounded-lg border border-slate-700">
+            <h5 class="font-semibold text-slate-200 mb-3">🎯 Recommandation de Trading</h5>
             <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-              <div class="text-center p-3 rounded-lg" :class="getRecommendationClass(loggerResponse.result.report.summary.recommendation.action)">
-                <div class="text-2xl mb-2">{{ getRecommendationIcon(loggerResponse.result.report.summary.recommendation.action) }}</div>
-                <div class="font-bold text-lg">{{ loggerResponse.result.report.summary.recommendation.action }}</div>
-                <div class="text-sm opacity-75">Confiance: {{ (loggerResponse.result.report.summary.recommendation.confidence * 100).toFixed(0) }}%</div>
+              <div class="rec-card">
+                <div class="rec-icon">{{ getRecommendationIcon(loggerResponse.result.report.summary.recommendation.action) }}</div>
+                <div class="rec-badge" :class="(loggerResponse.result.report.summary.recommendation.action || 'HOLD').toLowerCase()">
+                  {{ loggerResponse.result.report.summary.recommendation.action }}
+                </div>
+                <div class="rec-meta">Confiance: {{ (loggerResponse.result.report.summary.recommendation.confidence * 100).toFixed(0) }}%</div>
               </div>
-              <div class="space-y-2">
-                <div>
-                  <span class="text-gray-600 text-sm">Raison:</span>
-                  <p class="text-sm font-medium">{{ loggerResponse.result.report.summary.recommendation.reason }}</p>
+              <div class="stat-list">
+                <div class="stat-line">
+                  <span class="label">Raison</span>
+                  <span class="badge badge-neutral">{{ loggerResponse.result.report.summary.recommendation.reason || '—' }}</span>
                 </div>
-                <div>
-                  <span class="text-gray-600 text-sm">Niveau de risque:</span>
-                  <p class="text-sm font-medium" :class="getRiskClass(loggerResponse.result.report.summary.recommendation.risk_level)">
-                    {{ loggerResponse.result.report.summary.recommendation.risk_level }}
-                  </p>
+                <div class="stat-line">
+                  <span class="label">Niveau de risque</span>
+                  <span class="badge" :class="{
+                    'badge-success': loggerResponse.result.report.summary.recommendation.risk_level === 'LOW',
+                    'badge-danger': loggerResponse.result.report.summary.recommendation.risk_level === 'HIGH'
+                  }">{{ loggerResponse.result.report.summary.recommendation.risk_level }}</span>
                 </div>
-                <div>
-                  <span class="text-gray-600 text-sm">Sentiment du marché:</span>
-                  <p class="text-sm font-medium" :class="getSentimentClass(loggerResponse.result.report.summary.recommendation.market_sentiment)">
-                    {{ loggerResponse.result.report.summary.recommendation.market_sentiment }}
-                  </p>
+                <div class="stat-line">
+                  <span class="label">Sentiment du marché</span>
+                  <span class="badge" :class="{
+                    'badge-success': loggerResponse.result.report.summary.recommendation.market_sentiment === 'BULLISH',
+                    'badge-danger': loggerResponse.result.report.summary.recommendation.market_sentiment === 'BEARISH',
+                    'badge-neutral': loggerResponse.result.report.summary.recommendation.market_sentiment === 'NEUTRAL'
+                  }">{{ loggerResponse.result.report.summary.recommendation.market_sentiment }}</span>
                 </div>
               </div>
             </div>
           </div>
 
           <!-- Analyse de Trading -->
-          <div v-if="loggerResponse.result?.report?.trading_analysis" class="bg-white p-4 rounded-lg border border-gray-200">
-            <h5 class="font-semibold text-gray-800 mb-3">📊 Analyse de Trading</h5>
+          <div v-if="loggerResponse.result?.report?.trading_analysis" class="bg-slate-900/40 p-4 rounded-lg border border-slate-700">
+            <h5 class="font-semibold text-slate-200 mb-3">📊 Analyse de Trading</h5>
             <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
               <!-- Signaux -->
-              <div class="bg-blue-50 p-3 rounded-lg">
-                <h6 class="font-semibold text-blue-800 mb-2">📈 Signaux</h6>
-                <div class="space-y-1 text-sm">
-                  <div class="flex justify-between">
-                    <span class="text-green-600">Achat:</span>
-                    <span class="font-semibold">{{ loggerResponse.result.report.trading_analysis.signals.buy_signals }}</span>
-                  </div>
-                  <div class="flex justify-between">
-                    <span class="text-red-600">Vente:</span>
-                    <span class="font-semibold">{{ loggerResponse.result.report.trading_analysis.signals.sell_signals }}</span>
-                  </div>
-                  <div class="flex justify-between">
-                    <span class="text-yellow-600">Maintien:</span>
-                    <span class="font-semibold">{{ loggerResponse.result.report.trading_analysis.signals.hold_signals }}</span>
-                  </div>
+              <div class="bg-slate-800/40 p-3 rounded-lg border border-slate-700">
+                <h6 class="font-semibold text-slate-200 mb-2">📈 Signaux</h6>
+                <div class="stat-list">
+                  <div class="stat-line"><span class="label">Achat</span><span class="badge badge-success">{{ loggerResponse.result.report.trading_analysis.signals.buy_signals }}</span></div>
+                  <div class="stat-line"><span class="label">Vente</span><span class="badge badge-danger">{{ loggerResponse.result.report.trading_analysis.signals.sell_signals }}</span></div>
+                  <div class="stat-line"><span class="label">Maintien</span><span class="badge badge-neutral">{{ loggerResponse.result.report.trading_analysis.signals.hold_signals }}</span></div>
                 </div>
               </div>
 
               <!-- Prédictions -->
-              <div class="bg-purple-50 p-3 rounded-lg">
-                <h6 class="font-semibold text-purple-800 mb-2">🔮 Prédictions</h6>
-                <div class="space-y-1 text-sm">
-                  <div class="flex justify-between">
-                    <span class="text-green-600">Haussier:</span>
-                    <span class="font-semibold">{{ loggerResponse.result.report.trading_analysis.predictions.up_predictions }}</span>
-                  </div>
-                  <div class="flex justify-between">
-                    <span class="text-red-600">Baissier:</span>
-                    <span class="font-semibold">{{ loggerResponse.result.report.trading_analysis.predictions.down_predictions }}</span>
-                  </div>
-                  <div class="flex justify-between">
-                    <span class="text-gray-600">Total:</span>
-                    <span class="font-semibold">{{ loggerResponse.result.report.trading_analysis.predictions.total_predictions }}</span>
-                  </div>
+              <div class="bg-slate-800/40 p-3 rounded-lg border border-slate-700">
+                <h6 class="font-semibold text-slate-200 mb-2">🔮 Prédictions</h6>
+                <div class="stat-list">
+                  <div class="stat-line"><span class="label">Haussier</span><span class="badge badge-success">{{ loggerResponse.result.report.trading_analysis.predictions.up_predictions }}</span></div>
+                  <div class="stat-line"><span class="label">Baissier</span><span class="badge badge-danger">{{ loggerResponse.result.report.trading_analysis.predictions.down_predictions }}</span></div>
+                  <div class="stat-line"><span class="label">Total</span><span class="badge">{{ loggerResponse.result.report.trading_analysis.predictions.total_predictions }}</span></div>
                 </div>
               </div>
 
               <!-- Trades -->
-              <div class="bg-green-50 p-3 rounded-lg">
-                <h6 class="font-semibold text-green-800 mb-2">💰 Trades</h6>
-                <div class="space-y-1 text-sm">
-                  <div class="flex justify-between">
-                    <span class="text-green-600">Exécutés:</span>
-                    <span class="font-semibold">{{ loggerResponse.result.report.trading_analysis.trades.filled_trades }}</span>
-                  </div>
-                  <div class="flex justify-between">
-                    <span class="text-yellow-600">En attente:</span>
-                    <span class="font-semibold">{{ loggerResponse.result.report.trading_analysis.trades.pending_trades }}</span>
-                  </div>
-                  <div class="flex justify-between">
-                    <span class="text-gray-600">Total:</span>
-                    <span class="font-semibold">{{ loggerResponse.result.report.trading_analysis.trades.total_trades }}</span>
-                  </div>
+              <div class="bg-slate-800/40 p-3 rounded-lg border border-slate-700">
+                <h6 class="font-semibold text-slate-200 mb-2">💰 Trades</h6>
+                <div class="stat-list">
+                  <div class="stat-line"><span class="label">Exécutés</span><span class="badge badge-success">{{ loggerResponse.result.report.trading_analysis.trades.filled_trades }}</span></div>
+                  <div class="stat-line"><span class="label">En attente</span><span class="badge badge-neutral">{{ loggerResponse.result.report.trading_analysis.trades.pending_trades }}</span></div>
+                  <div class="stat-line"><span class="label">Total</span><span class="badge">{{ loggerResponse.result.report.trading_analysis.trades.total_trades }}</span></div>
                 </div>
               </div>
             </div>
           </div>
         </div>
-        <div v-else class="text-gray-500">
+        <div v-else class="text-slate-400">
           Aucun test exécuté
         </div>
       </div>
 
       <!-- Logs en temps réel -->
-      <div class="bg-gray-50 p-4 rounded-lg border border-gray-200">
-        <h4 class="font-semibold text-gray-800 mb-3">📝 Logs en Temps Réel</h4>
+      <div class="bg-slate-800/40 p-4 rounded-lg border border-slate-700">
+        <h4 class="font-semibold text-slate-200 mb-3">📝 Logs en Temps Réel</h4>
         <div class="max-h-64 overflow-y-auto space-y-2 text-sm">
-          <div 
+          <div
             v-for="(log, index) in realTimeLogs"
             :key="index"
             :class="[
               'p-2 rounded-lg',
-              log.type === 'success' ? 'bg-green-100 text-green-800' :
-              log.type === 'error' ? 'bg-red-100 text-red-800' :
-              log.type === 'warning' ? 'bg-yellow-100 text-yellow-800' : 'bg-blue-100 text-blue-800'
+              log.type === 'success' ? 'bg-green-900/30 text-green-300' :
+              log.type === 'error' ? 'bg-red-900/30 text-red-300' :
+              log.type === 'warning' ? 'bg-yellow-900/30 text-yellow-300' : 'bg-blue-900/30 text-blue-300'
             ]"
           >
-            <span class="font-mono text-xs text-gray-500">{{ formatTime(log.timestamp) }}</span>
+            <span class="font-mono text-xs text-slate-400">{{ formatTime(log.timestamp) }}</span>
             <span class="ml-2">{{ log.message }}</span>
           </div>
-          <div v-if="realTimeLogs.length === 0" class="text-gray-500">
+          <div v-if="realTimeLogs.length === 0" class="text-slate-400">
             En attente des logs...
           </div>
         </div>
@@ -465,7 +431,7 @@
 
     <!-- Toast Notifications -->
     <div v-if="toastMessage" class="fixed top-4 right-4 z-50">
-      <div 
+      <div
         :class="[
           'px-4 py-2 rounded-lg text-white font-medium transform transition-all duration-300',
           toastType === 'success' ? 'bg-green-500' :
@@ -475,6 +441,7 @@
       >
         {{ toastMessage }}
       </div>
+    </div>
     </div>
   </div>
 </template>
@@ -545,7 +512,7 @@ export default {
     const getAgentStatusClass = (agentName) => {
       const agent = pipelineStatus.value.agents?.[agentName]
       if (!agent) return ''
-      
+
       switch (agent.status) {
         case 'running': return 'active'
         case 'processing': return 'processing'
@@ -632,12 +599,12 @@ export default {
           if (response.metrics) {
             pipelineStatus.value.predictions_count = response.metrics.predictions_count || 0
             pipelineStatus.value.signals_count = response.metrics.signals_count || 0
-            
+
             // Mettre à jour les comptes d'exécution des agents
             const totalExecutions = response.metrics.total_executions || 0
             const agentNames = ['data_collector', 'news_collector', 'data_aggregator', 'predictor', 'strategy', 'trader', 'logger']
             const executionsPerAgent = Math.floor(totalExecutions / agentNames.length)
-            
+
             agentNames.forEach(agentName => {
               if (pipelineStatus.value.agents[agentName]) {
                 pipelineStatus.value.agents[agentName].execution_count = executionsPerAgent
@@ -645,10 +612,10 @@ export default {
               }
             })
           }
-          
+
           // Mettre à jour les données du pipeline
           pipelineData.value = response.pipeline_data || []
-          
+
           // Ajouter des logs en temps réel
           if (response.pipeline_data && response.pipeline_data.length > 0) {
             const latestData = response.pipeline_data[0]
@@ -732,7 +699,7 @@ export default {
           // Créer une structure de réponse similaire à celle attendue
           const metricsData = response.metrics || {}
           const pipelineDataArray = response.pipeline_data || []
-          
+
           loggerResponse.value = {
             status: 'success',
             result: {
@@ -773,7 +740,7 @@ export default {
               }
             }
           }
-          
+
           showToast('Logger Agent appelé avec succès! ✅', 'success')
           addLog('🧪 Logger Agent appelé avec succès', 'success')
         } else {
@@ -811,7 +778,7 @@ export default {
         message,
         type
       })
-      
+
       // Limiter le nombre de logs
       if (realTimeLogs.value.length > 50) {
         realTimeLogs.value = realTimeLogs.value.slice(0, 50)
@@ -885,11 +852,11 @@ export default {
       toastMessage,
       toastType,
       agentFlow,
-      
+
       // Computed
       priceHistory,
       pipelineLogs,
-      
+
       // Méthodes
       formatTime,
       formatAgentName,
@@ -937,12 +904,18 @@ export default {
 .pipeline-dashboard {
   background: linear-gradient(135deg, #111421 0%, #111421 100%);
   min-height: 100vh;
-  padding: 50px;
+  padding: 50px 0;
   font-family: "Roboto", sans-serif;
   display: flex;
   flex-direction: column;
   align-items: center;
   overflow-y: auto;
+}
+
+.page-container {
+  width: 100%;
+  max-width: 1200px;
+  padding: 0 24px;
 }
 
 /* ===== HEADER COHÉRENT AVEC ACCUEIL.VUE ===== */
@@ -1025,49 +998,49 @@ export default {
   transition: all 0.3s ease;
 }
 
-.status-indicator.running { 
+.status-indicator.running {
   background: var(--success-gradient);
   animation: pulse-green 2s infinite;
 }
 
-.status-indicator.stopped { 
+.status-indicator.stopped {
   background: linear-gradient(135deg, #6b7280 0%, #4b5563 100%);
 }
 
-.status-indicator.processing { 
+.status-indicator.processing {
   background: var(--warning-gradient);
   animation: pulse-yellow 1s infinite;
 }
 
-.status-indicator.error { 
+.status-indicator.error {
   background: var(--error-gradient);
   animation: pulse-red 1s infinite;
 }
 
 /* Animations pour les indicateurs */
 @keyframes pulse-green {
-  0%, 100% { 
+  0%, 100% {
     box-shadow: 0 0 0 0 rgba(16, 185, 129, 0.7);
   }
-  50% { 
+  50% {
     box-shadow: 0 0 0 10px rgba(16, 185, 129, 0);
   }
 }
 
 @keyframes pulse-yellow {
-  0%, 100% { 
+  0%, 100% {
     box-shadow: 0 0 0 0 rgba(245, 158, 11, 0.7);
   }
-  50% { 
+  50% {
     box-shadow: 0 0 0 10px rgba(245, 158, 11, 0);
   }
 }
 
 @keyframes pulse-red {
-  0%, 100% { 
+  0%, 100% {
     box-shadow: 0 0 0 0 rgba(239, 68, 68, 0.7);
   }
-  50% { 
+  50% {
     box-shadow: 0 0 0 10px rgba(239, 68, 68, 0);
   }
 }
@@ -1272,11 +1245,11 @@ export default {
 
 /* Animations */
 @keyframes pulse-card {
-  0%, 100% { 
+  0%, 100% {
     transform: scale(1);
     box-shadow: 0 0 20px rgba(245, 158, 11, 0.3);
   }
-  50% { 
+  50% {
     transform: scale(1.05);
     box-shadow: 0 0 30px rgba(245, 158, 11, 0.5);
   }
@@ -1294,6 +1267,15 @@ export default {
   position: relative;
   box-shadow: var(--card-shadow);
 }
+
+/* Variantes sombres pour éviter texte noir/fonds clairs */
+.card-dark {
+  background: rgba(15, 23, 42, 0.65);
+  border: 1px solid rgba(100, 116, 139, 0.35);
+  box-shadow: var(--card-shadow);
+  color: #e5e7eb;
+}
+.card-title { color: #e5e7eb; font-weight: 700; font-size: 1.25rem; }
 
 .bg-white::before {
   content: "";
@@ -1451,8 +1433,18 @@ button[class*="from-red-500"]:hover {
 }
 
 /* Grilles responsives */
-.grid {
-  gap: 1.5rem;
+.grid { gap: 1.5rem; }
+
+/* Nouvelle grille pour les boutons agents (sans Tailwind) */
+.agent-controls-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(220px, 1fr));
+  gap: 1rem;
+  max-width: 900px;
+  margin: 0 auto;
+}
+@media (min-width: 1200px) {
+  .agent-controls-grid { grid-template-columns: repeat(4, minmax(200px, 1fr)); }
 }
 
 /* ===== CARTES D'AGENTS COHÉRENTES AVEC ACCUEIL.VUE ===== */
@@ -1496,6 +1488,89 @@ button[class*="from-red-500"]:hover {
 .agent-card:hover::before {
   opacity: 1;
 }
+
+/* ==== NOUVELLES MISES EN PAGE DE DONNÉES ==== */
+.two-col-grid { display: grid; grid-template-columns: 1fr; gap: 2rem; }
+@media (min-width: 1024px) { .two-col-grid { grid-template-columns: 1fr 1fr; } }
+
+.history-list { max-height: 18rem; overflow-y: auto; }
+.history-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 10px 12px;
+  background: rgba(15, 23, 42, 0.55);
+  border: 1px solid rgba(100, 116, 139, 0.35);
+  border-radius: 12px;
+  margin-bottom: 10px;
+}
+.history-left { display: flex; align-items: center; gap: 10px; }
+.history-left .time { color: #94a3b8; font-size: 12px; }
+.history-left .price { color: #e2e8f0; font-weight: 600; }
+.history-right { display: flex; gap: 8px; align-items: center; }
+
+.agent-list { display: flex; flex-direction: column; gap: 10px; }
+.stat-row { display: flex; align-items: center; justify-content: space-between; padding: 10px 12px; background: rgba(15, 23, 42, 0.55); border: 1px solid rgba(100,116,139,.35); border-radius: 12px; }
+.stat-left { display: flex; align-items: center; gap: 10px; }
+.stat-left .name { color: #e5e7eb; font-weight: 600; text-transform: capitalize; }
+.stat-right { display: flex; align-items: center; gap: 8px; }
+.stat-right .badge { background: rgba(99, 102, 241, 0.25); border: 1px solid rgba(99, 102, 241, 0.45); color: #c7d2fe; padding: 4px 8px; border-radius: 999px; font-size: 12px; }
+.stat-right .meta { color: #94a3b8; font-size: 12px; }
+
+.metrics-grid { display: grid; grid-template-columns: 1fr; gap: 1rem; }
+@media (min-width: 768px) { .metrics-grid { grid-template-columns: repeat(3, 1fr); } }
+
+/* Texte aéré */
+.lede { color: #cbd5e1; line-height: 1.8; letter-spacing: 0.2px; margin-top: 6px; }
+.card-dark p { line-height: 1.7; }
+
+/* ==== LISTE DE LOGS LISIBLES ==== */
+.log-list { max-height: 18rem; overflow-y: auto; background: rgba(15,23,42,.5); border: 1px solid rgba(100,116,139,.35); border-radius: 12px; padding: 10px; }
+.log-row { display: grid; grid-template-columns: 120px 1fr 140px 110px; gap: 10px; align-items: center; padding: 8px 10px; border-bottom: 1px dashed rgba(100,116,139,.3); }
+.log-row:last-child { border-bottom: none; }
+.log-row .time { color: #94a3b8; font-size: 12px; }
+.log-row .symbol-chip { color: #e5e7eb; font-weight: 600; background: rgba(99,102,241,.18); border: 1px solid rgba(99,102,241,.35); padding: 4px 10px; border-radius: 999px; width: max-content; }
+.log-row .price { color: #cbd5e1; font-weight: 600; }
+.signal-badge { padding: 4px 10px; border-radius: 999px; font-weight: 800; letter-spacing: .3px; color: #fff; text-align: center; }
+.signal-badge.buy { background: #22c55e; }
+.signal-badge.sell { background: #ef4444; }
+.signal-badge.hold { background: #f59e0b; }
+.empty { color: #94a3b8; text-align: center; padding: 20px 0; }
+
+/* ==== LOGGER ACTIONS ==== */
+.logger-actions { display: flex; flex-wrap: wrap; gap: 10px; margin-bottom: 16px; }
+.chip-btn { border: 1px solid var(--glass-border); padding: 10px 14px; border-radius: 999px; background: rgba(255,255,255,.08); color: #fff; font-weight: 700; }
+.chip-success { background: linear-gradient(135deg, #10b981 0%, #059669 100%); }
+.chip-slate { background: linear-gradient(135deg, #64748b 0%, #475569 100%); }
+
+/* ==== KPI GRID ==== */
+.kpi-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 12px; }
+@media (min-width: 1024px) { .kpi-grid { grid-template-columns: repeat(5, minmax(0, 1fr)); } }
+.kpi-card { display: flex; align-items: center; gap: 12px; background: rgba(15,23,42,.55); border: 1px solid rgba(100,116,139,.35); border-radius: 14px; padding: 12px 14px; }
+.kpi-icon { font-size: 20px; }
+.kpi-content { display: flex; flex-direction: column; }
+.kpi-value { color: #e5e7eb; font-weight: 800; font-size: 20px; line-height: 1; }
+.kpi-label { color: #94a3b8; font-size: 12px; }
+.text-emerald { color: #34d399; }
+.text-rose { color: #f87171; }
+
+/* ==== STAT LINES ==== */
+.stat-list { display: flex; flex-direction: column; gap: 8px; }
+.stat-line { display: grid; grid-template-columns: 1fr auto; align-items: center; background: rgba(15,23,42,.55); border: 1px solid rgba(100,116,139,.35); border-radius: 12px; padding: 10px 12px; }
+.stat-line .label { color: #cbd5e1; font-weight: 600; }
+.badge { background: rgba(99,102,241,.18); border: 1px solid rgba(99,102,241,.35); color: #e5e7eb; padding: 4px 10px; border-radius: 999px; font-weight: 800; letter-spacing: .2px; }
+.badge-success { background: rgba(16,185,129,.25); border-color: rgba(16,185,129,.4); color: #d1fae5; }
+.badge-danger { background: rgba(239,68,68,.25); border-color: rgba(239,68,68,.4); color: #fee2e2; }
+.badge-neutral { background: rgba(148,163,184,.18); border-color: rgba(148,163,184,.35); color: #e2e8f0; }
+
+/* Carte recommandation */
+.rec-card { display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 6px; padding: 14px; border-radius: 14px; background: rgba(15,23,42,.55); border: 1px solid rgba(100,116,139,.35); }
+.rec-icon { font-size: 28px; }
+.rec-badge { padding: 6px 14px; border-radius: 999px; font-weight: 800; color: #fff; }
+.rec-badge.buy { background: #22c55e; }
+.rec-badge.sell { background: #ef4444; }
+.rec-badge.hold { background: #f59e0b; }
+.rec-meta { color: #cbd5e1; font-size: 12px; }
 
 /* ===== SCROLLBARS COHÉRENTES AVEC ACCUEIL.VUE ===== */
 .overflow-y-auto::-webkit-scrollbar {
@@ -1547,6 +1622,9 @@ button[class*="from-red-500"]:hover {
   font-weight: 600;
   text-shadow: 0 2px 4px rgba(0, 0, 0, 0.3);
 }
+
+/* Titres de section lisibles sur fond sombre */
+.section-title { color: #e5e7eb !important; text-shadow: 0 2px 4px rgba(0,0,0,.35); }
 
 /* Titres cohérents */
 h1, h2, h3, h4, h5, h6 {
@@ -1692,16 +1770,16 @@ h1, h2, h3, h4, h5, h6 {
   .pipeline-dashboard {
     padding: 0.5rem;
   }
-  
+
   .agent-flow-card {
     min-width: 100px;
     padding: 1rem 0.5rem;
   }
-  
+
   .flow-arrow {
     font-size: 1rem;
   }
-  
+
   .agent-control-btn {
     padding: 0.5rem 1rem;
     font-size: 0.75rem;
@@ -1746,7 +1824,7 @@ button:focus,
 
 /* Effets de néon pour les éléments actifs */
 .neon-effect {
-  box-shadow: 
+  box-shadow:
     0 0 5px currentColor,
     0 0 10px currentColor,
     0 0 15px currentColor,
@@ -1777,31 +1855,62 @@ button:focus,
   transition: all 0.3s ease;
 }
 
+/* ==== CTA BOUTONS START/STOP ==== */
+.cta-btn {
+  position: relative;
+  padding: 14px 28px;
+  border-radius: 14px;
+  font-weight: 800;
+  font-size: 18px;
+  color: #fff;
+  border: 1px solid rgba(255,255,255,0.18);
+  background: rgba(15, 23, 42, 0.55);
+  box-shadow: 0 10px 30px rgba(0,0,0,0.25), inset 0 0 0 1px rgba(255,255,255,0.06);
+  backdrop-filter: blur(12px);
+}
+.cta-btn::before {
+  content: '';
+  position: absolute; inset: 0; border-radius: 14px;
+  background: linear-gradient(135deg, rgba(255,255,255,0.15), rgba(255,255,255,0));
+  pointer-events: none;
+}
+.cta-btn:hover { transform: translateY(-2px); box-shadow: 0 16px 40px rgba(0,0,0,0.35); }
+.cta-btn:active { transform: translateY(0); }
+.cta-btn:disabled { opacity: .6; cursor: not-allowed; transform: none; }
+
+.cta-start { background: linear-gradient(135deg, rgba(16,185,129,.15), rgba(6,95,70,.15)); border-color: rgba(16,185,129,.35); }
+.cta-start { box-shadow: 0 12px 32px rgba(16,185,129,.25); }
+.cta-start:hover { background: linear-gradient(135deg, rgba(16,185,129,.25), rgba(6,95,70,.25)); box-shadow: 0 18px 44px rgba(16,185,129,.35); }
+
+.cta-stop { background: linear-gradient(135deg, rgba(239,68,68,.15), rgba(153,27,27,.15)); border-color: rgba(239,68,68,.35); }
+.cta-stop { box-shadow: 0 12px 32px rgba(239,68,68,.25); }
+.cta-stop:hover { background: linear-gradient(135deg, rgba(239,68,68,.25), rgba(153,27,27,.25)); box-shadow: 0 18px 44px rgba(239,68,68,.35); }
+
 /* ===== RESPONSIVE DESIGN COHÉRENT AVEC ACCUEIL.VUE ===== */
 @media (max-width: 768px) {
   .pipeline-dashboard {
     padding: 20px 16px;
   }
-  
+
   .bg-white {
     padding: 16px;
     border-radius: 16px;
   }
-  
+
   .agent-card {
     padding: 12px;
     border-radius: 16px;
   }
-  
+
   button[class*="bg-gradient-to-r"] {
     padding: 12px 16px;
     font-size: 14px;
   }
-  
+
   .grid {
     gap: 12px;
   }
-  
+
   h1, h2, h3 {
     font-size: 1.5rem;
   }
@@ -1811,26 +1920,26 @@ button:focus,
   .pipeline-dashboard {
     padding: 16px 12px;
   }
-  
+
   .bg-white {
     padding: 12px;
     border-radius: 12px;
   }
-  
+
   .agent-card {
     padding: 8px;
     border-radius: 12px;
   }
-  
+
   button[class*="bg-gradient-to-r"] {
     padding: 10px 12px;
     font-size: 12px;
   }
-  
+
   .grid {
     gap: 8px;
   }
-  
+
   h1, h2, h3 {
     font-size: 1.25rem;
   }
