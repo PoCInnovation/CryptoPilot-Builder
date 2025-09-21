@@ -1,7 +1,6 @@
 import { createRouter, createWebHashHistory } from "vue-router";
 import Accueil from "../acceuil/Accueil.vue";
 import AI from "../agent_building/Ai.vue";
-import Module from "../agent_building/Module.vue";
 import Prompte from "../agent_building/Prompte.vue";
 import ChatPage from "../acceuil/Chat_Page.vue";
 import UserMemory from "../components/UserMemory.vue";
@@ -27,9 +26,7 @@ const routes = [
   },
   {
     path: "/Module",
-    name: "Module",
-    component: Module,
-    meta: { requiresAuth: true },
+    redirect: "/Prompte",
   },
   {
     path: "/Prompte",

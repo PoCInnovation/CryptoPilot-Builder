@@ -267,6 +267,18 @@ class ApiService {
       method: "POST",
     });
   }
+
+  // ===== MCP TOOLS =====
+
+  async callMCPTool(toolName, parameters = {}) {
+    return this.request("/mcp/call-tool", {
+      method: "POST",
+      body: {
+        tool_name: toolName,
+        parameters,
+      },
+    });
+  }
 }
 
 // Instance singleton
@@ -309,4 +321,5 @@ export const {
   stopPipeline,
   startAllAgents,
   stopAllAgents,
+  callMCPTool,
 } = apiService;

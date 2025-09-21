@@ -35,7 +35,7 @@ export default {
     },
     totalSteps: {
       type: Number,
-      default: 3
+      default: 2
     }
   },
   computed: {
@@ -59,16 +59,14 @@ export default {
     getStepTitle(step) {
       const titles = {
         1: 'Configuration IA',
-        2: 'Modules',
-        3: 'Finalisation'
+        2: 'Finalisation'
       };
       return titles[step] || `Étape ${step}`;
     },
     getStepSubtitle(step) {
       const subtitles = {
         1: 'Modèle & API',
-        2: 'Fonctionnalités',
-        3: 'Prompt & Chat'
+        2: 'Prompt & Chat'
       };
       return subtitles[step] || '';
     }
