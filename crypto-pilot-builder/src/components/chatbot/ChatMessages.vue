@@ -19,6 +19,7 @@
 
 <script setup>
 import { ref, nextTick, onMounted, watch } from 'vue'
+import { marked } from 'marked'
 
 const props = defineProps({
   messages: {
@@ -34,12 +35,55 @@ const props = defineProps({
 const messagesContainer = ref(null)
 const shouldAutoScroll = ref(true)
 
+// Configuration de marked pour un rendu sécurisé
+marked.setOptions({
+  breaks: true,
+  gfm: true,
+  sanitize: false, // Nous faisons confiance au contenu de l'IA
+  smartLists: true,
+  smartypants: true
+})
+
 function formatMessage(text) {
   if (!text) return ''
-  return text
-    .replace(/\\n\\n/g, '<br><br>')
-    .replace(/\\n/g, '<br>')
-    .replace(/- /g, '• ')
+
+  // Détecter si le texte contient du markdown
+  const hasMarkdown = /^#+\s|^\*\*|^\- |^\* |^\d+\.|^>|^\|/.test(text.trim()) ||
+                     /\*\*.*\*\*|__.*__|\*.*\*|_.*_|`.*`|\[.*\]\(.*\)/.test(text) ||
+                     text.includes('```') || text.includes('##') || text.includes('**')
+
+  console.log('FormatMessage - Text:', text.substring(0, 100) + '...')
+  console.log('FormatMessage - HasMarkdown:', hasMarkdown)
+
+  if (hasMarkdown) {
+    try {
+      const rendered = marked.parse(text)
+      console.log('FormatMessage - Rendered:', rendered.substring(0, 100) + '...')
+      return rendered
+    } catch (error) {
+      console.warn('Erreur lors du rendu markdown:', error)
+      // Fallback vers le formatage basique
+      return text
+        .replace(/\\n\\n/g, '<br><br>')
+        .replace(/\\n/g, '<br>')
+        .replace(/- /g, '• ')
+    }
+  }
+
+  // Pour les messages de l'IA, essayer toujours le rendu markdown
+  // car l'IA peut générer du markdown même si notre détection échoue
+  try {
+    const rendered = marked.parse(text)
+    console.log('FormatMessage - Force markdown rendered:', rendered.substring(0, 100) + '...')
+    return rendered
+  } catch (error) {
+    console.warn('Erreur lors du rendu markdown forcé:', error)
+    // Fallback vers le formatage basique
+    return text
+      .replace(/\\n\\n/g, '<br><br>')
+      .replace(/\\n/g, '<br>')
+      .replace(/- /g, '• ')
+  }
 }
 
 function scrollToBottom() {
@@ -140,5 +184,108 @@ watch(() => props.messages, () => {
   min-height: 40px;
   display: flex;
   align-items: center;
+}
+
+/* Styles pour le rendu markdown */
+.message :deep(h1),
+.message :deep(h2),
+.message :deep(h3),
+.message :deep(h4),
+.message :deep(h5),
+.message :deep(h6) {
+  color: #ffffff;
+  margin: 0.5rem 0;
+  font-weight: bold;
+}
+
+.message :deep(h1) { font-size: 1.5rem; }
+.message :deep(h2) { font-size: 1.3rem; }
+.message :deep(h3) { font-size: 1.1rem; }
+
+.message :deep(p) {
+  margin: 0.5rem 0;
+  line-height: 1.6;
+}
+
+.message :deep(ul),
+.message :deep(ol) {
+  margin: 0.5rem 0;
+  padding-left: 1.5rem;
+}
+
+.message :deep(li) {
+  margin: 0.25rem 0;
+}
+
+.message :deep(strong),
+.message :deep(b) {
+  font-weight: bold;
+  color: #ffffff;
+}
+
+.message :deep(em),
+.message :deep(i) {
+  font-style: italic;
+}
+
+.message :deep(code) {
+  background-color: #2d3748;
+  color: #68d391;
+  padding: 0.2rem 0.4rem;
+  border-radius: 4px;
+  font-family: 'Courier New', monospace;
+  font-size: 0.9rem;
+}
+
+.message :deep(pre) {
+  background-color: #2d3748;
+  color: #ffffff;
+  padding: 1rem;
+  border-radius: 8px;
+  overflow-x: auto;
+  margin: 0.5rem 0;
+  border: 1px solid #4a5568;
+}
+
+.message :deep(pre code) {
+  background-color: transparent;
+  color: inherit;
+  padding: 0;
+  border-radius: 0;
+}
+
+.message :deep(blockquote) {
+  border-left: 4px solid #4a5568;
+  padding-left: 1rem;
+  margin: 0.5rem 0;
+  color: #a0aec0;
+  font-style: italic;
+}
+
+.message :deep(table) {
+  border-collapse: collapse;
+  width: 100%;
+  margin: 0.5rem 0;
+}
+
+.message :deep(th),
+.message :deep(td) {
+  border: 1px solid #4a5568;
+  padding: 0.5rem;
+  text-align: left;
+}
+
+.message :deep(th) {
+  background-color: #2d3748;
+  font-weight: bold;
+}
+
+.message :deep(a) {
+  color: #63b3ed;
+  text-decoration: underline;
+}
+
+.message :deep(a:hover) {
+  color: #90cdf4;
 }
 </style>
