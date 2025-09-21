@@ -1650,19 +1650,19 @@ export default {
 /* ===== LAYOUT DE BASE ===== */
 .app-container {
   display: flex;
-  height: 100vh;
+  min-height: 100vh;
   font-family: "Roboto", sans-serif;
   background: linear-gradient(120deg, rgba(28, 32, 51, 0), rgba(16, 21, 33, 0));
-  overflow: hidden;
+  overflow-x: hidden;
 }
 
 /* ===== SIDEBAR ===== */
 .sidebar {
   position: fixed;
-  top: 10vh;
-  left: 5vh;
-  width: 28vh;
-  height: 80vh;
+  top: 20px;
+  left: 20px;
+  width: 320px;
+  height: calc(100vh - 40px);
   background: rgba(255, 255, 255, 0.1);
   backdrop-filter: blur(20px);
   border-radius: 24px;
@@ -1672,7 +1672,10 @@ export default {
   display: flex;
   flex-direction: column;
   gap: 20px;
-  overflow: hidden;
+  overflow-y: auto;
+  z-index: 4;
+  box-sizing: border-box;
+  margin-right: 20px;
 }
 .sidebar-header {
   margin-bottom: 35px;
@@ -1957,12 +1960,18 @@ export default {
 /* ===== CONTENU PRINCIPAL ===== */
 .main-content {
   flex: 1;
+  margin-left: 380px;
   padding: 50px;
   display: flex;
   flex-direction: column;
   align-items: center;
   background: linear-gradient(135deg, #111421 0%, #111421 100%);
   overflow-y: auto;
+  min-height: 100vh;
+  width: calc(100% - 380px);
+  box-sizing: border-box;
+  position: relative;
+  z-index: 1;
 }
 
 /* En-tête */
@@ -2058,6 +2067,8 @@ export default {
   max-width: 1200px;
   width: 100%;
   animation: fadeInUp 0.6s ease;
+  position: relative;
+  z-index: 4;
 }
 
 .widgets-container {
@@ -2066,6 +2077,8 @@ export default {
   gap: 30px;
   margin-top: 150px;
   flex-wrap: wrap;
+  position: relative;
+  z-index: 4;
 }
 /* Bento Grid Layout */
 /* Bento Grid Layout - Style Apple */
@@ -2078,6 +2091,8 @@ export default {
   max-width: 1000px;
   margin: 40px auto;
   padding: 0 20px;
+  position: relative;
+  z-index: 4;
 }
 
 /* Widgets */
@@ -2105,6 +2120,7 @@ export default {
   position: relative;
   overflow: hidden;
   transform: perspective(1000px) rotateY(0deg);
+  z-index: 4;
   background: linear-gradient(120deg, rgba(28, 32, 51, 0), rgba(16, 21, 33, 0));
   border: none;
   cursor: pointer;
@@ -2806,8 +2822,28 @@ export default {
   backdrop-filter: blur(1px);
 }
 
-/* Responsive Design Simple */
+/* Responsive Design - Tablettes */
+@media (max-width: 1200px) {
+  .sidebar {
+    width: 280px;
+  }
+  
+  .main-content {
+    margin-left: 340px;
+    width: calc(100% - 340px);
+  }
+}
+
 @media (max-width: 1024px) {
+  .sidebar {
+    width: 260px;
+  }
+  
+  .main-content {
+    margin-left: 320px;
+    width: calc(100% - 320px);
+  }
+  
   .bento-grid {
     grid-template-columns: repeat(3, 1fr);
     grid-template-rows: repeat(4, 180px);
@@ -2836,8 +2872,19 @@ export default {
 }
 
 @media (max-width: 768px) {
+  .app-container {
+    flex-direction: column;
+  }
+  
   .sidebar {
-    display: none;
+    position: relative;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: auto;
+    max-height: 50vh;
+    margin-bottom: 20px;
+    border-radius: 0 0 24px 24px;
   }
 
   .main-content {
@@ -3409,8 +3456,19 @@ export default {
 }
 
 @media (max-width: 768px) {
+  .app-container {
+    flex-direction: column;
+  }
+  
   .sidebar {
-    display: none;
+    position: relative;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: auto;
+    max-height: 50vh;
+    margin-bottom: 20px;
+    border-radius: 0 0 24px 24px;
   }
 
   .main-content {
