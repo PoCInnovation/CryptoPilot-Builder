@@ -1,6 +1,6 @@
 <template>
   <div class="container">
-    <progress-bar :current-step="3" :total-steps="3" />
+    <progress-bar :current-step="2" :total-steps="2" />
     <div class="page-content">
       <div class="header-section">
         <h2 class="page-title">Finalisation</h2>
@@ -319,7 +319,7 @@
       </div>
     </div>
     <div class="button-container">
-      <router-link to="/Module" class="btn-link">
+      <router-link to="/AI" class="btn-link">
         <button class="btn btn-secondary">
           <svg width="20" height="20" viewBox="0 0 24 24" fill="none">
             <path
@@ -418,6 +418,7 @@ export default {
       try {
         // Préparer la configuration complète
         const completeConfig = {
+          provider: this.aiConfig.provider || 'openai',
           selectedModel: this.aiConfig.selectedModel,
           apiKey: this.aiConfig.apiKey,
           prompt: this.localPrompt,

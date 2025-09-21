@@ -28,6 +28,7 @@ CREATE TABLE IF NOT EXISTS chat_messages (
 CREATE TABLE IF NOT EXISTS agent_configs (
     id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
     user_id UUID REFERENCES users(id) ON DELETE CASCADE,
+    provider VARCHAR(50) NOT NULL DEFAULT 'openai',
     selected_model VARCHAR(100) NOT NULL,
     api_key TEXT NOT NULL,
     modules_config JSON,

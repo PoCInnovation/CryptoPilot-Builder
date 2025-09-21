@@ -1,6 +1,6 @@
 <template>
   <div class="container">
-    <progress-bar :current-step="1" :total-steps="3" />
+    <progress-bar :current-step="1" :total-steps="2" />
     <div class="page-content">
       <div class="header-section">
         <h2 class="page-title">Configuration IA</h2>
@@ -128,7 +128,7 @@
           Précédent
         </button>
       </router-link>
-      <router-link to="/Module" class="btn-link">
+      <router-link to="/Prompte" class="btn-link">
         <button
           class="btn btn-primary"
           :disabled="!isFormValid"

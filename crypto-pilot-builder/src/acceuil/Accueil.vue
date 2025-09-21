@@ -35,7 +35,7 @@
             v-if="isAuthenticated"
             class="btn-icon"
             @click="showChat = false"
-            title="Retour"
+            title="Retour au dashboard"
           >
             🏠️
           </button>
@@ -131,13 +131,6 @@
                 🤖 AutoWallet
               </button>
             </router-link>
-            <button
-              v-if="hasValidConfig"
-              class="chat-access-button"
-              @click="showChat = true"
-            >
-              💬 Accéder au Chat
-            </button>
           </div>
           <div v-else class="auth-required-section">
             <button
@@ -1713,7 +1706,7 @@ export default {
 /* Contrôles de la sidebar */
 .chat-controls {
   display: flex;
-  gap: 84px;
+  gap: 60px;
   flex-shrink: 0;
 }
 

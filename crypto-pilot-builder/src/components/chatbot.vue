@@ -920,11 +920,11 @@ if (typeof window !== "undefined") {
 
 <style scoped>
 .chat-container {
-  display: fixed;
-  top: 11vh;
-  right: 2px;
-  width: 81vw;
-  height : 82vh;
+  position: fixed;
+  top: 20px;
+  left: 380px;
+  right: 20px;
+  height: calc(100vh - 40px);
   border: 1px solid rgba(255, 255, 255, 0.1);
   border-radius: 24px;
   box-shadow:
@@ -932,7 +932,8 @@ if (typeof window !== "undefined") {
     0 0 0 1px rgba(255, 255, 255, 0.05);
   overflow: hidden;
   background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-  position: fixed;
+  z-index: 4;
+  box-sizing: border-box;
 }
 
 /* Animation de fond */
@@ -992,6 +993,7 @@ if (typeof window !== "undefined") {
   position: relative;
   border-radius: 0 24px 24px 0;
   height : 100%;
+  z-index: 4;
 }
 
 /* Header moderne avec glassmorphism */
@@ -1516,12 +1518,27 @@ if (typeof window !== "undefined") {
 }
 
 /* Responsive design */
+@media (max-width: 1200px) {
+  .chat-container {
+    left: 340px;
+    right: 20px;
+  }
+}
+
+@media (max-width: 1024px) {
+  .chat-container {
+    left: 320px;
+    right: 20px;
+  }
+}
+
 @media (max-width: 768px) {
   .chat-container {
-    width: 74vw;
-    height: 95vh;
+    left: 20px;
+    right: 20px;
+    top: 20px;
+    height: calc(100vh - 40px);
     border-radius: 16px;
-    margin: 10px;
   }
   
   .chat-main {
@@ -1630,11 +1647,12 @@ if (typeof window !== "undefined") {
 
 @media (max-width: 480px) {
   .chat-container {
-    width: 74vw;
-    height: 100vh;
-    border-radius: 0;
-    margin: 0;
-    border: none;
+    left: 10px;
+    right: 10px;
+    top: 10px;
+    height: calc(100vh - 20px);
+    border-radius: 16px;
+    border: 1px solid rgba(255, 255, 255, 0.1);
   }
   
   .chat-main {
